@@ -1,4 +1,7 @@
-Reference is made to version 1.3 of the Matter Specification found here :[text](https://csa-iot.org/wp-content/uploads/2024/05/matter-1-3-device-library-specification.pdf)
+Reference is made to version 1.3 of the Matter Specification found [here](https://csa-iot.org/wp-content/uploads/2024/05/matter-1-3-device-library-specification.pdf)
+
+This project heavily leans on the fantastic work by Ingo Fischer and the development team on [Matter.js](https://github.com/project-chip/matter.js)
+
 
 # To Dos
 
