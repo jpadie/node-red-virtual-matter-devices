@@ -1,0 +1,412 @@
+<script type="text/javascript">
+    const types = {
+        // onOffSensor: "On/Off Sensor",
+        temperatureSensor: "Temperature Sensor",
+        humiditySensor: "Humidity Sensor",
+        occupancySensor: "Occupancy Sensor",
+        pressureSensor: "Pressure Sensor",
+        flowSensor: "Flow Sensor",
+        rainSensor: "Rain Sensor",
+        lightSensor: "Light Sensor",
+        contactSensor: "Contact Sensor",
+        airQualitySensor: "Air Quality Sensor",
+        waterFreezeDetector: "Water Freeze Detector",
+        waterLeakDetector: "Water Leak Detector",
+        //ordered by likely most common
+    };
+    RED.nodes.registerType('matter-sensors', {
+        category: 'matter',
+        defaults: {
+            serverNode: {
+                value: ""
+            },
+            name: {
+                value: ""
+            },
+            sensorType: {
+                value: "temperatureSensor"
+            },
+            supportsTemperature: {
+                value: 0,
+
+            },
+            supportsHumidity: {
+                value: 0,
+
+            },
+            supportsCO: {
+                value: 0,
+
+            },
+            supportsCO2: {
+                value: 0,
+
+            },
+            supportsNO2: {
+                value: 0,
+
+            },
+            supportsOzone: {
+                value: 0,
+
+            },
+            supportsTVOC: {
+                value: 0,
+
+            },
+            supportsFormaldehyde: {
+                value: 0,
+
+            },
+            supportsPM1: {
+                value: 0,
+
+            },
+            supportsPM25: {
+                value: 0,
+
+            },
+            supportsPM10: {
+                value: 0,
+
+            },
+            supportsRadon: {
+                value: 0,
+
+            },
+            regularUpdates: {
+                value: "1",
+
+            },
+            telemetryInterval: {
+                value: 60,
+
+            },
+            passThroughMessage: {
+                value: "1",
+
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        color: "#F3B567",
+        label: function () {
+            if (this.name && this.name != "") {
+                return this.name;
+            }
+            if (this.sensorType) {
+                return types[this.sensorType];
+            }
+            return "Sensor";
+        },
+        paletteLabel: "Sensor",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+        oneditsave: function () {
+            for (const item of ["Temperature", "Humidity", "CO", "CO2", "NO2", "Ozone", "Formaldehyde", "PM1", "PM25", "PM10", "Radon", "TVOC"]) {
+                this[`supports${item}`] = $(`#node-input-supports${item}`).val() == "1" ? 1 : 0;
+            }
+
+            for (const item of ["regularUpdates", "passThroughMessage", "reportAirQualityString"]) {
+                this[item] = $(`#node-input-${item}`).val() == "1" ? 1 : 0;
+            }
+
+            this.sensorType = $("#node-input-sensorType").val();
+
+
+        },
+        oneditprepare: function () {
+
+            const node = this;
+            const groups = ["Temperature", "Humidity", "CO", "CO2", "NO2", "Ozone", "Formaldehyde", "PM1", "PM25", "PM10", "Radon", "TVOC"];
+            $(document).ready(() => {
+
+                if (this.serverNode) {
+                    $("#node-input-serverNode").val(this.serverNode);
+                }
+                const elem = $("#node-input-sensorType");
+                for (const opt in types) {
+                    let o = new Option(types[opt], opt);
+                    if (this.sensorType && opt == this.sensorType) {
+                        o.selected = true;
+                    }
+                    elem.append(o);
+                }
+                $("#node-input-sensorType").on("change", (e) => {
+                    if ($(e.target).val() == "airQualitySensor") {
+                        $("fieldset.aqs").show();
+                    } else {
+                        $("fieldset.aqs").hide();
+                    }
+                })
+
+                $("#node-input-sensorType").trigger("change");
+
+                /*
+                to do
+                freeze type once created and commissioned
+                */
+                let serverID = $("#node-input-serverNode").val();
+                if (serverID && serverID != "_ADD_") {
+                    $.ajax({
+                        url: "matter-server/" + serverID,
+                        type: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+                            data = JSON.parse(data);
+                            if (data.commissioned) {
+                                $("#node-input-sensorType").attr("readonly", "readonly");
+                            }
+                        }
+                    });
+                }
+                for (const item in ["passThroughMessage", "regularUpdates", "reportAirQualityString"]) {
+                    $(`#node-input-${item}`).attr("checked", this[item] ? true : false);
+                }
+
+                const aqs = $("fieldset.aqs");
+                for (const item of groups) {
+                    let d = document.createElement("div");
+                    $(d).addClass("form-row");
+                    let l = document.createElement("label");
+                    $(l).attr("for", "node-input-supports" + item);
+                    $(l).text(item);
+                    let i = document.createElement("input");
+                    i.id = "node-input-supports" + item;
+                    $(i).addClass("hidden").hide();
+                    $(d).append($(l));
+                    $(d).append($(i));
+                    let d2 = document.createElement("div");
+                    $(d2).addClass("fR");
+
+                    let b1 = document.createElement("button");
+                    $(b1).text("Yes");
+                    $(b1).attr("type", "button");
+                    $(b1).addClass(`${item}-group red-ui-button toggle`);
+                    let b2 = document.createElement("button");
+                    $(b2).text("No");
+                    $(b2).attr("type", "button");
+                    $(b2).addClass(`${item}-group red-ui-button toggle`);
+                    if (this[`supports${item}`] == 1) {
+                        $(b1).addClass("selected");
+                        $(b2).removeClass("selected");
+                        $(i).val(1);
+                    } else {
+                        $(b2).addClass("selected");
+                        $(b1).removeClass("selected");
+                        $(i).val(0);
+                    }
+                    $(d2).append($(b1));
+                    $(d2).append($(b2));
+                    $(d).append($(d2));
+                    aqs.append($(d));
+                    $(`.${item}-group`).on("click", function () {
+                        $(`fieldset.matter .${item}-group`).removeClass("selected");
+                        $(this).addClass("selected");
+                        $(`#node-input-supports${item}`).val($(this).text() == "Yes" ? 1 : 0);
+                    })
+
+                }
+
+                $("fieldset.matter input:checkbox").each(function () {
+                    let elem = $(this);
+                    let id = $(this).attr("id");
+                    let d = document.createElement("div");
+                    $(d).addClass("fR");
+                    let i = document.createElement("input");
+                    $(i).attr("id", $(this).attr("id"))
+                        .val(node[id] ?? "0")
+                        .css("width", "1rem")
+                        .addClass("hidden");
+                    let b1 = document.createElement("button");
+                    $(b1).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b1).attr("value", "1");
+                    $(b1).text("Yes");
+                    let b2 = document.createElement("button");
+                    $(b2).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b2).attr("value", "0");
+                    $(b2).text("No");
+                    if ($(elem).is(":checked")) {
+                        $(b1).addClass("selected");
+                    } else {
+                        $(b2).addClass("selected");
+                    }
+                    $(b2).on("click", function (e) {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.target).addClass("selected");
+
+                        $("#" + id).val($(e.target).val());
+                        this[id.substring(11)] = 1;
+                    });
+                    $(b1).on("click", function (e) {
+
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.target).addClass("selected");
+
+                        $("#" + id).val($(e.target).val());
+                        this[id.substring(11)] = 1;
+                    });
+
+                    $(d).append($(i), $(b1), $(b2));
+                    $(this).replaceWith($(d));
+                });
+
+                let newInput = document.createElement("input");
+                $(newInput).attr("type", "hidden").attr("id", "node-input-telemetryInterval-type").insertAfter($("#node-input-telemetryInterval"));
+                let fsRoot = parseInt($("html").css("font-size"));
+
+                $("#node-input-telemetryInterval").typedInput({
+                    type: "number",
+                    types: ["num"],
+                    typeField: "#node-input-telemetryInterval-type",
+                });
+                $("#node-input-telemetryInterval").typedInput("width", `${5 * fsRoot}px`)
+            });
+        },
+        onadd: function () {
+
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matter-sensors">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            float: left;
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            float:left;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden{
+            display: none !important;
+        }
+
+        fieldset.hidden {
+            display:none !important;
+        }
+
+    </style>
+    
+    <fieldset class="matter">
+        <legend>Sensor Type</legend>
+        
+        <div class="form-row">
+            <label for="node-input-sensorType">Sensor Type</label>
+            <div class="fR">
+                <select id="node-input-sensorType">
+                    
+                </select>   
+            </div>
+        </div>
+    </fieldset>
+    <fieldset class="matter aqs hideable">
+        <legend>Supported Air Quality Features</legend>
+        <div class="form-row">
+            <label for="node-input-reportAirQualityString">Report AQ in words</label>
+            <input type="checkbox" id="node-input-reportAirQualityString" value="1">
+        </div>
+        <!--- autofilled -->
+
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Telemetry</legend>
+        <div class="form-row">
+            <label for="node-input-regularUpdates">Enable Telemetry</label>
+            <input type="checkbox" id="node-input-regularUpdates" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
+            <div class="fR">
+            <input type="text" id="node-input-telemetryInterval" placeholder="60" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-passThroughMessage">Pass through msg</label>
+            <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Name</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <div class="fR">
+                <input type="text" id="node-input-name" placeholder="Name" />
+                <input type="hidden" id="node-input-serverNode" />
+            </div>
+        </div>
+    </fieldset>
+</script>
+
+
+<script type="text/html" data-help-name="matter-sensors">
+    <p>This node provides a variety of synthetic sensors for matter controllers</p>
+    <h2>Input</h2>
+    <p>
+        The sensors enabled by this node take a single input that provides either the measured value for the sensor or the state. 
+        <br/>
+        For example, you could provide a temperature sensor with a value of 20.0 and this would tell the matter controller that the temperature was 20C.  For contact sensors, rain water sensors, occupancy sensors you provide a boolean value (true or false).
+        <br/>
+        The input should be in msg.payload and be an object in the following format
+        <br/>
+        <pre>
+        {
+            occupancy:          boolean,
+            pressure:           float,      // in m3/hr
+            temperature:        float,      // in centigrade    *
+            humidity:           float,      // in %RH           *
+            rain:               boolean,
+            contact:            boolean,
+            illuminance:        float,      //in lux
+            waterFreezeDetector boolean,
+            waterLeakDetector   boolean,
+            airQuality          number or string, // settable in the config *
+            COLevel             float,     //in ppm             *
+            CO2Level            float,     //in ppm             *
+            NO2Level            float,     //in ppm             *
+            ozoneLevel          float,     //in ppm             *
+            TVOCLevel           float,     //in ppm             *
+            PM1Level            float,      //in ug/m3          *
+            PM25Level           float,      //in ug/m3          *
+            PM10Level           float,      //in ug/m3          *
+            formaldehydeLevel   float,      //in ug/m3          *
+            radonLevel          float,      //in Bq/m3          *
+        }
+        </pre>
+        <br/>
+        Note that an air quality sensor will accept any one or more of the asterisked values, provided that you have configured support for that attribute in the config dialog
+    </p>
+
+    <h2>Output</h2>
+    <p>
+        These sensors are not "controlled" by a matter controller in the sense that their value is not changed by the controller but by an external event.  So these nodes do not need monitoring in the same way that a light bulb might.
+    <br/>
+        However the nodes will still output all changes that it becomes aware of and, if you enable telemetry, then the nodes will also send their current state every telemetry period.
+    <br/>
+        The format of the output msg.payload depends on the sensor type.  However they will have one or more of the properties shown in the input message format, and in some cases a unit will be provided.
+   </p>
+
+   <h2>Status Updates</h2>
+   <p>
+    Nodes will show their status in the editor.  if the status is grey the node is offline and there is an error or for some reason the Matter server has not started properly.
+    <br/>
+    Most nodes will show a green status when they are online. In some cases the colour of the status will correspond to state (e.g. a contact sensor has green for open, red for closed; a rain sensor shows blue for raining etc).
+   </p>
+
+</script>

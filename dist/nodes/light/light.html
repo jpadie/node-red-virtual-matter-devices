@@ -1,0 +1,223 @@
+<script type="text/javascript">
+    let booleanNodes = [];
+    RED.nodes.registerType('matter-light', {
+        category: 'matter',
+        defaults: {
+            serverNode: {
+                value: "",
+                type: "matter-hub"
+            },
+            name: { value: "" },
+            lightType: { value: "colorLight" },
+            regularUpdates: { value: 0 },
+            telemetryInterval: { value: 60 },
+            passThroughMessage: { value: 0 }
+        },
+        inputs: 1,
+        outputs: 1,
+        color: "#F3B567",
+        label: function () {
+            return this.name || "Light";
+        },
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+        paletteLabel: "Light",
+        onremove: function () {
+            console.log("on remove has been called");
+        },
+        oneditdelete: function () {
+            console.log("oneditdelete has been called");
+        },
+        onadd: function () {
+
+        },
+        oneditprepare: () => {
+            let node = this;
+            $("fieldset.matter input:checkbox").each(function () {
+                let elem = $(this);
+                let id = $(this).attr("id");
+                booleanNodes.push(id);
+                let d = document.createElement("div");
+                $(d).addClass("fR");
+                let i = document.createElement("input");
+                $(i).attr("id", $(this).attr("id"))
+                    .val(node[id] ?? "0")
+                    .css("width", "1rem")
+                    .addClass("hidden");
+                let b1 = document.createElement("button");
+                $(b1).addClass("red-ui-button toggle " + `${id}-group`);
+                $(b1).attr("value", "1");
+                $(b1).text("Yes");
+                let b2 = document.createElement("button");
+                $(b2).addClass("red-ui-button toggle " + `${id}-group`);
+                $(b2).attr("value", "0");
+                $(b2).text("No");
+                if (node[id]) {
+                    $(b1).addClass("selected");
+                } else {
+                    $(b2).addClass("selected");
+                }
+                $(b2).on("click", function (e) {
+                    $(`button.${id}-group`).removeClass("selected");
+                    $(e.target).addClass("selected");
+                    $("#" + id).val(0);
+                    this[id.substring(11)] = 0;
+                });
+                $(b1).on("click", function (e) {
+
+                    $(`button.${id}-group`).removeClass("selected");
+                    $(e.target).addClass("selected");
+                    $("#" + id).val(1);
+                    this[id.substring(11)] = 1;
+                });
+
+                $(d).append($(i), $(b1), $(b2));
+                $(this).replaceWith($(d));
+            });
+
+            let newInput = document.createElement("input");
+            $(newInput).attr("type", "hidden").attr("id", "node-input-telemetryInterval-type").insertAfter($("#node-input-telemetryInterval"));
+            let fsRoot = parseInt($("html").css("font-size"));
+
+            $("#node-input-telemetryInterval").typedInput({
+                type: "number",
+                types: ["num"],
+                typeField: "#node-input-telemetryInterval-type",
+            });
+
+            $("#node-input-telemetryInterval").typedInput("width", `${5 * fsRoot}px`)
+        },
+        oneditsave: () => {
+            for (const item of booleanNodes) {
+                this[item.substring(11)] = Number(this[item.substring(11)]);
+            }
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="matter-light">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            float: left;
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            float:left;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden{
+            display: none !important;
+        }
+        fieldset.hidden {
+            display: none !important;
+        }
+    </style>
+    <fieldset class="matter hidden">
+        <legend>Matter Hub</legend>
+    
+        <div class="form-row">
+            <label for="node-input-serverNode">Matter Server</label>
+            <div class="fR">
+                <input type="text" id="node-input-serverNode" placeholder="server node" />
+            </div>
+        </div>
+    
+    </fieldset>
+    
+    <fieldset class="matter">
+        <legend>Feature Support</legend>
+        
+        <div class="form-row">
+            <label for="node-input-dimmable">Light Type</label>
+            <div class="fR">
+                <select id="node-input-lightType">
+                    <option value="colorLight">Color</option>
+                    <option value="dimmableLight">Dimmable</option>
+                    <option value="onOffLight">On/Off</option>
+                </select>
+            </div>
+        </div>
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Regular Updates</legend>
+        <div class="form-row">
+            <label for="node-input-regularUpdates">Periodic Updates</label>
+            <input type="checkbox" id="node-input-regularUpdates" value="1"/>
+        </div>
+        <div class="form-row">
+            <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
+            <div class="fR">
+            <input type="text" id="node-input-telemetryInterval" placeholder="60" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-passThroughMessage">Pass through msg</label>
+            <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Basic Info</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <div class="fR">
+                <input type="text" id="node-input-name" />
+            </div>
+        </div>
+    </fieldset>
+   
+</script>
+
+
+<script type="text/html" data-help-name="matter-light">
+    <p>This node provides a synthetic light for matter controllers</p>
+    <h2>Input</h2>
+    <p>An input will send an update to Matter to change the light's state. e.g. its colour, dimmer level or on-off state.</p>    
+		<h3>Example input msg</h3>
+		<div>
+<pre>
+msg.payload = {
+	onoff: true,
+    brightness: 50,
+    color: {
+        x: value,
+        y, value
+    }
+}
+</pre>
+        <p>color values as XY and as HS {hue: value, saturation: value} are supported. Value limits are 0 - 254</p>
+        <p>brightness should be a value in percent.</p>
+		</div>
+		
+        <h3>Output</h3>
+        <div>
+            changes to some of the internal status of the device are monitored (e.g. color, brightness and power state) 
+        </div>
+        <h3>
+            Name
+        </h3>
+        <p>The name of the node will be sent to the controller (e.g. Alexa). This should make it easier to identify the device in your controller app.  NB not all controllers support this.</p>
+		<h3>Notes</h3>
+		<div>
+		<ul>
+		<li>If properties are provided that are not in the list above, they will be ignored.</li>
+		<li>You do not need to provide all the properties on each input; only those provided will be taken into account.</li>
+		</ul>
+		</div>
+
+</script>

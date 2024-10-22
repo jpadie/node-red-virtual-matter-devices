@@ -1,0 +1,438 @@
+<script type="text/javascript">
+    let deviceTypes = { thermostat: "Thermostat", airconditioner: "Air Conditioner", fan: "Fan", airPurifier: "Air Purifier" };
+    RED.nodes.registerType('matter-hvac', {
+        category: 'matter',
+        defaults: {
+            serverNode: {
+                value: "",
+                type: "matter-hub"
+            },
+            name: { value: "" },
+            deviceType: {
+                value: ""
+            },
+            supportsOccupancy: { value: 0 },
+            supportsOutdoorTemperature: { value: 1 },
+            supportsCooling: { value: 1 },
+            supportsHeating: { value: 1 },
+            supportsHumidity: { value: 0 },
+            telemetryInterval: {
+                value: 60
+            },
+            passThroughMessage: { value: 1 },
+            regularUpdates: { value: 1 },
+            occupiedSetback: { value: 0.75 },
+            unoccupiedSetback: { value: 3 },
+
+            supportsWind: { value: 0 },
+            supportsRocking: { value: 0 },
+            supportsAirflow: { value: 0 },
+            supportsMultiSpeed: { value: 0 },
+
+        },
+        inputs: 1,
+        outputs: 2,
+        color: "#F3B567",
+        label: function () {
+            if (this.name && this.name != "") {
+                return this.name;
+            }
+            if (this.deviceType) {
+                return deviceTypes[this.deviceType];
+            }
+            return "HVAC Device";
+        },
+        paletteLabel: "HVAC",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+
+        oneditsave: function () {
+            this.supportsWind = parseInt($("#node-input-supportsWind").val());
+            this.supportsRocking = parseInt($("#node-input-supportsRocking").val());
+        },
+        onpaletteadd: function () {
+
+        },
+        oneditprepare: function () {
+            let node = this;
+
+            $(document).ready(() => {
+
+                $(".hasType").each((index, elem) => {
+                    let l = $(elem).find("label:first");
+                    let id = l.attr("for");
+                    $("#" + id).typedInput({
+                        type: "num",
+                        types: ["num"],
+                        typeField: "#" + id + "-type"
+                    })
+                });
+
+
+                $("fieldset.matter input:checkbox").each((index, elem) => {
+                    let id = $(elem).attr("id");
+                    let d = document.createElement("div");
+                    $(d).addClass("fR");
+
+                    /*
+                    let i = document.createElement("input");
+                    $(i).attr("id", $(this).attr("id"))
+                        .val(node[id] ?? "0")
+                        .css("width", "1rem")
+                        .val($(this).is(":checked") ? 1 : 0)
+                        .addClass("hidden");
+                    */
+
+                    let b1 = document.createElement("button");
+                    $(b1).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b1).attr("value", "1");
+                    $(b1).text("Yes");
+                    let b2 = document.createElement("button");
+                    $(b2).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b2).attr("value", "0");
+                    $(b2).text("No");
+                    if ($(elem).is(":checked")) {
+                        $(b1).addClass("selected");
+                    } else {
+                        $(b2).addClass("selected");
+                    }
+                    $(b2).on("click", function (e) {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.currentTarget).addClass("selected");
+                        //$(i).val(0);
+                        $(elem).prop("checked", false);
+                        // $("#" + id).prop("checked", false);
+                        //  this[id.substring(11)] = 0;
+                    });
+
+                    $(b1).on("click", (e) => {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.currentTarget).addClass("selected");
+                        $(elem).prop("checked", true);
+                        /// $(i).val(1);
+                        //  $("#" + id).prop("checked", true);
+                        //this[id.substring(11)] = 1;
+                    });
+
+                    $(d).append($(b1), $(b2));
+                    $(d).insertBefore($(elem));
+                    $(elem).hide();
+                });
+
+                let isBitSet = (value, bit) => {
+                    return (value & Math.pow(2, bit)) ? true : false;
+                }
+
+                //let elem = $("#node-input-deviceType");
+
+                for (const opt in deviceTypes) {
+                    console.log(this.deviceType, opt);
+                    let o = new Option(deviceTypes[opt], opt);
+                    if (this.deviceType && opt == this.deviceType) {
+                        o.selected = true;
+                    }
+                    $("#node-input-deviceType").append(o);
+                }
+
+                $("#node-input-deviceType").on("change", (e) => {
+                    $("fieldset.hideable").hide();
+                    let elem = "fieldset." + $(e.target).val();
+                    $(elem).show();
+                }).trigger("change");
+
+                let updateThermostatVisibility = () => {
+                    if ($("#node-input-deviceType").val() != "thermostat") return;
+                    if (node.supportsOccupancy == "1") {
+                        $('.supportsOccupancy').show();
+                    } else {
+                        $('.supportsOccupancy').hide();
+                    }
+                }
+
+                $(".node-input-supportsOccupancy-group").on("click", updateThermostatVisibility);
+
+                updateThermostatVisibility();
+
+
+                $("button.supportsRocking-group").on("click", (e) => {
+                    $(e.currentTarget).toggleClass("selected");
+                    let elem = $("#node-input-supportsRocking");
+                    let val = parseInt($(e.currentTarget).val());
+                    let cVal = parseInt(elem.val());
+                    if ($(e.currentTarget).hasClass("selected")) {
+                        cVal += val;
+                    } else {
+                        cVal -= val;
+                    }
+                    elem.val(cVal);
+                }).each((index, elem) => {
+                    if (parseInt(node.supportsRocking) & parseInt($(elem).val())) {
+                        $(elem).addClass("selected");
+                    } else {
+                        $(elem).removeClass("selected");
+                    }
+                })
+
+                $("button.supportsWind-group").on("click", (e) => {
+                    $(e.currentTarget).toggleClass("selected");
+                    let elem = $("#node-input-supportsWind");
+                    let val = parseInt($(e.currentTarget).val());
+                    let cVal = parseInt(elem.val());
+                    if ($(e.currentTarget).hasClass("selected")) {
+                        cVal += val;
+                    } else {
+                        cVal -= val;
+                    }
+                    elem.val(cVal);
+                }).each((index, elem) => {
+                    if (parseInt(node.supportsWind) & parseInt($(elem).val())) {
+                        $(elem).addClass("selected");
+                    } else {
+                        $(elem).removeClass("selected");
+                    }
+                });
+            });
+        }
+    });
+
+</script>
+
+<script type="text/html" data-template-name="matter-hvac">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            float: left;
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            float:left;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden, fieldset.hidden{
+            display: none !important;
+        }
+        
+
+    </style>
+
+    <fieldset class="matter">
+        <div class="form-row hidden">
+            <label for="node-input-serverNode">Hub</label>
+            <input type="text" id="node-input-serverNode" placeholder="server node" />
+        </div>
+    
+        <div class="form-row">
+            <label for="node-input-deviceType">HVAC Device</label>
+            <select id="node-input-deviceType" >
+                
+            </select>
+        </div>
+    </fieldset>
+    
+    <fieldset class="fan airPurifier hideable matter">
+        <legend>Feature Support</legend>
+
+        <div class="form-row">
+            <label for="node-input-supportsAirflow">Airflow Direction</label>
+            <input type="checkbox" id="node-input-supportsAirflow" value="1"/>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-supportsMultiSpeed">MultiSpeed</label>
+            <input type="checkbox" id="node-input-supportsMultiSpeed" value="1"/>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-supportsRocking">Rocking</label>
+            <div class="fR">
+                <button class="toggle red-ui-button rockUpDown rocking supportsRocking-group" value="1">Up/Down</button>
+                <button class="toggle red-ui-button rockLeftRight rocking supportsRocking-group" value="2">Left/Right</button>
+                <button class="toggle red-ui-button rockRound rocking supportsRocking-group" value="4">Round</button>
+            </div>
+            <input id="node-input-supportsRocking" type="hidden" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-supportsWind">Wind</label>
+            <div class="fR">
+                <button class="toggle red-ui-button sleepWind supportsWind-group wind" value="1">Sleep Wind</button>
+                <button class="toggle red-ui-button naturalWind supportsWind-group wind" value="2">Natural Wind</button>                
+            </div>
+            <input id="node-input-supportsWind" type="hidden" />
+        </div>
+        
+    </fieldset>
+
+    <fieldset class="airPurifier hideable matter">
+        <legend>Air Purifier Filter Options</legend>
+        <div class="form-row">
+            <label for="node-input-supportsHepaFilterMonitoring">Hepa Filter</label>
+            <input type="checkbox" id="node-input-supportsHepaFilterMonitoring" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-supportsActivatedCarbonFilterMonitoring">Activated Carbon Filter</label>
+            <input type="checkbox" id="node-input-supportsActivatedCarbonFilterMonitoring" value="1" />
+        </div>
+    </fieldset>
+    <fieldset class="thermostat hideable matter">
+        <legend>Feature Support</legend>
+        
+        <div class="form-row">
+            <label for="node-input-heating">Heating</label>
+            <input type="checkbox" id="node-input-supportsHeating" value="1"/>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-cooling">Cooling</label>
+            <input type="checkbox" id="node-input-supportsCooling" value="1"/>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-humidity">Humidity</label>
+            <input type="checkbox" id="node-input-supportsHumidity" value="1"/>
+        </div>
+    
+        <div class="form-row">
+            <label for="node-input-occupancySensor">Occupancy Sensor</label>
+            <input type="checkbox" id="node-input-supportsOccupancy" value="1"/>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-outdoorTemperature">Outdoor Temp.</label>
+            <input type="checkbox" id="node-input-supportsOutdoorTemperature" value="1"/>
+        </div>
+    </fieldset>
+   
+    <fieldset class="matter thermostat hideable">
+        <legend>Thermostat Setback</legend>
+        <div class="form-row"></div>
+            <label for="node-input-occupiedSetback">Setback</label>
+            <input type="text" id="node-input-occupiedSetback" placeholder="1" />
+        </div>
+        <div class="form-row"></div>
+            <label for="node-input-unoccupiedSetback">Setback (unoccupied)</label>
+            <input type="text" id="node-input-unoccupiedSetback" placeholder="2.5" />
+        </div>
+    </fieldset>
+
+    <fieldset class="matter">
+        <legend>Telemetry</legend>
+        <div class="form-row">
+            <label for="node-input-regularUpdates">Enable Telemetry</label>
+            <input type="checkbox" id="node-input-regularUpdates" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
+            <div class="fR">
+            <input type="text" id="node-input-telemetryInterval" placeholder="60" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-passThroughMessage">Pass through msg</label>
+            <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Name</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <div class="fR">
+                <input type="text" id="node-input-name" placeholder="Name" />
+            </div>
+        </div>
+    </fieldset>
+    
+   
+</script>
+
+
+<script type="text/html" data-help-name="matter-hvac">
+    <div class="thermostat hideable">
+    <p>This node provides a synthetic thermostat for matter controllers</p>
+    <h2>Input</h2>
+    <p>The input should be an object whose payload contains one or more of the following properties (which must be of the corresponding type)<br/>
+    <dl>
+	    <dt>systemMode (integer)</dt>
+    	<dd>
+		    <ul>
+		    	<li>0 <span>Off</span></li>
+		    	<li>3 <span>Cool</span></li>
+		    	<li>4 <span>Heat</span></li>
+		    </ul>
+		</dd>
+		
+		<dt>localTemperature (float)</dt>
+		<dd>
+		This should represent the ambient temperature (in celcius) in the room associated with the thermostat</dd>
+		
+		<dt>relativeHumidity (float)</dt>
+		<dd>
+		The relative humidity of the room associated with the thermostat in percent.
+		</dd>
+		
+		<dt>occupied (boolean)</dt>
+		<dd>
+		true if motion/occupation is detected in the room associated with the thermostat. This will cause the thermostat to use the occupied/unoccupied setpoints.
+		</dd>
+		
+		<dt>occupiedHeatingSetPoint (float)</dt>
+		<dd>if the thermostat supports a heating mode then this is the default set-point for that mode. The value should be in the same unit as temperatureUnit</dd>
+		
+		<dt>occupiedCoolingSetPoint (float)</dt>
+		<dd>if the thermostat supports a cooling mode then this is the default set-point for that mode. The value should be in the same unit as temperatureUnit</dd>
+		
+		<dt>unOccupiedHeatingSetPoint (float)</dt>
+		<dd>if the thermostat supports a heating mode and has an occupancy sensor 
+		then this is the default set-point for that mode when there is no occupancy. 
+		The value should be in the same unit as temperatureUnit</dd>
+
+		<dt>unOccupiedCoolingSetPoint (float)</dt>
+		<dd>if the thermostat supports a cooling mode and has an occupancy sensor 
+		then this is the default set-point for that mode when there is no occupancy. 
+		The value should be in the same unit as temperatureUnit</dd>
+		
+		</dl>
+		
+		<h3>Example input msg</h3>
+		<div>
+<pre>
+msg.payload = {
+	localTemperature: 21.4,
+    outdoorTemperature: 16.89,
+	systemMode: 1,
+	occupied: 0,                        
+	occupiedHeatingSetPoint: 19.1,
+	unoccupiedHeatingSetPoint: 17.0,
+	occupiedCoolingSetPoint: 21.5,
+	unoccupiedCoolingSetPoint: 25.0
+}
+</pre>
+		</div>
+		
+		<h3>Notes</h3>
+		<div>
+		<ul>
+		<li>If properties are provided that are not in the list above, they will be ignored.</li>
+		<li>You do not need to provide all the properties on each input; only those provided will be taken into account.</li>
+		<li>If you provide a property that doesn't make sense for the config, it will be ignored.  For example if you provide a value for occupied but not occupancy sensor is configured for the node, it will be ignored.</li>
+		<li>Auto mode is currently not supported.  The more advanced HVAC properties within the matter specification are also not supported.</li>
+		</ul>
+		</div>
+    </div>
+</script>

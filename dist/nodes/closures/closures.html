@@ -1,0 +1,224 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matter-closure', {
+
+        category: 'matter',
+        defaults: {
+
+            name: { value: "Matter Closure Device" },
+            regularUpdates: { value: 1 },
+            telemetryInterval: { value: 60 },
+            passThroughMessage: { value: 1 },
+            windowCoveringType: { value: 0 },
+            deviceType: { value: "doorLock" },
+            doorLockType: { value: 2 }
+        },
+        inputs: 1,
+        outputs: 1,
+        color: "#F3B567",
+        label: function () {
+            return this.name || "Matter Closure Device";
+        },
+        paletteLabel: "Closures",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+        onadd: function () {
+
+        },
+        oneditprepare: () => {
+            $(document).ready(() => {
+                $("#node-input-deviceType").on("change", (e) => {
+                    $("fieldset.hideable").hide();
+                    $("fieldset" + `.${$(e.currentTarget).val()}`).show();
+                }).trigger("change");
+
+                $("fieldset.matter input:checkbox").each((index, elem) => {
+                    let id = $(elem).attr("id");
+                    let d = document.createElement("div");
+                    $(d).addClass("fR");
+                    let b1 = document.createElement("button");
+                    $(b1).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b1).attr("value", "1");
+                    $(b1).text("Yes");
+                    let b2 = document.createElement("button");
+                    $(b2).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b2).attr("value", "0");
+                    $(b2).text("No");
+                    if ($(elem).is(":checked")) {
+                        $(b1).addClass("selected");
+                    } else {
+                        $(b2).addClass("selected");
+                    }
+                    $(b2).on("click", function (e) {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.currentTarget).addClass("selected");
+                        //$(i).val(0);
+                        $(elem).prop("checked", false);
+                        // $("#" + id).prop("checked", false);
+                        //  this[id.substring(11)] = 0;
+                    });
+
+                    $(b1).on("click", (e) => {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.currentTarget).addClass("selected");
+                        $(elem).prop("checked", true);
+                        /// $(i).val(1);
+                        //  $("#" + id).prop("checked", true);
+                        //this[id.substring(11)] = 1;
+                    });
+
+                    $(d).append($(b1), $(b2));
+                    $(d).insertBefore($(elem));
+                    $(elem).hide();
+                });
+            });
+        },
+        oneditsave: () => {
+        },
+        onpaletteadd: () => {
+
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matter-closure">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            float: left;
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            float:left;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden{
+            display: none !important;
+        }
+        fieldset.hidden {
+            display: none !important;
+        }
+
+    </style>
+    <fieldset class="matter">
+        
+        <div class="form-row">
+            <label for="node-input-deviceType">Device Type</label>
+            <select id="node-input-deviceType">
+                <option value="doorLock">Door Lock</option>
+                <option value="windowCovering">Window Covering</option>
+            </select>
+        </div>
+
+    </fieldset>
+    
+    <fieldset class="windowCovering hideable matter">
+        <legend>Window Covering Feature Support</legend>
+        <div class="form-row">
+            <label for="node-input-windowCoveringType">Matter Server</label>
+            <select id="node-input-windowCoveringType" >
+                <option value="0">Blind</option>
+                <option value="7">Tilt Only Blind</option>
+                <option value="8">Tilt and Lift Blind</option>
+                <option value="4">Curtains</option>
+                <option value="5">Awnings</option>
+                <option value="6">Shutters</option>
+            </select>
+        </div>
+    </fieldset>
+
+    <fieldset class="hideable doorLock matter">
+        <legend>Door Lock Feature Support</legend>
+        <div class="form-row">
+            <label for="node-input-doorLockType">Lock Type</label>
+            <select id="node-input-doorLockType">
+                <option value="0">Dead Bolt</option>
+                <option value="1">Magnetic</option>
+                <option value="3">Mortise</option>
+                <option value="4">Rim</option>
+                <option value="5">Latch Bolt</option>
+                <option value="6">Cylindrical Lock</option>
+                <option value="7">Tubular Lock</option>
+                <option value="8">Interconnected Lock</option>
+                <option value="9">Dead Latch</option>
+                <option value="10">Door Furniture</option>
+                <option value="11">Euro Cylinder</option>
+                <option value="2">Other</option>
+            </select>
+            
+        </div>
+    </fieldset>
+
+    <fieldset class="matter">
+        <legend>Telemetry</legend>
+        <div class="form-row">
+            <label for="node-input-regularUpdates">Enable Telemetry</label>
+            <input type="checkbox" id="node-input-regularUpdates" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
+            <div class="fR">
+            <input type="text" id="node-input-telemetryInterval" placeholder="60" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-passThroughMessage">Pass through msg</label>
+            <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Name</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <div class="fR">
+                <input type="text" id="node-input-name" placeholder="Name" />
+            </div>
+        </div>
+    </fieldset>
+   
+</script>
+
+
+<script type="text/html" data-help-name="matter-closure">
+    <p>This node provides a synthetic closure-type device (e.g. automatic curtains or blinds or a door lock) for matter controllers</p>
+    <h2>Input</h2>
+    <p>An input will send an update to Matter to change the window-covering's state. e.g. to open/close the blinds.</p>    
+		<h3>Example input msg</h3>
+		<div>
+<pre>
+msg.payload = {
+	
+}
+</pre>
+        
+		</div>
+		
+        <h3>Output</h3>
+        <div>
+            changes to some of the internal status of the device are monitored and will be passed to the output of the node 
+        </div>
+        </div>
+		<h3>Notes</h3>
+		<div>
+		<ul>
+		<li>If properties are provided that are not supported, they will be ignored.</li>
+		<li>You do not need to provide all the properties on each input; only those provided will be taken into account.</li>
+		</ul>
+		</div>
+
+</script>

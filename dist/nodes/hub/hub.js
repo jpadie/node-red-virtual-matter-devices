@@ -1,0 +1,45 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+type: module;
+require("@project-chip/matter-node.js");
+const server_1 = require("../server/server");
+module.exports = (RED) => {
+    function MatterHub(config) {
+        RED.nodes.createNode(this, config);
+    }
+    RED.nodes.registerType('matter-hub-status', MatterHub);
+    RED.httpAdmin.post("/matter-hub/:id", function (req, res) {
+        const node = RED.nodes.getNode(req.params.id);
+        console.log(req.body);
+        if (node == null) {
+            res.sendStatus(404);
+            return;
+        }
+        if (!req.body) {
+            res.sendStatus(500);
+        }
+        else {
+            const data = JSON.parse(req.body);
+            let responseData = {};
+            switch (data.request) {
+                case "getStatus":
+                    responseData = server_1.matterHub.getStatus();
+                    responseData = Object.assign(responseData, { message: "OK" });
+                    res.send(responseData);
+                    res.end();
+                    break;
+                case "reInitialise":
+                    server_1.matterHub.reInitialise();
+                    res.sendStatus(200);
+                    break;
+                case "shutdown":
+                    server_1.matterHub.shutDown();
+                    res.sendStatus(200);
+                    break;
+                default:
+                    res.sendStatus(500);
+            }
+        }
+    });
+};
+//# sourceMappingURL=hub.js.map

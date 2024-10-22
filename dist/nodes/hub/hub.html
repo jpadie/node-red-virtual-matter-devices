@@ -1,0 +1,212 @@
+<script type="text/javascript">
+    RED.nodes.registerType("matter-hub-status", {
+        category: 'matter',
+        defaults: {
+            name: {
+                value: "My Matter Hub"
+            },
+            qrcode: {
+                value: ""
+            },
+            qrCodeURL: {
+                value: ""
+            },
+            manualPairingCode: {
+                value: ""
+            },
+            commissioned: {
+                value: ""
+            },
+            online: {
+                value: ""
+            }
+
+        },
+        label: function () {
+            return this.name || "Matter Hub";
+        },
+        paletteLabel: "Status",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+        onpaletteremove: function () {
+            $.ajax({
+                url: "matter-hub/" + node.id,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ request: "shutdown" }),
+                success: function (data) {
+
+                }
+            });
+        },
+        oneditprepare: function () {
+            const node = this;
+            //console.log(node);
+            $(document).ready(() => {
+                //  $("fieldset.qrCode").hide();
+                $("#node-input-reInitialise").on("click", (e) => {
+                    let myNotification = RED.notify("Reinitialisation will regenerate the matter hub and decommission it.  All virtual devices will remain but you will need to use the QR Code (or manually pair) the hub with each controller ", {
+                        modal: true,
+                        fixed: true,
+                        type: 'warning',
+                        buttons: [
+                            {
+                                text: "cancel",
+                                click: function (e) {
+                                    myNotification.close();
+                                }
+                            },
+                            {
+                                text: "okay",
+                                class: "primary",
+                                click: function (e) {
+                                    myNotification.close();
+                                    $.ajax({
+                                        url: "matter-hub/" + node.id,
+                                        type: "POST",
+                                        contentType: "application/json; charset=utf-8",
+                                        data: JSON.stringify({ request: "reInitialise" }),
+                                        success: function (data) {
+                                            RED.notify("Hub reinitialised");
+                                        }
+                                    });
+                                }
+                            }
+                        ]
+                    });
+
+                });
+
+                const getStatus = () => {
+                    $.ajax({
+                        url: "matter-hub/" + node.id,
+                        type: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        data: JSON.stringify({ request: "getStatus" }),
+                        success: function (data) {
+                            //data = JSON.parse(data);
+                            console.log(data);
+                            $("#node-input-qrcode").text("\n" + data.qrcode);
+                            $("#node-input-manualPairingCode").text(data.manualPairingCode);
+                            $("#node-input-qrCodeURL")
+                                .attr("href", data.qrcodeURL)
+                                .text("Click Here");
+                            $("#node-input-commissioned").text(data.commissioned ? "Yes" : "No");
+                            $("#node-input-online").text(data.online ? "Yes" : "No");
+                            if (data.commissioned) {
+                                $("fieldset.qrCode").hide();
+                            } else {
+                                $("fieldset.qrCode").show();
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            $("fieldset.qrCode").hide();
+                        }
+                    });
+                }
+                if (node.id) {
+                    getStatus();
+                }
+            });
+        },
+        oneditdelete: function () {
+
+        },
+        oneditsave: function () {
+
+        }
+    });
+</script>
+<script type="text/html" data-template-name="matter-hub-status">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            float: left;
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            float:left;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden, fieldset.hidden{
+            display: none !important;
+        }
+        
+
+    </style>
+    
+    <fieldset class="qrCode matter">
+        <legend>Commissioning Info</legend>
+        <div class="form-row">
+            <label for="node-input-qrcode">QR Code</label>
+            <pre id="node-input-qrcode">
+
+            </pre>
+        </div>
+        <div class="form-row">
+            <label for="node-input-manualPairingCode">Pairing Code</label>
+            <div class="fR" id="node-input-manualPairingCode"></div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-qrCodeURL">Pairing URL</label>
+            <div class="fR"><a id="node-input-qrCodeURL" target="_blank" href=""></a></div>
+        </div>
+    </fieldset>
+    <fieldset class="matter status">
+        <legend>Status</legend>
+        <div class="form-row">
+            <label >Commissioned</label>
+            <div class="fR" id="node-input-commissioned">
+            </div>
+        </div>
+        <div class="form-row">
+            <label >Online</label>
+            <div class="fR" id="node-input-online">
+            </div>
+        </div>
+
+
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Actions</legend>
+        <div class="form-row">
+            <label>
+                Reinitialise MatterHub
+            </label>
+            <div class="fR">
+                <button id="node-input-reInitialise" class="button">ReInit</button>
+            </div>
+        </div>
+     
+    </fieldset>
+    <fieldset class="matter">
+        <legend>Basic Info</legend>
+        <div class="form-row">
+            <label for="node-input-name">
+                Name
+            </label>
+            <input type="text" id="node-input-name">
+        </div>
+    </fieldset>
+    
+</script>
+
+<script type="text/html" data-help-name="matter-hub-status">
+    <p>This node provides details on the status of the hub. </p>
+</script>

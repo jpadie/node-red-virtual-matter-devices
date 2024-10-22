@@ -1,0 +1,351 @@
+const { executionAsyncId } = require("async_hooks");
+const { stat } = require("fs");
+require("@project-chip/matter-node.js");
+const Endpoint = require("@project-chip/matter.js/endpoint").Endpoint;
+const BridgedDeviceBasicInformationServer = require("@project-chip/matter.js/behavior/definitions/bridged-device-basic-information").BridgedDeviceBasicInformationServer;
+const OnOffLightDevice = require("@project-chip/matter.js/devices/OnOffLightDevice").OnOffLightDevice;
+const LevelControlServer = require("@project-chip/matter.js/behaviors/level-control").LevelControlServer;
+const ColorControlServer = require("@project-chip/matter.js/behaviors/color-control").ColorControlServer;
+const _ = require("lodash");
+
+module.exports = function (RED) {
+
+    function Light(config) {
+        RED.nodes.createNode(this, config);
+        let dirty = false;
+        let endpoint;
+        let telemetryPeriod = config.telemetryPeriod || 30;
+        let aggregator;
+        let matterServer = RED.nodes.getNode(config.serverNode);
+        let Context = this.context();
+        let context;
+        let changedAttribute = {};
+        let attributes = {
+            id: this.id,
+            bridgedDeviceBasicInformation: {
+                nodeLabel: config.name,
+                productName: config.name,
+                productLabel: config.name,
+                serialNumber: `light-${this.id}`,
+                reachable: true,
+            },
+            onOff: {
+                startUpOnOff: null,
+                onOff: false
+            },
+            levelControl: {
+                options: {
+                    executeIfOff: true,
+                    coupleColorTempToLevel: true
+                },
+                currentLevel: 0,
+                onLevel: null,
+                onOffTransitionTime: 150
+            },
+            colorControl: {
+                managedTransitionTimeHandling: true,
+                options: {
+                    executeIfOff: true,
+                },
+                colorCapabilities: {
+                    hueSaturation: true,
+                    xy: true,
+                    enhancedHue: false,
+                    colorLoop: false,
+                    colorTemperature: true
+                },
+                colorTemperatureMireds: 0x00FA,
+                coupleColorTempToLevelMinMireds: 0x00FA,
+                startUpColorTemperatureMireds: 0x00FA,
+                currentX: 0,
+                currentY: 0,
+                currentHue: 0,
+                currentSaturation: 0
+            }
+        }
+
+        let filterAttributes = () => {
+            if (!config.colour || !config.dimmable) {
+                delete attributes.colorControl;
+                delete attributes.levelControl.options.coupleColorTempToLevel;
+            }
+            if (!config.dimmable) {
+                delete attributes.levelControl;
+            }
+        }
+
+        let deploy = () => {
+            let withs = [BridgedDeviceBasicInformationServer];
+
+            if (config.dimmable) {
+                withs.push(LevelControlServer.with("OnOff", "Lighting"));
+            }
+
+            if (config.colour) {
+                withs.push(ColorControlServer.with("HueSaturation", "Xy", "ColorTemperature"));
+            }
+
+            endpoint = new Endpoint(OnOffLightDevice.with(...withs), context);
+        }
+
+        let regularUpdate = () => {
+            setInterval(() => {
+                try {
+                    let updates = {};
+                    for (const cluster in attributes) {
+                        if (["id", "bridgedDeviceBasicInformation"].includes(cluster)) continue;
+                        updates[cluster] = endpoint.state[cluster];
+                        for (const item in updates[cluster]) {
+                            if (updates[cluster][item] != context[cluster][item]) {
+                                context[cluster][item] = updates[cluster][item];
+                                dirty = true;
+                            }
+                        }
+                    }
+                    this.send({ payload: updates });
+                    if (dirty) {
+                        Context.set("attributes", context);
+                        dirty = false;
+                    }
+                } catch (error) {
+                    if (this.done) {
+                        this.done(error);
+                    } else {
+                        this.error(error);
+                    }
+                }
+            },
+                telemetryPeriod * 1000
+            );
+
+            setInterval(() => {
+                if (Object.entries(changedAttribute).length > 0) {
+                    this.send({ payload: changedAttribute });
+                    context = _.defaultsDeep(context, changedAttribute);
+                    dirty = true;
+                    changedAttribute = {};
+                    setStatus();
+                }
+            }, 200);
+
+            setInterval(() => {
+                if (dirty) {
+                    Context.set("attributes", context);
+                    dirty = false;
+                    setStatus();
+                }
+            }, 60000);
+
+        }
+
+        let setListeners = () => {
+            let listeners = {
+                onOff: {
+                    onOff: null
+                },
+                levelControl: {
+                    currentLevel: null,
+                },
+                colorControl: {
+                    currentX: null,
+                    currentY: null,
+                    currentHue: null,
+                    currentSaturation: null
+                }
+            }
+            if (!config.colour) delete listeners.colorControl;
+            if (!config.dimmable) delete listeners.levelControl;
+            for (const cluster in listeners) {
+                for (const item in listeners[cluster]) {
+                    console.log(`endpoint.events[${cluster}][${item}$Changed]`);
+                    endpoint.events[cluster][`${item}$Changed`].on((value) => {
+                        let msg = {
+                            payload: {
+                                [cluster]: {
+                                    [item]: value
+                                }
+                            }
+                        };
+                        context[cluster][item] = value;
+                        this.send([null, msg]);
+                    });
+                }
+            }
+        }
+
+
+        let setStatus = () => {
+            let status = {
+                shape: "dot",
+                fill: context.onOff.onOff ? "yellow" : "grey"
+            };
+            if (context.onOff.onOff) {
+                if (config.colour) {
+                    switch (context.colorControl.colorMode) {
+                        case 0:
+                            status.text = `HSB:${context.colorControl.currentHue},${context.colorControl.currentSaturation},${context.levelControl.currentLevel}`;
+                            break;
+                        case 1:
+                            status.text = `XYB:${context.colorControl.currentX},${context.colorControl.currentY},${context.levelControl.currentLevel}`;
+                            break;
+                        case 2:
+                            status.text = "";
+                    }
+
+                } else if (config.dimmable) {
+                    status.text = `Brightness:${Math.ceil(context.level.currentLevel / 2.54)}%`;
+                }
+            }
+            this.status(status);
+            this.send({
+                payload: "changing status \n" + JSON.stringify(status, null, 2)
+            });
+        }
+
+
+        if (this.id) {
+            filterAttributes();
+            context = Context.get("attributes");
+            if (context == null) {
+                context = attributes;
+            } else {
+                context = _.defaultsDeep(context, attributes);
+                dirty = true;
+            }
+        }
+
+        this.on("input", (msg, send, done) => {
+            /* format of input message 
+            command: "transition" | "update" | null,
+            brightness: 0-100 || null, // in percent
+            color: {x: 0-254, y: 254} || {hue: 0-254, saturation: 0-254} | null
+            onOff: true|false|null
+            transitionTime : 0 - 65000 in 1/10ths of a second
+            */
+            console.log("message received");
+            console.log(msg);
+            try {
+                if (Object.hasOwn(msg.payload, "command") && msg.payload.command == "transition") {
+                    console.log("sending a transition command");
+                    if (Object.hasOwn(msg.payload.color, "hue") && Object.hasOwn(msg.payload.color, "saturation")) {
+                        let m = {
+                            hue: msg.payload.color.hue,
+                            saturation: msg.payload.color.saturation,
+                            transitionTime: msg.payload.transitionTime || 15,
+                            optionsMask: {
+                                executeIfOff: true
+                            },
+                            optionsOverride: {}
+                        };
+                        console.log("about to set hue and saturation command");
+                        console.log(m);
+                        endpoint.act(agent => agent.get(ColorControlServer).moveToHueAndSaturation(m));
+                    } else if (Object.hasOwn(msg.payload.color, "x") && Object.hasOwn(msg.payload.color, "y")) {
+                        let m = {
+                            colorX: msg.payload.color.x,
+                            colorY: msg.payload.color.y,
+                            transitionTime: msg.payload.transitionTime || 15,
+                            optionsMask: {
+                                executeIfOff: true
+                            },
+                            optionsOverride: {}
+                        };
+                        endpoint.act(agent => agent.get(ColorControlServer).moveToColor(m));
+                    } else if (Object.hasOwn(msg.payload, "brightness")) {
+                        endpoint.act(agent => agent.get(LevelControlServer).moveToLevel({
+                            level: Math.floor(msg.payload.brightness / 100 * 254),
+                            transitionTime: msg.payload.transitionTime || 15,
+                            optionsMask: {
+                                executeIfOff: true
+                            },
+                            optionsOverride: {}
+                        }));
+                    }
+                } else {
+                    let update = {
+                        levelControl: {},
+                        onOff: {},
+                        colorControl: {}
+                    };
+                    //can set the values directly
+                    if (Object.hasOwn(msg.payload, "brightness")) {
+                        update.levelControl.currentLevel = Math.floor(Math.min(100, Math.max(0, msg.payload.brightness)) / 100 * 254);
+                    } else {
+                        delete update.levelControl;
+                    }
+                    if (Object.hasOwn(msg.payload, "onOff") && msg.payload.onOff != null && msg.payload.onOff != "") {
+                        update.onOff.onOff = [1, true, "1", "true", "TRUE"].includes(msg.payload.onOff) ? true : false;
+                    } else {
+                        delete update.onOff;
+                    }
+                    if (Object.hasOwn(msg.payload, "color")) {
+                        if (Object.hasOwn(msg.payload.color, "x") && Object.hasOwn(msg.payload.color, "y")) {
+                            update.colorControl.currentX = msg.payload.color.x;
+                            update.colorControl.currentY = msg.payload.color.y;
+                        } else if (Object.hasOwn(msg.payload.color, "hue") && Object.hasOwn(msg.payload.color, "saturation")) {
+                            update.colorControl.currentHue = msg.payload.color.hue;
+                            update.colorControl.currentSaturation = msg.payload.color.saturation;
+                        } else if (Object.hasOwn(msg.payload.color, "r") && Object.hasOwn(msg.payload.color, "g") && Object.hasOwn(msg.payload.color, "b")) {
+                            //get max
+                            let { r, g, b } = msg.payload.color;
+                            let max = Math.max(r, g, b);
+                            let min = Math.min(r, g, b);
+                            let hue;
+                            if (r >= g)
+                                if (r >= b) {
+                                    hue = ((g - b) / (max - min));
+                                } else {
+                                    hue = 4.0 + ((r - g) / (max - min));
+                                }
+                            else if (g >= b) {
+                                //green
+                                hue = 2.0 + ((b - r) / (max - min));
+                            } else {
+                                //blue
+                                hue = 4.0 + ((r - g) / (max - min));
+                            }
+                            hue *= 60;
+                            hue = hue < 0 ? hue + 360 : hue;
+                            let luminance = (max + min) / (255 * 2.0);
+                            let saturation;
+                            if (max == min) {
+                                saturation = 0
+                            } else {
+                                saturation = luminance > 0.5 ? ((max - min) / (max + min)) : ((max - min) / (510 - max - min));
+                            }
+                            update.colorControl.currentHue = hue;
+                            update.colorControl.currentSaturation = saturation;
+                        }
+                    } else {
+                        delete update.colorControl;
+                    }
+                    console.log(update);
+                    if (Object.keys(update).length > 0) {
+                        endpoint.set(update);
+                    }
+                }
+            } catch (error) {
+                if (done) {
+                    done(error);
+                } else {
+                    this.error(error, msg);
+                }
+            }
+        });
+
+        if (matterServer != null && this.id) {
+            matterServer.on("matterAggregatorStarted", (aggregator) => {
+                deploy();
+                aggregator
+                    .add(endpoint)
+                    .then((resolve) => {
+                        setListeners();
+                        regularUpdate();
+                        setStatus();
+                    });
+            });
+        };
+
+    }
+    RED.nodes.registerType("matter-light", Light);
+}

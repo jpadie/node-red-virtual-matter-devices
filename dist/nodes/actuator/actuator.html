@@ -1,0 +1,222 @@
+<script type="text/javascript">
+
+    RED.nodes.registerType('matter-actuator', {
+        category: 'matter',
+        defaults: {
+            serverNode: {
+                value: ""
+            },
+            name: { value: "" },
+            deviceType: {
+                value: ""
+            },
+            telemetryInterval: {
+                value: 60
+            },
+            passThroughMessage: { value: 1 },
+            regularUpdates: { value: 1 },
+        },
+        inputs: 1,
+        outputs: 1,
+        color: "#F3B567",
+        label: function () {
+            if (this.name && this.name != "") {
+                return this.name;
+            }
+            if (this.deviceType) {
+                let deviceTypes = {
+                    onOffPlug: "On/Off Plug",
+                    dimmablePlug: "Dimmable Plug",
+                    pump: "Pump"
+                };
+                return deviceTypes[this.deviceType];
+            }
+            return "Actuator";
+        },
+        paletteLabel: "Actuator",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+
+        oneditsave: function () {
+
+        },
+        onadd: function () {
+            let hasConfig = false;
+            RED.nodes.eachConfig(function (n) {
+                console.log(n);
+                if (n.type === 'matter-hub') hasConfig = true;
+                this.serverNode = n.id;
+                $("#node-input-serverNode").val(n.id);
+            });
+            if (!hasConfig) {
+                console.log("creating config");
+                const configNode = {
+                    id: RED.nodes.id(),
+                    _def: RED.nodes.getType("matter-hub"),
+                    type: "matter-hub",
+                    users: []
+                };
+                RED.nodes.add(configNode);
+                RED.nodes.dirty(true);
+                this.serverNode = configNode.id;
+                $("#node-input-serverNode").val(configNode.id);
+            }
+        },
+        oneditprepare: function () {
+            let node = this;
+            let deviceTypes = {
+                onOffPlug: "On/Off Plug",
+                dimmablePlug: "Dimmable Plug",
+            };
+            $(document).ready(() => {
+
+                $(".hasType").each((index, elem) => {
+                    let l = $(elem).find("label:first");
+                    let id = l.attr("for");
+                    $("#" + id).typedInput({
+                        type: "num",
+                        types: ["num"],
+                        typeField: "#" + id + "-type"
+                    })
+                });
+
+
+                $("fieldset.matter input:checkbox").each((index, elem) => {
+                    let id = $(elem).attr("id");
+                    let d = document.createElement("div");
+                    $(d).addClass("fR");
+
+                    /*
+                    let i = document.createElement("input");
+                    $(i).attr("id", $(this).attr("id"))
+                        .val(node[id] ?? "0")
+                        .css("width", "1rem")
+                        .val($(this).is(":checked") ? 1 : 0)
+                        .addClass("hidden");
+                    */
+
+                    let b1 = document.createElement("button");
+                    $(b1).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b1).attr("value", "1");
+                    $(b1).text("Yes");
+                    let b2 = document.createElement("button");
+                    $(b2).addClass("red-ui-button toggle " + `${id}-group`);
+                    $(b2).attr("value", "0");
+                    $(b2).text("No");
+                    if ($(elem).is(":checked")) {
+                        $(b1).addClass("selected");
+                    } else {
+                        $(b2).addClass("selected");
+                    }
+                    $(b2).on("click", function (e) {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.currentTarget).addClass("selected");
+                        //$(i).val(0);
+                        $(elem).prop("checked", false);
+                        // $("#" + id).prop("checked", false);
+                        //  this[id.substring(11)] = 0;
+                    });
+
+                    $(b1).on("click", (e) => {
+                        $(`button.${id}-group`).removeClass("selected");
+                        $(e.currentTarget).addClass("selected");
+                        $(elem).prop("checked", true);
+                        /// $(i).val(1);
+                        //  $("#" + id).prop("checked", true);
+                        //this[id.substring(11)] = 1;
+                    });
+
+                    $(d).append($(b1), $(b2));
+                    $(d).insertBefore($(elem));
+                    $(elem).hide();
+                });
+
+                let isBitSet = (value, bit) => {
+                    return (value & Math.pow(2, bit)) ? true : false;
+                }
+
+                //let elem = $("#node-input-deviceType");
+
+                for (const opt in deviceTypes) {
+                    console.log(this.deviceType, opt);
+                    let o = new Option(deviceTypes[opt], opt);
+                    if (this.deviceType && opt == this.deviceType) {
+                        o.selected = true;
+                    }
+                    $("#node-input-deviceType").append(o);
+                }
+
+                $("#node-input-deviceType").on("change", (e) => {
+                    $("fieldset.hideable").hide();
+                    let elem = "fieldset." + $(e.target).val();
+                    $(elem).show();
+                }).trigger("change");
+            });
+        }
+    });
+
+</script>
+
+<script type="text/html" data-template-name="matter-actuator">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            float: left;
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            float:left;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden, fieldset.hidden{
+            display: none !important;
+        }
+
+    </style>
+    <fieldset class="matter hidden">
+        <div class="form-row">
+            <label for="node-input-serverNode">Matter Server</label>
+            <input type="text" id="node-input-serverNode" placeholder="server node" />
+        </div>
+    
+        <div class="form-row">
+            <label for="node-input-deviceType">Actuator Device</label>
+            <select id="node-input-deviceType" >
+                
+            </select>
+        </div>
+    </fieldset>
+    
+    <fieldset class="matter">
+        <legend>Name</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <div class="fR">
+                <input type="text" id="node-input-name" placeholder="Name" />
+            </div>
+        </div>
+    </fieldset>
+    
+   
+</script>
+
+
+<script type="text/html" data-help-name="matter-actuator">
+
+</script>
