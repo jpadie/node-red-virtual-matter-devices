@@ -1,26 +1,46 @@
 {
-  "name": "node-red-contrib-matter.js",
+  "name": "node-red-virtual-matter-devices",
   "version": "0.2.0",
-  "description": "",
+  "description": "Sensors",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "jpadie",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "node-red": {
     "nodes": {
-      "matter-sensors": "dist/nodes/sensors/sensors.js",
-      "matter-light": "dist/nodes/light/light.js",
-      "matter-closure": "dist/nodes/closures/closures.js",
-      "matter-hvac": "dist/nodes/hvac/hvac.js",
-      "matter-actuator": "dist/nodes/actuator/actuator.js",
-      "matter-hub-status": "dist/nodes/hub/hub.js"
+      "matter-sensors": "src/nodes/sensors/sensors.js",
+      "matter-light": "src/nodes/light/light.js",
+      "matter-closure": "src/nodes/closures/closures.js",
+      "matter-hvac": "src/nodes/hvac/hvac.js",
+      "matter-actuator": "src/nodes/actuator/actuator.js",
+      "matter-hub-status": "src/nodes/hub/hub.js"
     }
   },
   "dependencies": {
     "@project-chip/matter-node.js": "^0.10.0",
     "@project-chip/matter.js": "^0.10.0",
     "lodash": "^4.17.21"
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jpadie/node-red-virtual-matter-devices.git"
+  },
+  "keywords": [
+    "alpha",
+    "matter",
+    "matterjs",
+    "Project CHiP",
+    "virtual-devices",
+    "synthetic-devices"
+  ],
+  "bugs": {
+    "url": "https://github.com/jpadie/node-red-virtual-matter-devices/issues"
+  },
+  "homepage": "https://github.com/jpadie/node-red-virtual-matter-devices#readme"
 }
