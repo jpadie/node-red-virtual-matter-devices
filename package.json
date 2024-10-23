@@ -1,21 +1,22 @@
 {
-  "name": "node-red-virtual-matter-devices",
-  "version": "0.2.0",
+  "name": "@jpadie/node-red-virtual-matter-devices",
+  "version": "0.2.1",
   "description": "Virtual Matter Devices for Node-Red",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepack": "npmignore --auto"
   },
   "author": "jpadie",
   "license": "Apache-2.0",
   "node-red": {
     "nodes": {
-      "matter-sensors": "src/nodes/sensors/sensors.js",
-      "matter-light": "src/nodes/light/light.js",
-      "matter-closure": "src/nodes/closures/closures.js",
-      "matter-hvac": "src/nodes/hvac/hvac.js",
-      "matter-actuator": "src/nodes/actuator/actuator.js",
-      "matter-hub-status": "src/nodes/hub/hub.js"
+      "matter-sensors": "dist/nodes/sensors/sensors.js",
+      "matter-light": "dist/nodes/light/light.js",
+      "matter-closure": "dist/nodes/closures/closures.js",
+      "matter-hvac": "dist/nodes/hvac/hvac.js",
+      "matter-actuator": "dist/nodes/actuator/actuator.js",
+      "matter-hub-status": "dist/nodes/hub/hub.js"
     }
   },
   "dependencies": {
@@ -42,5 +43,11 @@
   "bugs": {
     "url": "https://github.com/jpadie/node-red-virtual-matter-devices/issues"
   },
-  "homepage": "https://github.com/jpadie/node-red-virtual-matter-devices#readme"
+  "homepage": "https://github.com/jpadie/node-red-virtual-matter-devices#readme",
+  "publishConfig": {
+    "ignore": [
+      "src/",
+      "node_modules/"
+    ]
+  }
 }

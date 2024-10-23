@@ -39,6 +39,7 @@
     "exclude": [
         "node_modules",
         "src/nodes/appliances",
-        "src/nodes/energy"
+        "src/nodes/energy",
+        "src/nodes/actuator/waterValve.ts"
     ]
 }

@@ -3,7 +3,7 @@ import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/beh
 import { Endpoint } from "@project-chip/matter.js/endpoint";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { EnergyEvse } from "@project-chip/matter.js/cluster";
+import { EnergyEvse, EnergyEvseCluster } from "@project-chip/matter.js/cluster";
 
 
 export class evse extends BaseEndpoint {
@@ -18,11 +18,7 @@ export class evse extends BaseEndpoint {
         }
 
 
-        //this establishes defaults for the fan and then overrides them if the synthetic device
-        // has already been used
-
-        this.attributes.serialNumber = ("rac-" + this.attributes.serialNumber);
-
+        this.attributes.serialNumber = ("evse-" + this.attributes.serialNumber);
     }
 
     override setStatus() {
@@ -44,8 +40,5 @@ export class evse extends BaseEndpoint {
     }
 
     override async deploy() {
-
-
-
     }
 }
