@@ -142,7 +142,7 @@
 
                 let updateThermostatVisibility = () => {
                     if ($("#node-input-deviceType").val() != "thermostat") return;
-                    if (node.supportsOccupancy == "1") {
+                    if (node.supportsOccupancy == 1) {
                         $('.supportsOccupancy').show();
                     } else {
                         $('.supportsOccupancy').hide();
@@ -321,13 +321,17 @@
    
     <fieldset class="matter thermostat hideable">
         <legend>Thermostat Setback</legend>
-        <div class="form-row"></div>
+        <div class="form-row hasType"></div>
             <label for="node-input-occupiedSetback">Setback</label>
-            <input type="text" id="node-input-occupiedSetback" placeholder="1" />
+            <div class="fR">
+                <input class="" type="text" id="node-input-occupiedSetback" placeholder="1" />
+            </div>
         </div>
-        <div class="form-row"></div>
+        <div class="form-row hasType supportsOccupancy"></div>
             <label for="node-input-unoccupiedSetback">Setback (unoccupied)</label>
-            <input type="text" id="node-input-unoccupiedSetback" placeholder="2.5" />
+            <div class="fR">
+                <input type="text" id="node-input-unoccupiedSetback" placeholder="2.5" />
+            </div>
         </div>
     </fieldset>
 
@@ -337,7 +341,7 @@
             <label for="node-input-regularUpdates">Enable Telemetry</label>
             <input type="checkbox" id="node-input-regularUpdates" value="1" />
         </div>
-        <div class="form-row">
+        <div class="form-row hasType">
             <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
             <div class="fR">
             <input type="text" id="node-input-telemetryInterval" placeholder="60" />

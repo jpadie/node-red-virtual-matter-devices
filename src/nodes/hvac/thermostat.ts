@@ -14,7 +14,7 @@ export class thermostat extends BaseEndpoint {
     private heating_coolingState: Number = 1;
 
     constructor(node: Node, config: any, _name: any = "") {
-        let name = _name || config.name || "AirCon Unit"
+        let name = _name || config.name || "Thermostat"
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
@@ -45,7 +45,11 @@ export class thermostat extends BaseEndpoint {
         };
         a.setpointChangeSource = Thermostat.SetpointChangeSource.External;
 
-        this.setDefault("systemMode", Thermostat.SystemMode.Heat);
+        if (this.config.supportsHeating) {
+            this.setDefault("systemMode", Thermostat.SystemMode.Heat);
+        } else {
+            this.setDefault("systemMode", Thermostat.SystemMode.Cool);
+        }
         a.systemMode = this.context.systemMode;
 
         if (this.config.supportsOutDoorTemperature) {
@@ -116,11 +120,15 @@ export class thermostat extends BaseEndpoint {
             this.prune('occupiedCoolingSetpoint');
         }
 
-        a.controlledSequenceOfOperation = (this.config.supportsCooling && this.config.supportsHeating)
-            ? Thermostat.ControlSequenceOfOperation.CoolingAndHeating
-            : this.config.supportsHeating
-                ? Thermostat.ControlSequenceOfOperation.HeatingOnly
-                : Thermostat.ControlSequenceOfOperation.CoolingOnly;
+        if (this.config.supportsHeating) {
+            if (this.config.supportsCooling) {
+                a.controlledSequenceOfOperation = Thermostat.ControlSequenceOfOperation.CoolingAndHeating;
+            } else {
+                a.controlledSequenceOfOperation = Thermostat.ControlSequenceOfOperation.HeatingOnly;
+            }
+        } else {
+            a.controlledSequenceOfOperation = Thermostat.ControlSequenceOfOperation.CoolingOnly;
+        }
 
         if (this.config.supportsHumidity) {
             this.setDefault("humidity", 50);
@@ -134,6 +142,15 @@ export class thermostat extends BaseEndpoint {
         this.attributes.thermostat = a;
     }
 
+    override getVerbose(item: any, value: any) {
+        switch (item) {
+            case "systemMode":
+                return this.getEnumKeyByEnumValue(Thermostat.SystemMode, value);
+                break;
+            default:
+                return value;
+        }
+    }
     override setStatus() {
         let text = (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
         this.node.warn(`status: ${text}`);
@@ -144,8 +161,27 @@ export class thermostat extends BaseEndpoint {
         })
     }
     override regularUpdate() {
-        super.regularUpdate();
+        if (this.config.regularUpdates) {
+            setInterval(() => {
+                let update = {};
+                for (const item in this.context) {
+                    let value = this.getVerbose(item, this.context[item]);
+                    if (value != this.context[item]) {
+                        update[`${item}_in_words`] = value;
+                    }
+                }
+                this.node.send([{
+                    payload: { ...this.context, ...update },
+                    topic: "regular update"
+                }, {
+                    payload: {
+                        onOff: this.deriveOnOff()
+                    }
+                }]);
+            }, this.config.telemetryInterval * 1000);
+        }
     }
+
     override listenForChange_postProcess() {
         let onOff = this.deriveOnOff();
         this.node.send([null, { payload: { onOff: onOff ? "on" : "off", onOffBoolean: onOff ? true : false } }]);

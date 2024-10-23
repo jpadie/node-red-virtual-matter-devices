@@ -44,7 +44,12 @@ export class BaseEndpoint {
             text: "offline"
         });
         ;
+        console.log(this.config);
+    }
 
+    getEnumKeyByEnumValue(myEnum, enumValue) {
+        let keys = Object.keys(myEnum).filter(x => myEnum[x] == enumValue);
+        return keys.length > 0 ? keys[0] : null;
     }
 
     setSerialNumber(value: string) {
@@ -78,6 +83,7 @@ export class BaseEndpoint {
             }, this.config.telemetryInterval * 1000);
         }
     }
+
     deploy() {
         return;
     }
