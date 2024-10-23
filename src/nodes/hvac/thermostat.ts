@@ -12,6 +12,7 @@ import { BaseEndpoint } from "../base/BaseEndpoint";
 
 export class thermostat extends BaseEndpoint {
     private heating_coolingState: Number = 1;
+    private withs: any = [];
 
     constructor(node: Node, config: any, _name: any = "") {
         let name = _name || config.name || "Thermostat"
@@ -140,6 +141,20 @@ export class thermostat extends BaseEndpoint {
         }
 
         this.attributes.thermostat = a;
+
+        let withs: any = [];
+        let features: Thermostat.Feature[] = [Thermostat.Feature.Setback];
+
+        if (this.config.supportsCooling) features.push(Thermostat.Feature.Cooling);
+        if (this.config.supportsHeating) features.push(Thermostat.Feature.Heating);
+        if (this.config.supportsOccupancy) features.push(Thermostat.Feature.Occupancy);
+
+        withs.push(ThermostatServer.with(...features));
+        if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
+        withs.push(BridgedDeviceBasicInformationServer);
+        this.withs = withs;
+        console.log("thermostat attributes");
+        console.log(this.attributes);
     }
 
     override getVerbose(item: any, value: any) {
@@ -271,16 +286,7 @@ export class thermostat extends BaseEndpoint {
         }
     }
     override async deploy() {
-        let withs: any = [];
-        let features: Thermostat.Feature[] = [Thermostat.Feature.Setback];
 
-        if (this.config.supportsCooling) features.push(Thermostat.Feature.Cooling);
-        if (this.config.supportsHeating) features.push(Thermostat.Feature.Heating);
-        if (this.config.supportsOccupancy) features.push(Thermostat.Feature.Occupancy);
-
-        withs.push(ThermostatServer.with(...features));
-        if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
-        withs.push(BridgedDeviceBasicInformationServer);
-        this.endpoint = await new Endpoint(ThermostatDevice.with(...withs), this.attributes);
+        this.endpoint = await new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
     }
 }
