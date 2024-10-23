@@ -43,7 +43,7 @@ export class BaseEndpoint {
             shape: "dot",
             text: "offline"
         });
-        ;
+
         console.log(this.config);
     }
 
