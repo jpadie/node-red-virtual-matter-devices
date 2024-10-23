@@ -153,7 +153,6 @@ export class thermostat extends BaseEndpoint {
     }
     override setStatus() {
         let text = (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
-        this.node.warn(`status: ${text}`);
         this.node.status({
             fill: "green",
             shape: "dot",

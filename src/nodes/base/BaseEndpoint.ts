@@ -147,7 +147,7 @@ export class BaseEndpoint {
 
                 if (typeof this.mapping[item][key] == "string") {
                     let s: string = `${this.mapping[item][key]}$Changed`;
-                    //   console.log(`listening at ${key}.${s}`);
+                    console.log(`listening at ${key}.${s}`);
                     this.endpoint.events[key][s].on((value) => {
                         this.node.warn({ key: key, item: s, value: value });
                         value = this.preProcessDeviceChanges(value, s)
@@ -184,6 +184,7 @@ export class BaseEndpoint {
                     let k = ks[0];
 
                     let s: string = `${k}$Changed`;
+                    console.log(`listening at ${key}.${s}`);
                     this.endpoint.events[key][s].on((value) => {
                         value = this.preProcessDeviceChanges(value, s)
                         if (this.skip) {
