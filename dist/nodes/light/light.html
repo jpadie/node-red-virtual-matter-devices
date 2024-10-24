@@ -11,7 +11,8 @@
             lightType: { value: "colorLight" },
             regularUpdates: { value: 0 },
             telemetryInterval: { value: 60 },
-            passThroughMessage: { value: 0 }
+            passThroughMessage: { value: 0 },
+            enableZigbee: { value: 1 }
         },
         inputs: 1,
         outputs: 1,
@@ -87,10 +88,16 @@
 
             $("#node-input-telemetryInterval").typedInput("width", `${5 * fsRoot}px`)
         },
-        oneditsave: () => {
+        oneditsave: function () {
             for (const item of booleanNodes) {
                 this[item.substring(11)] = Number(this[item.substring(11)]);
             }
+            let outputs = 1;
+            if ($("#node-input-enableZigbee").val() == "1") {
+                outputs++;
+                this.outputLabels = ["Normal", "Z2M"]
+            }
+            this.outputs = outputs;
         },
     });
 </script>
@@ -168,6 +175,10 @@
         <div class="form-row">
             <label for="node-input-passThroughMessage">Pass through msg</label>
             <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-enableZigbee">Z2M format Input</label>
+            <input type="checkbox" id="node-input-enableZigbee" value="1" />
         </div>
 
     </fieldset>

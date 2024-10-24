@@ -28,7 +28,7 @@ export class dimmableLight extends onOffLight {
 
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
+            brightness: { levelControl: "currentLevel", multiplier: 1, unit: "" }
         }
 
         this.setSerialNumber("dmLt-");
@@ -45,6 +45,25 @@ export class dimmableLight extends onOffLight {
             default:
                 return super.getVerbose(item, value);
         }
+    }
+    override listenForChange_postProcess(report: any = null) {
+        super.listenForChange_postProcess(report);
+        //no need to do anything for zigbee
+    };
+
+    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
+        let { a, b } = super.preProcessNodeRedInput(item, value)
+        if (this.config.enableZigbee) {
+            switch (a) {
+                case "brightness":
+                    a = "brightness";
+                    b = Math.round(value * 100 / 255);  //Math.ceil(b * 100 / 255)
+                    break;
+                default:
+
+            }
+        }
+        return { a: a, b: b };
     }
 
     override setStatus() {

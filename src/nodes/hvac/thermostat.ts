@@ -24,7 +24,7 @@ export class thermostat extends BaseEndpoint {
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
             occupiedCoolingSetPpoint: { thermostat: "occupiedCoolingSetpoint", multiplier: 100, unit: "C" },
             unoccupiedHeatingSetpoint: { thermostat: "unoccupiedHeatingSetpoint", multiplier: 100, unit: "C" },
-            unoccupiedCoolingSetPpoint: { thermostat: "unoccupiedCoolingSetpoint", multiplier: 100, unit: "C" },
+            unoccupiedCoolingSetpoint: { thermostat: "unoccupiedCoolingSetpoint", multiplier: 100, unit: "C" },
             occupied: { thermostat: "occupancy", multiplier: 1, unit: "" },
             occupiedSetback: { thermostat: "occupiedSetback", multiplier: 10, unit: "C" },
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
@@ -87,7 +87,7 @@ export class thermostat extends BaseEndpoint {
             this.setDefault("unoccupiedSetback", 3);
             a.unoccupiedSetback = this.context.unoccupiedSetback * 10;
         } else {
-            this.prune("occupancy");
+            this.prune("occupied");
             this.prune("unoccupiedCoolingSetpoint");
             this.prune("unoccupiedHeatingSetpoint");
             this.prune("unoccupiedSetback");
@@ -108,6 +108,7 @@ export class thermostat extends BaseEndpoint {
             a.occupiedHeatingSetpoint = this.context.occupiedHeatingSetpoint * 100;
         } else {
             this.prune("occupiedHeatingSetpoint");
+            this.prune("unoccupiedHeatingSetpoint");
         }
 
         if (this.config.supportsCooling) {
@@ -119,16 +120,17 @@ export class thermostat extends BaseEndpoint {
             a.occupiedCoolingSetpoint = this.context.occupiedCoolingSetpoint * 100;
         } else {
             this.prune('occupiedCoolingSetpoint');
+            this.prune('unoccupiedCoolingSetpoint');
         }
 
         if (this.config.supportsHeating) {
             if (this.config.supportsCooling) {
-                a.controlledSequenceOfOperation = Thermostat.ControlSequenceOfOperation.CoolingAndHeating;
+                a.controlSequenceOfOperation = Thermostat.ControlSequenceOfOperation.CoolingAndHeating;
             } else {
-                a.controlledSequenceOfOperation = Thermostat.ControlSequenceOfOperation.HeatingOnly;
+                a.controlSequenceOfOperation = Thermostat.ControlSequenceOfOperation.HeatingOnly;
             }
         } else {
-            a.controlledSequenceOfOperation = Thermostat.ControlSequenceOfOperation.CoolingOnly;
+            a.controlSequenceOfOperation = Thermostat.ControlSequenceOfOperation.CoolingOnly;
         }
 
         if (this.config.supportsHumidity) {
@@ -286,7 +288,7 @@ export class thermostat extends BaseEndpoint {
         }
     }
     override async deploy() {
+        this.endpoint = new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
 
-        this.endpoint = await new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
     }
 }

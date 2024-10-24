@@ -32,10 +32,8 @@ class colorLight extends dimmableLight_1.dimmableLight {
         };
         this.mapping = {
             ...this.mapping,
-            colorX: { colorControl: "currentX", multiplier: 1, unit: "" },
-            colorY: { colorControl: "currentY", multiplier: 1, unit: "" },
-            colorHue: { colorControl: "currentHue", multiplier: 1, unit: "" },
-            colorSaturation: { colorControl: "currentSaturation", multiplier: 1, unit: "" }
+            colorX: { colorControl: "currentX", multiplier: 65536, unit: "" },
+            colorY: { colorControl: "currentY", multiplier: 65536, unit: "" },
         };
         this.setSerialNumber("clLt-");
         this.setDefault("colorX", 0);
@@ -56,6 +54,67 @@ class colorLight extends dimmableLight_1.dimmableLight {
             shape: "dot",
             text: text
         });
+    }
+    listenForChange_postProcess(report = null) {
+        super.listenForChange_postProcess(report);
+        if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
+            console.log("report");
+            console.log(report);
+            if (this.config.enableZigbee) {
+                console.log("zigbee enabled");
+                let payload = { color: {} };
+                if (Object.hasOwn(report, "colorX")) {
+                    payload.color.x = Math.round(100 * report.colorX) / 100;
+                    this.context.colorX = Math.round(100 * report.colorX) / 100;
+                }
+                if (Object.hasOwn(report, "colorY")) {
+                    payload.color.y = Math.round(100 * report.colorY) / 100;
+                    this.context.colorY = Math.round(100 * report.colorY) / 100;
+                }
+                console.log("context");
+                console.log(this.context);
+                this.node.send([null, { payload: payload }]);
+            }
+            else {
+                console.log("zigbee not enabled");
+                if (Object.hasOwn(report, "colorX")) {
+                    this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
+                }
+                if (Object.hasOwn(report, "colorY")) {
+                    this.context.colorY = Math.round(report.colorY * 100 / 65536) / 100;
+                }
+            }
+        }
+    }
+    ;
+    preProcessNodeRedInput(item, value) {
+        let { a, b } = super.preProcessNodeRedInput(item, value);
+        if (this.config.enableZigbee) {
+            this.node.warn("zigbee enabled");
+            switch (a) {
+                case "color":
+                    if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
+                        a = ["colorX", "colorY"];
+                        b = [value.x, value.y];
+                    }
+                    break;
+                default:
+            }
+        }
+        else {
+            this.node.warn("zigbee not enabled");
+        }
+        if (["colorX", "colorY", "color"].includes(item)) {
+            if (Array.isArray(b)) {
+                for (let i = 0; i < b.length; i++) {
+                    b[i] = Math.min(1, b[i]);
+                }
+            }
+            else {
+                b = Math.min(1, b);
+            }
+        }
+        return { a: a, b: b };
     }
     async deploy() {
         try {

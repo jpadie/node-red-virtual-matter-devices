@@ -38,6 +38,30 @@ export class onOffLight extends BaseEndpoint {
                 return super.getVerbose(item, value);
         }
     }
+    override listenForChange_postProcess(report: any = null) {
+        if (!this.config.enableZigbee) return;
+        if (typeof report == "object" && Object.hasOwn(report, "onoff")) {
+            this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF" } }]);
+        }
+    };
+
+    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
+        let a: any;
+        let b: any;
+        if (this.config.enableZigbee) {
+            switch (item) {
+                case "state":
+                    a = "onoff";
+                    b = value == "ON" ? 1 : 0;
+                    break;
+                default:
+                    a = item;
+                    b = value;
+            }
+            return { a: a, b: b };
+        }
+        return { a: item, b: value };
+    }
 
     override setStatus() {
         this.node.status({

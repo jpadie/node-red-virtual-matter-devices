@@ -43,7 +43,10 @@ class BaseEndpoint {
             shape: "dot",
             text: "offline"
         });
-        ;
+    }
+    getEnumKeyByEnumValue(myEnum, enumValue) {
+        let keys = Object.keys(myEnum).filter(x => myEnum[x] == enumValue);
+        return keys.length > 0 ? keys[0] : null;
     }
     setSerialNumber(value) {
         this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
@@ -80,13 +83,19 @@ class BaseEndpoint {
     }
     async getEndpoint() {
         if (server_1.matterHub) {
-            await this.deploy();
-            this.regularUpdate();
-            this.listen();
-            this.setStatus();
-            this.setDefault("lastHeardFrom", "");
-            this.saveContext();
-            server_1.matterHub.addDevice(this.endpoint);
+            try {
+                await this.deploy();
+                this.regularUpdate();
+                this.listen();
+                this.setStatus();
+                this.setDefault("lastHeardFrom", "");
+                this.saveContext();
+                server_1.matterHub.addDevice(this.endpoint);
+            }
+            catch (e) {
+                console.error(e);
+                console.trace();
+            }
         }
         else {
             this.node.status({
@@ -128,12 +137,18 @@ class BaseEndpoint {
         return value;
     }
     listenForChange() {
-        try {
-            for (const item in this.mapping) {
-                let keys = Object.keys(this.mapping[item]);
-                let key = keys[0];
-                if (typeof this.mapping[item][key] == "string") {
-                    let s = `${this.mapping[item][key]}$Changed`;
+        if (!this.endpoint) {
+            console.error("endpoint is not established");
+            console.log(this.endpoint);
+            return;
+        }
+        for (const item in this.mapping) {
+            let keys = Object.keys(this.mapping[item]);
+            let key = keys[0];
+            if (typeof this.mapping[item][key] == "string") {
+                let s = `${this.mapping[item][key]}$Changed`;
+                console.log(`listening at ${key}.${s}`);
+                try {
                     this.endpoint.events[key][s].on((value) => {
                         this.node.warn({ key: key, item: s, value: value });
                         value = this.preProcessDeviceChanges(value, s);
@@ -161,16 +176,24 @@ class BaseEndpoint {
                             if (this.mapping[item].unit == "")
                                 delete report.unit;
                             this.node.send({ payload: report });
-                            this.Context.set("attributes", this.context);
+                            this.listenForChange_postProcess(report);
+                            this.saveContext();
                             this.setStatus();
-                            this.listenForChange_postProcess();
                         }
                     });
                 }
-                else if (typeof this.mapping[item][key] == "object") {
-                    let ks = Object.keys(this.mapping[item][key]);
-                    let k = ks[0];
-                    let s = `${k}$Changed`;
+                catch (e) {
+                    console.error("error in setting up listener");
+                    console.error(e);
+                    console.trace();
+                }
+            }
+            else if (typeof this.mapping[item][key] == "object") {
+                let ks = Object.keys(this.mapping[item][key]);
+                let k = ks[0];
+                let s = `${k}$Changed`;
+                console.log(`listening at ${key}.${s}`);
+                try {
                     this.endpoint.events[key][s].on((value) => {
                         value = this.preProcessDeviceChanges(value, s);
                         if (this.skip) {
@@ -199,74 +222,104 @@ class BaseEndpoint {
                             this.node.send({ payload: report });
                             this.Context.set("attributes", this.context);
                             this.setStatus();
-                            this.listenForChange_postProcess();
+                            this.listenForChange_postProcess(report);
+                        }
+                    });
+                }
+                catch (e) {
+                    console.error("error in setting up listener");
+                    console.error(e);
+                    console.trace();
+                }
+            }
+        }
+    }
+    listenForChange_postProcess(report = {}) {
+        if (report)
+            return;
+        return;
+    }
+    preProcessNodeRedInput(item, value) {
+        return { a: item, b: value };
+    }
+    processIncomingItem(item, value) {
+        let updates = [];
+        if (Object.hasOwn(this.mapping, item)) {
+            const keys = Object.keys(this.mapping[item]);
+            let key = keys[0];
+            if (typeof this.mapping[item][key] == "string") {
+                if (typeof this.mapping[item].multiplier == "object") {
+                    if (this.mapping[item].multiplier[0] != 1) {
+                        value = Math.round(this.mapping[item].multiplier[0] * value);
+                    }
+                    updates.push({
+                        [key]: { [this.mapping[item][key]]: value }
+                    });
+                }
+                else {
+                    if (this.mapping[item].multiplier != 1) {
+                        value = Math.round(this.mapping[item].multiplier * value);
+                    }
+                    updates.push({
+                        [key]: { [this.mapping[item][key]]: value }
+                    });
+                }
+            }
+            else if (typeof this.mapping[item][key] == "object") {
+                const ks = Object.keys(this.mapping[item][key]);
+                let k = ks[0];
+                if (typeof this.mapping[item].multiplier == "object") {
+                    if (this.mapping[item].multiplier[0] != 1) {
+                        value = Math.round(this.mapping[item].multiplier[0] * value);
+                    }
+                    updates.push({
+                        [key]: {
+                            [this.mapping[item][key]]: {
+                                [this.mapping[item][key][k]]: value
+                            }
+                        }
+                    });
+                }
+                else {
+                    if (this.mapping[item].multiplier != 1) {
+                        value = Math.round(this.mapping[item].multiplier * value);
+                    }
+                    updates.push({
+                        [key]: {
+                            [this.mapping[item][key]]: {
+                                [this.mapping[item][key][k]]: value
+                            }
                         }
                     });
                 }
             }
         }
-        catch (e) {
-            this.node.error("error in listener " + e);
+        for (const update of updates) {
+            try {
+                this.endpoint.set(update);
+            }
+            catch (e) {
+                console.log(e);
+            }
         }
-    }
-    listenForChange_postProcess() { }
-    preProcessNodeRedInput(item, value) {
-        return { a: item, b: value };
     }
     processIncomingMessages(msg, send, done) {
         try {
             if (this.config.passThroughMessage) {
-                this.node.warn("message received");
                 send(msg);
             }
             if (typeof msg.payload == "object") {
-                let updates = [];
-                for (const item in msg.payload) {
-                    if (Object.hasOwn(this.mapping, item)) {
-                        const keys = Object.keys(this.mapping[item]);
-                        let { a, b } = this.preProcessNodeRedInput(keys[0], msg.payload[item]);
-                        if (!a)
-                            break;
-                        let key = a;
-                        msg.payload[item] = b;
-                        if (typeof this.mapping[item][key] == "string") {
-                            if (typeof this.mapping[item].multiplier == "object") {
-                                updates.push({
-                                    [key]: { [this.mapping[item][key]]: this.mapping[item].multiplier[0](msg.payload[item]) }
-                                });
-                            }
-                            else {
-                                updates.push({
-                                    [key]: { [this.mapping[item][key]]: msg.payload[item] * this.mapping[item].multiplier }
-                                });
-                            }
-                        }
-                        else if (typeof this.mapping[item][key] == "object") {
-                            const ks = Object.keys(this.mapping[item][key]);
-                            let k = ks[0];
-                            if (typeof this.mapping[item].multiplier == "object") {
-                                updates.push({
-                                    [key]: {
-                                        [this.mapping[item][key]]: {
-                                            [this.mapping[item][key][k]]: this.mapping[item].multiplier[0](msg.payload[item])
-                                        }
-                                    }
-                                });
-                            }
-                            else {
-                                updates.push({
-                                    [key]: {
-                                        [this.mapping[item][key]]: {
-                                            [this.mapping[item][key][k]]: msg.payload[item] * this.mapping[item].multiplier
-                                        }
-                                    }
-                                });
-                            }
+                for (let item in msg.payload) {
+                    let { a, b } = this.preProcessNodeRedInput(item, msg.payload[item]);
+                    if (Array.isArray(a)) {
+                        for (let i = 0; i < a.length; i++) {
+                            this.processIncomingItem(a[i], b[i]);
                         }
                     }
+                    else {
+                        this.processIncomingItem(a, b);
+                    }
                 }
-                for (const update of updates)
-                    this.endpoint.set(update);
             }
         }
         catch (e) {

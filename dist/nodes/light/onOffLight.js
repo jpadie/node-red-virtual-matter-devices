@@ -32,6 +32,31 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
                 return super.getVerbose(item, value);
         }
     }
+    listenForChange_postProcess(report = null) {
+        if (!this.config.enableZigbee)
+            return;
+        if (typeof report == "object" && Object.hasOwn(report, "onoff")) {
+            this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF" } }]);
+        }
+    }
+    ;
+    preProcessNodeRedInput(item, value) {
+        let a;
+        let b;
+        if (this.config.enableZigbee) {
+            switch (item) {
+                case "state":
+                    a = "onoff";
+                    b = value == "ON" ? 1 : 0;
+                    break;
+                default:
+                    a = item;
+                    b = value;
+            }
+            return { a: a, b: b };
+        }
+        return { a: item, b: value };
+    }
     setStatus() {
         this.node.status({
             fill: "green",
