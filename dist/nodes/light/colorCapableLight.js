@@ -58,10 +58,7 @@ class colorLight extends dimmableLight_1.dimmableLight {
     listenForChange_postProcess(report = null) {
         super.listenForChange_postProcess(report);
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
-            console.log("report");
-            console.log(report);
             if (this.config.enableZigbee) {
-                console.log("zigbee enabled");
                 let payload = { color: {} };
                 if (Object.hasOwn(report, "colorX")) {
                     payload.color.x = Math.round(100 * report.colorX) / 100;
@@ -71,12 +68,10 @@ class colorLight extends dimmableLight_1.dimmableLight {
                     payload.color.y = Math.round(100 * report.colorY) / 100;
                     this.context.colorY = Math.round(100 * report.colorY) / 100;
                 }
-                console.log("context");
-                console.log(this.context);
+                payload.messageSource = "Matter";
                 this.node.send([null, { payload: payload }]);
             }
             else {
-                console.log("zigbee not enabled");
                 if (Object.hasOwn(report, "colorX")) {
                     this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
                 }

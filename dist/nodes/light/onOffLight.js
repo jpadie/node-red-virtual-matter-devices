@@ -36,7 +36,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
         if (!this.config.enableZigbee)
             return;
         if (typeof report == "object" && Object.hasOwn(report, "onoff")) {
-            this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF" } }]);
+            this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF", messageSource: "Matter" } }]);
         }
     }
     ;

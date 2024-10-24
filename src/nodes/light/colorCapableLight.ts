@@ -73,12 +73,9 @@ export class colorLight extends dimmableLight {
 
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
             //"color": { "x": 0.123, "y": 0.123 }
-            console.log("report");
-            console.log(report);
 
             if (this.config.enableZigbee) {
-                console.log("zigbee enabled");
-                let payload: { color: { x?: number, y?: number } } = { color: {} };
+                let payload: { color: { x?: number, y?: number }, messageSource?: string } = { color: {} };
                 if (Object.hasOwn(report, "colorX")) {
                     payload.color.x = Math.round(100 * report.colorX) / 100;
                     this.context.colorX = Math.round(100 * report.colorX) / 100;
@@ -87,11 +84,9 @@ export class colorLight extends dimmableLight {
                     payload.color.y = Math.round(100 * report.colorY) / 100;
                     this.context.colorY = Math.round(100 * report.colorY) / 100;
                 }
-                console.log("context");
-                console.log(this.context);
+                payload.messageSource = "Matter";
                 this.node.send([null, { payload: payload }]);
             } else {
-                console.log("zigbee not enabled");
                 if (Object.hasOwn(report, "colorX")) {
                     this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
                 }

@@ -179,13 +179,17 @@ export class BaseEndpoint {
                             let report = {
                                 [item]: this.getVerbose(item, this.context[item]),
                                 unit: this.mapping[item].unit,
-                                lastHeardFrom: this.context.lastHeardFrom
+                                lastHeardFrom: this.context.lastHeardFrom,
+                                messageSource: "Matter"
                             }
                             if (this.mapping[item].unit == "") delete report.unit;
+                            //reports.push(report);
                             this.node.send({ payload: report });
+
                             this.listenForChange_postProcess(report);
                             this.saveContext();
                             this.setStatus();
+
                         }
                     });
                 } catch (e) {
@@ -224,10 +228,12 @@ export class BaseEndpoint {
                                 lastHeardFrom: this.context.lastHeardFrom
                             }
                             if (this.mapping[item].unit == "") delete report.unit;
+
                             this.node.send({ payload: report });
-                            this.Context.set("attributes", this.context);
-                            this.setStatus();
+
                             this.listenForChange_postProcess(report);
+                            this.saveContext();
+                            this.setStatus();
                         }
                     });
                 } catch (e) {
@@ -305,16 +311,23 @@ export class BaseEndpoint {
             }
         }
 
-        for (const update of updates) {
-            try {
-                this.endpoint.set(update);
-            } catch (e) {
-                console.log(e);
-            }
+        // for (const update of updates) {
+        try {
+            this.endpoint.set(updates);
+        } catch (e) {
+            console.log(e);
         }
+        // }
     }
 
+
     processIncomingMessages(msg, send, done) {
+        if (Object.hasOwn(msg.payload, "payload_raw")) {
+            msg.payload.messageSource = "Z2M";
+        }
+        if (!Object.hasOwn(msg.payload, "messageSource")) {
+            msg.payload.messageSource = "Manual Input";
+        }
         try {
             if (this.config.passThroughMessage) {
                 //this.node.warn("message received");

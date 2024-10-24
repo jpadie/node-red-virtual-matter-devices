@@ -168,6 +168,35 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             text: text
         });
     }
+    preProcessNodeRedInput(item, value) {
+        let { a, b } = super.preProcessNodeRedInput(item, value);
+        if (this.config.enableZigbee) {
+            this.node.warn("zigbee enabled");
+            switch (a) {
+                case "color":
+                    if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
+                        a = ["colorX", "colorY"];
+                        b = [value.x, value.y];
+                    }
+                    break;
+                default:
+            }
+        }
+        else {
+            this.node.warn("zigbee not enabled");
+        }
+        if (["colorX", "colorY", "color"].includes(item)) {
+            if (Array.isArray(b)) {
+                for (let i = 0; i < b.length; i++) {
+                    b[i] = Math.min(1, b[i]);
+                }
+            }
+            else {
+                b = Math.min(1, b);
+            }
+        }
+        return { a: a, b: b };
+    }
     regularUpdate() {
         if (this.config.regularUpdates) {
             setInterval(() => {
