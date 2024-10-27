@@ -83,7 +83,9 @@ export class BaseEndpoint {
             }, this.config.telemetryInterval * 1000);
         }
     }
-
+    zigbee() {
+        return false;
+    }
     deploy() {
         return;
     }
@@ -160,7 +162,7 @@ export class BaseEndpoint {
                 console.log(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on((value) => {
-                        this.node.warn({ key: key, item: s, value: value });
+                        // this.node.warn({ key: key, item: s, value: value });
                         value = this.preProcessDeviceChanges(value, s)
                         if ((this.skip)) {
                             this.skip = false;
@@ -328,6 +330,7 @@ export class BaseEndpoint {
         if (!Object.hasOwn(msg.payload, "messageSource")) {
             msg.payload.messageSource = "Manual Input";
         }
+
         try {
             if (this.config.passThroughMessage) {
                 //this.node.warn("message received");

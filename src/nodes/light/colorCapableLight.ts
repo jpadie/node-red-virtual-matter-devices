@@ -74,7 +74,7 @@ export class colorLight extends dimmableLight {
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
             //"color": { "x": 0.123, "y": 0.123 }
 
-            if (this.config.enableZigbee) {
+            if (this.zigbee()) {
                 let payload: { color: { x?: number, y?: number }, messageSource?: string } = { color: {} };
                 if (Object.hasOwn(report, "colorX")) {
                     payload.color.x = Math.round(100 * report.colorX) / 100;
@@ -101,8 +101,7 @@ export class colorLight extends dimmableLight {
 
     override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
         let { a, b } = super.preProcessNodeRedInput(item, value)
-        if (this.config.enableZigbee) {
-            this.node.warn("zigbee enabled");
+        if (this.zigbee()) {
             switch (a) {
                 case "color":
                     if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
@@ -113,7 +112,7 @@ export class colorLight extends dimmableLight {
                 default:
             }
         } else {
-            this.node.warn("zigbee not enabled");
+
         }
         if (["colorX", "colorY", "color"].includes(item)) {
             if (Array.isArray(b)) {
@@ -132,6 +131,7 @@ export class colorLight extends dimmableLight {
             this.endpoint = await new Endpoint(ExtendedColorLightDevice.with(BridgedDeviceBasicInformationServer), this.attributes);
         } catch (e) {
             this.node.error(e);
+            console.trace();
         }
     }
 

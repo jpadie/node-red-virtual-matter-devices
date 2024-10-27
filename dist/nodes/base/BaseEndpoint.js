@@ -78,6 +78,9 @@ class BaseEndpoint {
             }, this.config.telemetryInterval * 1000);
         }
     }
+    zigbee() {
+        return false;
+    }
     deploy() {
         return;
     }
@@ -150,7 +153,6 @@ class BaseEndpoint {
                 console.log(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on((value) => {
-                        this.node.warn({ key: key, item: s, value: value });
                         value = this.preProcessDeviceChanges(value, s);
                         if ((this.skip)) {
                             this.skip = false;

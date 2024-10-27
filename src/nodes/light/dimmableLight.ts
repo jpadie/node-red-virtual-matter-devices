@@ -53,7 +53,7 @@ export class dimmableLight extends onOffLight {
 
     override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
         let { a, b } = super.preProcessNodeRedInput(item, value)
-        if (this.config.enableZigbee) {
+        if (this.zigbee()) {
             switch (a) {
                 case "brightness":
                     a = "brightness";

@@ -46,7 +46,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             this.setDefault("systemMode", cluster_1.Thermostat.SystemMode.Cool);
         }
         a.systemMode = this.context.systemMode;
-        if (this.config.supportsOutDoorTemperature) {
+        if (this.config.supportsOutdoorTemperature) {
             this.setDefault("outdoorTemperature", 15);
             a.outdoorTemperature = this.context.outdoorTemperature * 100;
         }
@@ -148,6 +148,8 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             withs.push(relative_humidity_measurement_1.RelativeHumidityMeasurementServer);
         withs.push(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer);
         this.withs = withs;
+        console.log("thermostat config");
+        console.log(this.config);
         console.log("thermostat attributes");
         console.log(this.attributes);
     }

@@ -58,7 +58,7 @@ class colorLight extends dimmableLight_1.dimmableLight {
     listenForChange_postProcess(report = null) {
         super.listenForChange_postProcess(report);
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
-            if (this.config.enableZigbee) {
+            if (this.zigbee()) {
                 let payload = { color: {} };
                 if (Object.hasOwn(report, "colorX")) {
                     payload.color.x = Math.round(100 * report.colorX) / 100;
@@ -84,8 +84,7 @@ class colorLight extends dimmableLight_1.dimmableLight {
     ;
     preProcessNodeRedInput(item, value) {
         let { a, b } = super.preProcessNodeRedInput(item, value);
-        if (this.config.enableZigbee) {
-            this.node.warn("zigbee enabled");
+        if (this.zigbee()) {
             switch (a) {
                 case "color":
                     if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
@@ -97,7 +96,6 @@ class colorLight extends dimmableLight_1.dimmableLight {
             }
         }
         else {
-            this.node.warn("zigbee not enabled");
         }
         if (["colorX", "colorY", "color"].includes(item)) {
             if (Array.isArray(b)) {
@@ -117,6 +115,7 @@ class colorLight extends dimmableLight_1.dimmableLight {
         }
         catch (e) {
             this.node.error(e);
+            console.trace();
         }
     }
 }

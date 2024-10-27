@@ -33,7 +33,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
         }
     }
     listenForChange_postProcess(report = null) {
-        if (!this.config.enableZigbee)
+        if (!this.zigbee())
             return;
         if (typeof report == "object" && Object.hasOwn(report, "onoff")) {
             this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF", messageSource: "Matter" } }]);
@@ -43,7 +43,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
     preProcessNodeRedInput(item, value) {
         let a;
         let b;
-        if (this.config.enableZigbee) {
+        if (this.zigbee()) {
             switch (item) {
                 case "state":
                     a = "onoff";
