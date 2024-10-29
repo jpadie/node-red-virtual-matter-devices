@@ -40,27 +40,19 @@
         oneditsave: function () {
 
         },
-        onadd: function () {
-            let hasConfig = false;
-            RED.nodes.eachConfig(function (n) {
-                console.log(n);
-                if (n.type === 'matter-hub') hasConfig = true;
-                this.serverNode = n.id;
-                $("#node-input-serverNode").val(n.id);
+        oneditdelete: function () {
+            //RED.warn("node deleted");
+            console.log("node removed");
+            $.ajax({
+                url: "matter-hub/" + this.id,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ request: "removeNode", nodeID: this.id }),
+                success: function (data) {
+                    this.node.warn("Node successfully removed from Matter Hub");
+                    RED.nodes.dirty(true);
+                }
             });
-            if (!hasConfig) {
-                console.log("creating config");
-                const configNode = {
-                    id: RED.nodes.id(),
-                    _def: RED.nodes.getType("matter-hub"),
-                    type: "matter-hub",
-                    users: []
-                };
-                RED.nodes.add(configNode);
-                RED.nodes.dirty(true);
-                this.serverNode = configNode.id;
-                $("#node-input-serverNode").val(configNode.id);
-            }
         },
         oneditprepare: function () {
             let node = this;
@@ -189,11 +181,8 @@
         }
 
     </style>
-    <fieldset class="matter hidden">
-        <div class="form-row">
-            <label for="node-input-serverNode">Matter Server</label>
-            <input type="text" id="node-input-serverNode" placeholder="server node" />
-        </div>
+    <fieldset class="matter">
+       
     
         <div class="form-row">
             <label for="node-input-deviceType">Actuator Device</label>

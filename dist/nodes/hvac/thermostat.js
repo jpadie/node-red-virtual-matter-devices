@@ -20,7 +20,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
-            occupiedCoolingSetPpoint: { thermostat: "occupiedCoolingSetpoint", multiplier: 100, unit: "C" },
+            occupiedCoolingSetpoint: { thermostat: "occupiedCoolingSetpoint", multiplier: 100, unit: "C" },
             unoccupiedHeatingSetpoint: { thermostat: "unoccupiedHeatingSetpoint", multiplier: 100, unit: "C" },
             unoccupiedCoolingSetpoint: { thermostat: "unoccupiedCoolingSetpoint", multiplier: 100, unit: "C" },
             occupied: { thermostat: "occupancy", multiplier: 1, unit: "" },
@@ -148,10 +148,6 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             withs.push(relative_humidity_measurement_1.RelativeHumidityMeasurementServer);
         withs.push(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer);
         this.withs = withs;
-        console.log("thermostat config");
-        console.log(this.config);
-        console.log("thermostat attributes");
-        console.log(this.attributes);
     }
     getVerbose(item, value) {
         switch (item) {

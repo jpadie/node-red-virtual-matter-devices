@@ -175,14 +175,19 @@ class MatterHub {
         }
     }
 
-    public async removeDevice(id: string) {
+    public async removeDevice(id: string): Promise<Boolean> {
+        let response = false;
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].close();
             delete (this.endpoints[id]);
+            response = true;
+        } else {
+            console.debug("Not removing endpoint as endpoint ID does not exist: " + id);
         }
         if (Object.keys(this.endpoints).length == 0) {
             await this.shutDown();
         }
+        return response;
     }
 
     public async shutDown() {

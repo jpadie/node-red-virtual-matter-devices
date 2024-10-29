@@ -22,7 +22,7 @@ export class thermostat extends BaseEndpoint {
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
-            occupiedCoolingSetPpoint: { thermostat: "occupiedCoolingSetpoint", multiplier: 100, unit: "C" },
+            occupiedCoolingSetpoint: { thermostat: "occupiedCoolingSetpoint", multiplier: 100, unit: "C" },
             unoccupiedHeatingSetpoint: { thermostat: "unoccupiedHeatingSetpoint", multiplier: 100, unit: "C" },
             unoccupiedCoolingSetpoint: { thermostat: "unoccupiedCoolingSetpoint", multiplier: 100, unit: "C" },
             occupied: { thermostat: "occupancy", multiplier: 1, unit: "" },
@@ -155,10 +155,14 @@ export class thermostat extends BaseEndpoint {
         if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
         withs.push(BridgedDeviceBasicInformationServer);
         this.withs = withs;
+        /*
         console.log("thermostat config");
         console.log(this.config);
+        console.log("thermostat mapping");
+        console.log(this.mapping);
         console.log("thermostat attributes");
         console.log(this.attributes);
+        */
     }
 
     override getVerbose(item: any, value: any) {

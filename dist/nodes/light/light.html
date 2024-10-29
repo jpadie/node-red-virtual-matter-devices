@@ -23,11 +23,20 @@
         icon: "matter-icon-seeklogo.svg",
         align: "left",
         paletteLabel: "Light",
-        onremove: function () {
-            console.log("on remove has been called");
-        },
+
         oneditdelete: function () {
-            console.log("oneditdelete has been called");
+            //RED.warn("node deleted");
+            console.log("node removed");
+            $.ajax({
+                url: "matter-hub/" + this.id,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ request: "removeNode", nodeID: this.id }),
+                success: function (data) {
+                    this.node.warn("Node successfully removed from Matter Hub");
+                    RED.nodes.dirty(true);
+                }
+            });
         },
         onadd: function () {
 

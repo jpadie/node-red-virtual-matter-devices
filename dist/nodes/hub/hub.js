@@ -19,7 +19,7 @@ module.exports = (RED) => {
             res.sendStatus(500);
         }
         else {
-            const data = JSON.parse(req.body);
+            const data = (req.body);
             let responseData = {};
             switch (data.request) {
                 case "getStatus":
@@ -35,6 +35,22 @@ module.exports = (RED) => {
                 case "shutdown":
                     server_1.matterHub.shutDown();
                     res.sendStatus(200);
+                    break;
+                case "removeNode":
+                    if (node.id) {
+                        server_1.matterHub.removeDevice(node.id).
+                            then((success) => {
+                            if (success) {
+                                res.send({ success: "ok" });
+                            }
+                            else {
+                                res.send({ success: "" });
+                            }
+                        }).catch((e) => {
+                            console.log(e);
+                            res.send({ success: "" });
+                        });
+                    }
                     break;
                 default:
                     res.sendStatus(500);

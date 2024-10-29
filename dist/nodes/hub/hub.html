@@ -29,15 +29,7 @@
         icon: "matter-icon-seeklogo.svg",
         align: "left",
         onpaletteremove: function () {
-            $.ajax({
-                url: "matter-hub/" + node.id,
-                type: "POST",
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify({ request: "shutdown" }),
-                success: function (data) {
 
-                }
-            });
         },
         oneditprepare: function () {
             const node = this;
@@ -92,7 +84,7 @@
                                 .attr("href", data.qrcodeURL)
                                 .text("Click Here");
                             $("#node-input-commissioned").text(data.commissioned ? "Yes" : "No");
-                            $("#node-input-online").text(data.online ? "Yes" : "No");
+
                             if (data.commissioned) {
                                 $("fieldset.qrCode").hide();
                             } else {
@@ -105,7 +97,7 @@
                     });
                 }
                 if (node.id) {
-                    getStatus();
+                    setInterval(getStatus(), 5000);
                 }
             });
         },
@@ -155,7 +147,7 @@
         <legend>Commissioning Info</legend>
         <div class="form-row">
             <label for="node-input-qrcode">QR Code</label>
-            <pre id="node-input-qrcode">
+            <pre id="node-input-qrcode" style="line-height:1; margin-top: 1px;">
 
             </pre>
         </div>
@@ -175,11 +167,7 @@
             <div class="fR" id="node-input-commissioned">
             </div>
         </div>
-        <div class="form-row">
-            <label >Online</label>
-            <div class="fR" id="node-input-online">
-            </div>
-        </div>
+        
 
 
     </fieldset>
@@ -190,7 +178,7 @@
                 Reinitialise MatterHub
             </label>
             <div class="fR">
-                <button id="node-input-reInitialise" class="button">ReInit</button>
+                <button id="node-input-reInitialise" class="button red-ui-button ">ReInit</button>
             </div>
         </div>
      

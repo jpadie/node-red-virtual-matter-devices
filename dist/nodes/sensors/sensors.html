@@ -102,6 +102,20 @@
         paletteLabel: "Sensor",
         icon: "matter-icon-seeklogo.svg",
         align: "left",
+        oneditdelete: function () {
+            //RED.warn("node deleted");
+            console.log("node removed");
+            $.ajax({
+                url: "matter-hub/" + this.id,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ request: "removeNode", nodeID: this.id }),
+                success: function (data) {
+                    this.node.warn("Node successfully removed from Matter Hub");
+                    RED.nodes.dirty(true);
+                }
+            });
+        },
         oneditsave: function () {
             for (const item of ["Temperature", "Humidity", "CO", "CO2", "NO2", "Ozone", "Formaldehyde", "PM1", "PM25", "PM10", "Radon", "TVOC"]) {
                 this[`supports${item}`] = $(`#node-input-supports${item}`).val() == "1" ? 1 : 0;

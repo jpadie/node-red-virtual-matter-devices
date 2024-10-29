@@ -47,7 +47,20 @@
         paletteLabel: "HVAC",
         icon: "matter-icon-seeklogo.svg",
         align: "left",
-
+        oneditdelete: function () {
+            //RED.warn("node deleted");
+            console.log("node removed");
+            $.ajax({
+                url: "matter-hub/" + this.id,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ request: "removeNode", nodeID: this.id }),
+                success: function (data) {
+                    this.node.warn("Node successfully removed from Matter Hub");
+                    RED.nodes.dirty(true);
+                }
+            });
+        },
         oneditsave: function () {
             this.supportsWind = parseInt($("#node-input-supportsWind").val());
             this.supportsRocking = parseInt($("#node-input-supportsRocking").val());
