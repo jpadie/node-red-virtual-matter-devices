@@ -20,8 +20,8 @@
     }
   },
   "dependencies": {
-    "@project-chip/matter-node.js": "^0.10.0",
-    "@project-chip/matter.js": "^0.10.0",
+    "@project-chip/matter-node.js": "^0.11.0",
+    "@project-chip/matter.js": "^0.11.0",
     "lodash": "^4.17.21"
   },
   "directories": {
