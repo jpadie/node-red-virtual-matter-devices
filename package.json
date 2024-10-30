@@ -1,6 +1,6 @@
 {
   "name": "@jpadie/node-red-virtual-matter-devices",
-  "version": "0.2.20",
+  "version": "0.2.21",
   "description": "Virtual Matter Devices for Node-Red",
   "main": "index.js",
   "scripts": {
