@@ -50,6 +50,9 @@ export class colorLight extends dimmableLight {
         this.setDefault("colorHue", 0);
         this.setDefault("colorSaturation", 0);
     }
+    override zigbee(): boolean {
+        return false;
+    }
 
     override getVerbose(item, value) {
         switch (item) {
@@ -134,5 +137,4 @@ export class colorLight extends dimmableLight {
             console.trace();
         }
     }
-
 }

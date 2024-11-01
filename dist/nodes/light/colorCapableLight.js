@@ -41,6 +41,9 @@ class colorLight extends dimmableLight_1.dimmableLight {
         this.setDefault("colorHue", 0);
         this.setDefault("colorSaturation", 0);
     }
+    zigbee() {
+        return false;
+    }
     getVerbose(item, value) {
         switch (item) {
             default:
