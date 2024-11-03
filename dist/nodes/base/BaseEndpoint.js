@@ -297,11 +297,19 @@ class BaseEndpoint {
                 }
             }
         }
-        try {
-            this.endpoint.set(updates);
-        }
-        catch (e) {
-            console.log(e);
+        if (updates.length > 0) {
+            let u = {};
+            for (let i = 0; i < updates.length; i++) {
+                u = Object.assign(u, updates[i]);
+            }
+            try {
+                this.endpoint.set(updates);
+            }
+            catch (e) {
+                console.log(e);
+                console.log(updates);
+                console.trace();
+            }
         }
     }
     processIncomingMessages(msg, send, done) {

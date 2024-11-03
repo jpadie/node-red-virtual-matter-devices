@@ -50,9 +50,6 @@ export class colorLight extends dimmableLight {
         this.setDefault("colorHue", 0);
         this.setDefault("colorSaturation", 0);
     }
-    override zigbee(): boolean {
-        return false;
-    }
 
     override getVerbose(item, value) {
         switch (item) {
@@ -97,9 +94,7 @@ export class colorLight extends dimmableLight {
                     this.context.colorY = Math.round(report.colorY * 100 / 65536) / 100;
                 }
             }
-
         }
-
     };
 
     override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
