@@ -1,6 +1,6 @@
 {
   "name": "@jpadie/node-red-virtual-matter-devices",
-  "version": "0.2.23",
+  "version": "0.2.25",
   "description": "Virtual Matter Devices for Node-Red",
   "main": "index.js",
   "scripts": {
@@ -20,8 +20,8 @@
     }
   },
   "dependencies": {
-    "@project-chip/matter-node.js": "^0.11.0",
-    "@project-chip/matter.js": "^0.11.0",
+    "@project-chip/matter-node.js": "0.10.6",
+    "@project-chip/matter.js": "0.10.6",
     "lodash": "^4.17.21"
   },
   "directories": {

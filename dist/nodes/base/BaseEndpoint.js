@@ -303,7 +303,7 @@ class BaseEndpoint {
                 u = Object.assign(u, updates[i]);
             }
             try {
-                this.endpoint.set(updates);
+                this.endpoint.set(u);
             }
             catch (e) {
                 console.log(e);

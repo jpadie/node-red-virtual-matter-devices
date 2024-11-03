@@ -319,9 +319,8 @@ export class BaseEndpoint {
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
             }
-
             try {
-                this.endpoint.set(updates);
+                this.endpoint.set(u);
             } catch (e) {
                 console.log(e);
                 console.log(updates);
