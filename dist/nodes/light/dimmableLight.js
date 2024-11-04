@@ -16,7 +16,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
             levelControl: {
                 options: {
                     executeIfOff: true,
-                    coupleColorTempToLevel: true
+                    coupleColorTempToLevel: false
                 },
                 onLevel: null,
                 onOffTransitionTime: 150,

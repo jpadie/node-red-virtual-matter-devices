@@ -2,15 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.colorLight = void 0;
 require("@project-chip/matter-node.js");
-const ExtendedColorLightDevice_1 = require("@project-chip/matter.js/devices/ExtendedColorLightDevice");
 const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
 const endpoint_1 = require("@project-chip/matter.js/endpoint");
 const dimmableLight_1 = require("./dimmableLight");
+const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
+const color_control_1 = require("@project-chip/matter.js/behaviors/color-control");
 class colorLight extends dimmableLight_1.dimmableLight {
     constructor(node, config, _name = '') {
         let name = config.name || _name || "Color Light";
         super(node, config, name);
-        this.setDefault("brightness", 0);
         this.attributes = {
             ...this.attributes,
             colorControl: {
@@ -21,9 +21,9 @@ class colorLight extends dimmableLight_1.dimmableLight {
                 colorCapabilities: {
                     hueSaturation: true,
                     xy: true,
-                    enhancedHue: false,
+                    enhancedHue: true,
                     colorLoop: false,
-                    colorTemperature: true
+                    colorTemperature: false
                 },
                 colorTemperatureMireds: 0x00FA,
                 coupleColorTempToLevelMinMireds: 0x00FA,
@@ -48,7 +48,7 @@ class colorLight extends dimmableLight_1.dimmableLight {
         }
     }
     setStatus() {
-        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: x: ${this.context.colorX} y: ${this.context.colorY}`;
+        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: x: ${this.context.colorX} y: ${this.context.colorY}`;
         this.node.status({
             fill: "green",
             shape: "dot",
@@ -111,7 +111,7 @@ class colorLight extends dimmableLight_1.dimmableLight {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(ExtendedColorLightDevice_1.ExtendedColorLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, color_control_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
         }
         catch (e) {
             this.node.error(e);

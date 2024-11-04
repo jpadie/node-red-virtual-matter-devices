@@ -19,7 +19,7 @@ export class dimmableLight extends onOffLight {
             levelControl: {
                 options: {
                     executeIfOff: true,
-                    coupleColorTempToLevel: true
+                    coupleColorTempToLevel: false
                 },
                 onLevel: null,
                 onOffTransitionTime: 150,

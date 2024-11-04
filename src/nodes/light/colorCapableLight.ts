@@ -1,9 +1,11 @@
 import "@project-chip/matter-node.js";
-import { ExtendedColorLightDevice } from "@project-chip/matter.js/devices/ExtendedColorLightDevice";
+//import { ExtendedColorLightDevice } from "@project-chip/matter.js/devices/ExtendedColorLightDevice";
 import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { Endpoint } from "@project-chip/matter.js/endpoint";
 import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight";
+import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
+import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
 
 
 export class colorLight extends dimmableLight {
@@ -11,8 +13,6 @@ export class colorLight extends dimmableLight {
     constructor(node: Node, config: any, _name: any = '') {
         let name = config.name || _name || "Color Light";
         super(node, config, name);
-
-        this.setDefault("brightness", 0);
 
         this.attributes = {
             ...this.attributes,
@@ -24,9 +24,9 @@ export class colorLight extends dimmableLight {
                 colorCapabilities: {
                     hueSaturation: true,
                     xy: true,
-                    enhancedHue: false,
+                    enhancedHue: true,
                     colorLoop: false,
-                    colorTemperature: true
+                    colorTemperature: false
                 },
                 colorTemperatureMireds: 0x00FA,
                 coupleColorTempToLevelMinMireds: 0x00FA,
@@ -60,7 +60,7 @@ export class colorLight extends dimmableLight {
     }
 
     override setStatus() {
-        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: x: ${this.context.colorX} y: ${this.context.colorY}`;
+        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: x: ${this.context.colorX} y: ${this.context.colorY}`;
         this.node.status({
             fill: "green",
             shape: "dot",
@@ -126,7 +126,20 @@ export class colorLight extends dimmableLight {
 
     override async deploy() {
         try {
-            this.endpoint = await new Endpoint(ExtendedColorLightDevice.with(BridgedDeviceBasicInformationServer), this.attributes);
+
+            this.endpoint = await new Endpoint(
+                DimmableLightDevice.with(
+                    BridgedDeviceBasicInformationServer,
+                    ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")
+                ),
+                this.attributes);
+
+            /*this.endpoint = await new Endpoint(
+                ExtendedColorLightDevice.with(
+                    BridgedDeviceBasicInformationServer
+                ), this.attributes);
+            */
+
         } catch (e) {
             this.node.error(e);
             console.trace();
