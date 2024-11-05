@@ -146,6 +146,9 @@ export class BaseEndpoint {
         if (item) return value;
         return value;
     }
+    preProcessOutputReport(report) {
+        return report;
+    }
     listenForChange() {
         if (!this.endpoint) {
             console.error("endpoint is not established");
@@ -232,6 +235,7 @@ export class BaseEndpoint {
 
                             if (this.mapping[item].unit == "") delete report.unit;
 
+                            report = this.preProcessOutputReport(report)
                             this.node.send({ payload: report });
 
                             this.listenForChange_postProcess(report);
@@ -340,11 +344,12 @@ export class BaseEndpoint {
             msg.payload.messageSource = "Manual Input";
         }
 
+
+        if (this.config.passThroughMessage) {
+            //this.node.warn("message received");
+            send(msg);
+        }
         try {
-            if (this.config.passThroughMessage) {
-                //this.node.warn("message received");
-                send(msg);
-            }
             if (typeof msg.payload == "object") {
                 for (let item in msg.payload) {
                     let { a, b } = this.preProcessNodeRedInput(item, msg.payload[item]);
@@ -377,8 +382,8 @@ export class BaseEndpoint {
         });
     }
     listen() {
-        this.listenForChange();
-        this.listenForMessages();
+        this.listenForChange();     //from Matter Commands
+        this.listenForMessages();   //from node-red inputs
         this.listenForClose();
     }
     listenForClose() {

@@ -1,6 +1,6 @@
 {
   "name": "@jpadie/node-red-virtual-matter-devices",
-  "version": "0.2.29",
+  "version": "0.2.31",
   "description": "Virtual Matter Devices for Node-Red",
   "main": "index.js",
   "scripts": {
@@ -22,12 +22,13 @@
   "dependencies": {
     "@project-chip/matter-node.js": "0.10.6",
     "@project-chip/matter.js": "0.10.6",
+    "c0lor": "^0.1.1",
+    "color-2-name": "^1.4.4",
     "lodash": "^4.17.21"
   },
   "directories": {
     "lib": "lib"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jpadie/node-red-virtual-matter-devices.git"

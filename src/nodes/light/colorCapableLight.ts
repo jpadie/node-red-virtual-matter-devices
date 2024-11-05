@@ -6,6 +6,8 @@ import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight";
 import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
 import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
+const color2Name = require("color-2-name")
+const C = require("c0lor");
 
 export class colorLight extends dimmableLight {
 
@@ -36,9 +38,9 @@ export class colorLight extends dimmableLight {
 
         this.mapping = {
             ...this.mapping,
-            // colorX: { colorControl: "currentX", multiplier: 65536, unit: "" },
-            // colorY: { colorControl: "currentY", multiplier: 65536, unit: "" },
-            hue: { colorControl: "currentHue", multiplier: 1, unit: "" },
+            colorX: { colorControl: "currentX", multiplier: 65536, unit: "" },
+            colorY: { colorControl: "currentY", multiplier: 65536, unit: "" },
+            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "" },
             saturation: { colorControl: "currentSaturation", multiplier: 1, unit: "" }
         }
 
@@ -48,8 +50,9 @@ export class colorLight extends dimmableLight {
         //  this.setDefault("colorY", 0);
         this.setDefault("hue", 0);
         this.setDefault("saturation", 0);
-        this.prune("colorX");
-        this.prune("colorY");
+        this.setDefault("colorX", 0);
+        this.setDefault("colorY", 0);
+        this.setDefault("colorSpace", "xyY");
     }
 
     override getVerbose(item, value) {
@@ -60,8 +63,52 @@ export class colorLight extends dimmableLight {
         }
     }
 
+    convertHSVtoXY(h, s, v) {
+        let color = C.hsv(h, s / 100, v / 255);
+        let colorXY = color.xyY();
+        return { x: colorXY.x, y: colorXY.y };
+    }
+
+    convertXYtoHSV(x, y) {
+        let color = C.xyY(x, y, 1 - x - y);
+        let colorHSV = color.hsv();
+        return { hue: colorHSV.h, saturation: colorHSV.s }
+    }
+
+    override preProcessOutputReport(report: any) {
+        if (this.context.colorSpace == "xyY") {
+            if (Object.hasOwn(report, "hue")) {
+                const xy = this.convertHSVtoXY(report.hue, this.context.saturation, this.context.brightness);
+                report.colorX = xy.x;
+                report.colorY = xy.y;
+                delete report.hue;
+            } else if (Object.hasOwn(report, "saturation")) {
+                const xy = this.convertHSVtoXY(this.context.hue, report.saturation, this.context.brightness);
+                report.colorX = xy.x;
+                report.colorY = xy.y;
+                delete report.saturation;
+            }
+            return report;
+        } else if (this.context.colorSpace = "hsv") {
+            if (Object.hasOwn(report, "colorX")) {
+                const hsv = this.convertXYtoHSV(report.colorX, this.context.colorY);
+                report.hue = hsv.hue
+                report.saturation = hsv.saturation;
+                delete report.colorX;
+
+            } else if (Object.hasOwn(report, "saturation")) {
+                const hsv = this.convertXYtoHSV(this.context.colorX, report.colorY);
+                report.hue = hsv.hue
+                report.saturation = hsv.saturation;
+                delete report.colorY;
+            }
+            return report;
+        }
+    }
+
     override setStatus() {
-        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: x: ${this.context.colorX} y: ${this.context.colorY}`;
+        let c = color2Name.closest(this.context.hue, this.context.saturation, this.context.brightness);
+        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
         this.node.status({
             fill: "green",
             shape: "dot",
@@ -71,42 +118,39 @@ export class colorLight extends dimmableLight {
 
     override listenForChange_postProcess(report: any = null) {
         super.listenForChange_postProcess(report);
-
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
             //"color": { "x": 0.123, "y": 0.123 }
 
-            if (this.zigbee()) {
-                let payload: { color: { x?: number, y?: number }, messageSource?: string } = { color: {} };
-                if (Object.hasOwn(report, "colorX")) {
-                    payload.color.x = Math.round(100 * report.colorX) / 100;
-                    this.context.colorX = Math.round(100 * report.colorX) / 100;
-                }
-                if (Object.hasOwn(report, "colorY")) {
-                    payload.color.y = Math.round(100 * report.colorY) / 100;
-                    this.context.colorY = Math.round(100 * report.colorY) / 100;
-                }
-                payload.messageSource = "Matter";
-                this.node.send([null, { payload: payload }]);
-            } else {
-                if (Object.hasOwn(report, "colorX")) {
-                    this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
-                }
-                if (Object.hasOwn(report, "colorY")) {
-                    this.context.colorY = Math.round(report.colorY * 100 / 65536) / 100;
-                }
+            if (Object.hasOwn(report, "colorX")) {
+                this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
             }
+            if (Object.hasOwn(report, "colorY")) {
+                this.context.colorY = Math.round(report.colorY * 100 / 65536) / 100;
+            }
+
         }
     };
 
     override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
         let { a, b } = super.preProcessNodeRedInput(item, value)
         if (a === "color") {
-            this.context.hue = b["currentHue"];
-            this.context.saturation = b["currentSaturation"];
-            this.context.colorX = b["currentX"];
-            this.context.colorY = b["currentY"];
-            delete b.currentX;
-            delete b.currentY;
+            if (Object.hasOwn(b, "colorX") && Object.hasOwn(b, "colorY")) {
+                //ignore H and S
+                delete b.hue;
+                delete b.saturation;
+                if (this.context.colorSpace != "xyY") {
+                    this.context.colorSpace = "xyY";
+                    this.saveContext();
+                }
+            }
+            else if (Object.hasOwn(b, "hue") && Object.hasOwn(b, "saturation")) {
+                delete b.colorX;
+                delete b.colorY;
+                if (this.context.colorSpace != "hsv") {
+                    this.context.colorSpace = "hsv";
+                    this.saveContext();
+                }
+            }
         }
         return { a: a, b: b };
     }

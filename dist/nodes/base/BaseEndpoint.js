@@ -139,6 +139,9 @@ class BaseEndpoint {
             return value;
         return value;
     }
+    preProcessOutputReport(report) {
+        return report;
+    }
     listenForChange() {
         if (!this.endpoint) {
             console.error("endpoint is not established");
@@ -222,6 +225,7 @@ class BaseEndpoint {
                             };
                             if (this.mapping[item].unit == "")
                                 delete report.unit;
+                            report = this.preProcessOutputReport(report);
                             this.node.send({ payload: report });
                             this.listenForChange_postProcess(report);
                             this.saveContext();
@@ -319,10 +323,10 @@ class BaseEndpoint {
         if (!Object.hasOwn(msg.payload, "messageSource")) {
             msg.payload.messageSource = "Manual Input";
         }
+        if (this.config.passThroughMessage) {
+            send(msg);
+        }
         try {
-            if (this.config.passThroughMessage) {
-                send(msg);
-            }
             if (typeof msg.payload == "object") {
                 for (let item in msg.payload) {
                     let { a, b } = this.preProcessNodeRedInput(item, msg.payload[item]);
