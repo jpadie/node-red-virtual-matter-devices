@@ -229,6 +229,7 @@ export class BaseEndpoint {
                                 unit: this.mapping[item].unit,
                                 lastHeardFrom: this.context.lastHeardFrom
                             }
+
                             if (this.mapping[item].unit == "") delete report.unit;
 
                             this.node.send({ payload: report });

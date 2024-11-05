@@ -29,14 +29,14 @@ class colorLight extends dimmableLight_1.dimmableLight {
         };
         this.mapping = {
             ...this.mapping,
-            colorX: { colorControl: "currentX", multiplier: 65536, unit: "" },
-            colorY: { colorControl: "currentY", multiplier: 65536, unit: "" },
+            hue: { colorControl: "currentHue", multiplier: 1, unit: "" },
+            saturation: { colorControl: "currentSaturation", multiplier: 1, unit: "" }
         };
         this.setSerialNumber("clLt-");
-        this.setDefault("colorX", 0);
-        this.setDefault("colorY", 0);
-        this.setDefault("colorHue", 0);
-        this.setDefault("colorSaturation", 0);
+        this.setDefault("hue", 0);
+        this.setDefault("saturation", 0);
+        this.prune("colorX");
+        this.prune("colorY");
     }
     getVerbose(item, value) {
         switch (item) {
@@ -81,28 +81,13 @@ class colorLight extends dimmableLight_1.dimmableLight {
     ;
     preProcessNodeRedInput(item, value) {
         let { a, b } = super.preProcessNodeRedInput(item, value);
-        if (this.zigbee()) {
-            switch (a) {
-                case "color":
-                    if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
-                        a = ["colorX", "colorY"];
-                        b = [value.x, value.y];
-                    }
-                    break;
-                default:
-            }
-        }
-        else {
-        }
-        if (["colorX", "colorY", "color"].includes(item)) {
-            if (Array.isArray(b)) {
-                for (let i = 0; i < b.length; i++) {
-                    b[i] = Math.min(1, b[i]);
-                }
-            }
-            else {
-                b = Math.min(1, b);
-            }
+        if (a === "color") {
+            this.context.hue = b["currentHue"];
+            this.context.saturation = b["currentSaturation"];
+            this.context.colorX = b["currentX"];
+            this.context.colorY = b["currentY"];
+            delete b.currentX;
+            delete b.currentY;
         }
         return { a: a, b: b };
     }
