@@ -25,9 +25,6 @@ class colorLight extends dimmableLight_1.dimmableLight {
                     colorLoop: false,
                     colorTemperature: false
                 },
-                colorTemperatureMireds: 0x00FA,
-                coupleColorTempToLevelMinMireds: 0x00FA,
-                startUpColorTemperatureMireds: 0x00FA
             }
         };
         this.mapping = {

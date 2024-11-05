@@ -28,9 +28,9 @@ export class colorLight extends dimmableLight {
                     colorLoop: false,
                     colorTemperature: false
                 },
-                colorTemperatureMireds: 0x00FA,
-                coupleColorTempToLevelMinMireds: 0x00FA,
-                startUpColorTemperatureMireds: 0x00FA
+                // colorTemperatureMireds: 0x00FA,
+                // coupleColorTempToLevelMinMireds: 0x00FA,
+                // startUpColorTemperatureMireds: 0x00FA
             }
         }
 

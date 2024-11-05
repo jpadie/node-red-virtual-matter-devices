@@ -49,6 +49,9 @@
         oneditsave: function () {
             this.supportsWind = parseInt($("#node-input-supportsWind").val());
             this.supportsRocking = parseInt($("#node-input-supportsRocking").val());
+            for (const item of ["regularUpdates", "passThroughMessage", "reportAirQualityString"]) {
+                this[item] = [1, "1", true].includes($(`#node-input-${item}`).val()) ? 1 : 0;
+            }
         },
         onpaletteadd: function () {
 
@@ -116,19 +119,19 @@
                     $(b2).on("click", function (e) {
                         $(`button.${id}-group`).removeClass("selected");
                         $(e.currentTarget).addClass("selected");
-                        //$(i).val(0);
+                        $(i).val(0);
                         $(elem).prop("checked", false);
                         // $("#" + id).prop("checked", false);
-                        //  this[id.substring(11)] = 0;
+                        node[id.substring(11)] = 0;
                     });
 
                     $(b1).on("click", (e) => {
                         $(`button.${id}-group`).removeClass("selected");
                         $(e.currentTarget).addClass("selected");
                         $(elem).prop("checked", true);
-                        /// $(i).val(1);
+                        $(i).val(1);
                         //  $("#" + id).prop("checked", true);
-                        //this[id.substring(11)] = 1;
+                        node[id.substring(11)] = 1;
                     });
 
                     $(d).append($(b1), $(b2));

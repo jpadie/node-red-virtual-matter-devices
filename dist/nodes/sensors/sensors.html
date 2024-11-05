@@ -121,8 +121,8 @@
                 this[`supports${item}`] = $(`#node-input-supports${item}`).val() == "1" ? 1 : 0;
             }
 
-            for (const item of ["regularUpdates", "passThroughMessage", "reportAirQualityString"]) {
-                this[item] = $(`#node-input-${item}`).val() == "1" ? 1 : 0;
+            for (const item of ["regularUpdates", "passThroughMessage"]) {
+                this[item] = [1, "1", true].includes($(`#node-input-${item}`).val()) ? 1 : 0;
             }
 
             this.sensorType = $("#node-input-sensorType").val();
@@ -222,16 +222,10 @@
 
                 }
 
-                $("fieldset.matter input:checkbox").each(function () {
-                    let elem = $(this);
-                    let id = $(this).attr("id");
+                $("fieldset.matter input:checkbox").each((index, elem) => {
+                    let id = $(elem).attr("id");
                     let d = document.createElement("div");
                     $(d).addClass("fR");
-                    let i = document.createElement("input");
-                    $(i).attr("id", $(this).attr("id"))
-                        .val(node[id] ?? "0")
-                        .css("width", "1rem")
-                        .addClass("hidden");
                     let b1 = document.createElement("button");
                     $(b1).addClass("red-ui-button toggle " + `${id}-group`);
                     $(b1).attr("value", "1");
@@ -247,23 +241,27 @@
                     }
                     $(b2).on("click", function (e) {
                         $(`button.${id}-group`).removeClass("selected");
-                        $(e.target).addClass("selected");
-
-                        $("#" + id).val($(e.target).val());
-                        this[id.substring(11)] = 1;
+                        $(e.currentTarget).addClass("selected");
+                        //$(i).val(0);
+                        $(elem).prop("checked", false);
+                        // $("#" + id).prop("checked", false);
+                        //  this[id.substring(11)] = 0;
                     });
-                    $(b1).on("click", function (e) {
 
+                    $(b1).on("click", (e) => {
                         $(`button.${id}-group`).removeClass("selected");
-                        $(e.target).addClass("selected");
-
-                        $("#" + id).val($(e.target).val());
-                        this[id.substring(11)] = 1;
+                        $(e.currentTarget).addClass("selected");
+                        $(elem).prop("checked", true);
+                        /// $(i).val(1);
+                        //  $("#" + id).prop("checked", true);
+                        //this[id.substring(11)] = 1;
                     });
 
-                    $(d).append($(i), $(b1), $(b2));
-                    $(this).replaceWith($(d));
+                    $(d).append($(b1), $(b2));
+                    $(d).insertBefore($(elem));
+                    $(elem).hide();
                 });
+
 
                 let newInput = document.createElement("input");
                 $(newInput).attr("type", "hidden").attr("id", "node-input-telemetryInterval-type").insertAfter($("#node-input-telemetryInterval"));

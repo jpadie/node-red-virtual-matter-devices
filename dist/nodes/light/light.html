@@ -42,17 +42,10 @@
         },
         oneditprepare: () => {
             let node = this;
-            $("fieldset.matter input:checkbox").each(function () {
-                let elem = $(this);
-                let id = $(this).attr("id");
-                booleanNodes.push(id);
+            $("fieldset.matter input:checkbox").each((index, elem) => {
+                let id = $(elem).attr("id");
                 let d = document.createElement("div");
                 $(d).addClass("fR");
-                let i = document.createElement("input");
-                $(i).attr("id", $(this).attr("id"))
-                    .val(node[id] ?? "0")
-                    .css("width", "1rem")
-                    .addClass("hidden");
                 let b1 = document.createElement("button");
                 $(b1).addClass("red-ui-button toggle " + `${id}-group`);
                 $(b1).attr("value", "1");
@@ -61,27 +54,32 @@
                 $(b2).addClass("red-ui-button toggle " + `${id}-group`);
                 $(b2).attr("value", "0");
                 $(b2).text("No");
-                if (node[id]) {
+                if ($(elem).is(":checked")) {
                     $(b1).addClass("selected");
                 } else {
                     $(b2).addClass("selected");
                 }
                 $(b2).on("click", function (e) {
                     $(`button.${id}-group`).removeClass("selected");
-                    $(e.target).addClass("selected");
-                    $("#" + id).val(0);
-                    this[id.substring(11)] = 0;
+                    $(e.currentTarget).addClass("selected");
+                    //$(i).val(0);
+                    $(elem).prop("checked", false);
+                    // $("#" + id).prop("checked", false);
+                    //  this[id.substring(11)] = 0;
                 });
-                $(b1).on("click", function (e) {
 
+                $(b1).on("click", (e) => {
                     $(`button.${id}-group`).removeClass("selected");
-                    $(e.target).addClass("selected");
-                    $("#" + id).val(1);
-                    this[id.substring(11)] = 1;
+                    $(e.currentTarget).addClass("selected");
+                    $(elem).prop("checked", true);
+                    /// $(i).val(1);
+                    //  $("#" + id).prop("checked", true);
+                    //this[id.substring(11)] = 1;
                 });
 
-                $(d).append($(i), $(b1), $(b2));
-                $(this).replaceWith($(d));
+                $(d).append($(b1), $(b2));
+                $(d).insertBefore($(elem));
+                $(elem).hide();
             });
 
             let newInput = document.createElement("input");
@@ -98,7 +96,8 @@
         },
         oneditsave: function () {
             for (const item of booleanNodes) {
-                this[item.substring(11)] = Number(this[item.substring(11)]);
+                //console.log(item);
+                this[item.substring(11)] = ["1", 1, true].includes($("#" + item).val()) ? 1 : 0
             }
             let outputs = 1;
             if ($("#node-input-enableZigbee").val() == "1") {
