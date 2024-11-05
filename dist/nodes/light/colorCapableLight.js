@@ -7,8 +7,6 @@ const endpoint_1 = require("@project-chip/matter.js/endpoint");
 const dimmableLight_1 = require("./dimmableLight");
 const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
 const color_control_1 = require("@project-chip/matter.js/behaviors/color-control");
-const color2Name = require("color-2-name");
-const C = require("c0lor");
 class colorLight extends dimmableLight_1.dimmableLight {
     constructor(node, config, _name = '') {
         let name = config.name || _name || "Color Light";
@@ -50,14 +48,30 @@ class colorLight extends dimmableLight_1.dimmableLight {
         }
     }
     convertHSVtoXY(h, s, v) {
-        let color = C.hsv(h, s / 100, v / 255);
-        let colorXY = color.xyY();
-        return { x: colorXY.x, y: colorXY.y };
+        import("c0lor")
+            .then((C) => {
+            let color = C.hsv(h, s / 100, v / 255);
+            let colorXY = color.xyY();
+            return { x: colorXY.x, y: colorXY.y };
+        })
+            .catch((e) => {
+            console.log(e);
+            return { x: 0, y: 0 };
+        });
+        return { x: 0, y: 0 };
     }
     convertXYtoHSV(x, y) {
-        let color = C.xyY(x, y, 1 - x - y);
-        let colorHSV = color.hsv();
-        return { hue: colorHSV.h, saturation: colorHSV.s };
+        import("c0lor")
+            .then((C) => {
+            let color = C.xyY(x, y, 1 - x - y);
+            let colorHSV = color.hsv();
+            return { hue: colorHSV.h, saturation: colorHSV.s };
+        })
+            .catch((e) => {
+            console.log(e);
+            return { hue: 0, saturation: 0 };
+        });
+        return { hue: 0, saturation: 0 };
     }
     preProcessOutputReport(report) {
         if (this.context.colorSpace == "xyY") {
@@ -92,14 +106,18 @@ class colorLight extends dimmableLight_1.dimmableLight {
         }
     }
     setStatus() {
-        let c = color2Name.closest(this.context.hue, this.context.saturation, this.context.brightness);
-        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
+        import("color-2-name")
+            .then((C) => {
+            let c = C.closest(this.context.hue, this.context.saturation, this.context.brightness);
+            let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
+            this.node.status({
+                fill: "green",
+                shape: "dot",
+                text: text
+            });
         });
     }
+    ;
     listenForChange_postProcess(report = null) {
         super.listenForChange_postProcess(report);
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {

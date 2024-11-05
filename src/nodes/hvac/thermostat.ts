@@ -183,34 +183,12 @@ export class thermostat extends BaseEndpoint {
         })
     }
 
-    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
-        let { a, b } = super.preProcessNodeRedInput(item, value)
-        if (this.config.enableZigbee) {
-            this.node.warn("zigbee enabled");
-            switch (a) {
-                case "color":
-                    if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
-                        a = ["colorX", "colorY"];
-                        b = [value.x, value.y]
-                    }
-                    break;
-                default:
-            }
-        } else {
-            this.node.warn("zigbee not enabled");
-        }
-        if (["colorX", "colorY", "color"].includes(item)) {
-            if (Array.isArray(b)) {
-                for (let i = 0; i < b.length; i++) {
-                    b[i] = Math.min(1, b[i]);
-                }
-            } else {
-                b = Math.min(1, b);
-            }
-        }
-        return { a: a, b: b };
+    override preProcessDeviceChanges(value: any, item: any) {
+        console.log("matter input");
+        console.log("item: " + value);
+        console.log("value: " + item);
+        return value;
     }
-
     override regularUpdate() {
         if (this.config.regularUpdates) {
             setInterval(() => {
@@ -304,7 +282,7 @@ export class thermostat extends BaseEndpoint {
 
                     //occupied or occupancy unsupported
                     if (this.heating_coolingState) {
-                        if (this.context.ocalTemperature < this.context.occupiedHeatingSetpoint) {
+                        if (this.context.localTemperature < this.context.occupiedHeatingSetpoint) {
                             return true;
                         } else {
                             this.heating_coolingState = 0;

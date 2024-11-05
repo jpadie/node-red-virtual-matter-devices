@@ -6,8 +6,7 @@ import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight";
 import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
 import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
-const color2Name = require("color-2-name")
-const C = require("c0lor");
+
 
 export class colorLight extends dimmableLight {
 
@@ -64,15 +63,31 @@ export class colorLight extends dimmableLight {
     }
 
     convertHSVtoXY(h, s, v) {
-        let color = C.hsv(h, s / 100, v / 255);
-        let colorXY = color.xyY();
-        return { x: colorXY.x, y: colorXY.y };
+        import("c0lor")
+            .then((C) => {
+                let color = C.hsv(h, s / 100, v / 255);
+                let colorXY = color.xyY();
+                return { x: colorXY.x, y: colorXY.y };
+            })
+            .catch((e) => {
+                console.log(e);
+                return { x: 0, y: 0 };
+            });
+        return { x: 0, y: 0 }
     }
 
     convertXYtoHSV(x, y) {
-        let color = C.xyY(x, y, 1 - x - y);
-        let colorHSV = color.hsv();
-        return { hue: colorHSV.h, saturation: colorHSV.s }
+        import("c0lor")
+            .then((C) => {
+                let color = C.xyY(x, y, 1 - x - y);
+                let colorHSV = color.hsv();
+                return { hue: colorHSV.h, saturation: colorHSV.s }
+            })
+            .catch((e) => {
+                console.log(e);
+                return { hue: 0, saturation: 0 }
+            })
+        return { hue: 0, saturation: 0 }
     }
 
     override preProcessOutputReport(report: any) {
@@ -107,14 +122,18 @@ export class colorLight extends dimmableLight {
     }
 
     override setStatus() {
-        let c = color2Name.closest(this.context.hue, this.context.saturation, this.context.brightness);
-        let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        });
-    }
+        import("color-2-name")
+            .then((C) => {
+                let c = C.closest(this.context.hue, this.context.saturation, this.context.brightness);
+                let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
+                this.node.status({
+                    fill: "green",
+                    shape: "dot",
+                    text: text
+                });
+            });
+    };
+
 
     override listenForChange_postProcess(report: any = null) {
         super.listenForChange_postProcess(report);

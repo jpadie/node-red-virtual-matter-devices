@@ -166,34 +166,11 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             text: text
         });
     }
-    preProcessNodeRedInput(item, value) {
-        let { a, b } = super.preProcessNodeRedInput(item, value);
-        if (this.config.enableZigbee) {
-            this.node.warn("zigbee enabled");
-            switch (a) {
-                case "color":
-                    if (Object.hasOwn(b, "x") && Object.hasOwn(b, "y")) {
-                        a = ["colorX", "colorY"];
-                        b = [value.x, value.y];
-                    }
-                    break;
-                default:
-            }
-        }
-        else {
-            this.node.warn("zigbee not enabled");
-        }
-        if (["colorX", "colorY", "color"].includes(item)) {
-            if (Array.isArray(b)) {
-                for (let i = 0; i < b.length; i++) {
-                    b[i] = Math.min(1, b[i]);
-                }
-            }
-            else {
-                b = Math.min(1, b);
-            }
-        }
-        return { a: a, b: b };
+    preProcessDeviceChanges(value, item) {
+        console.log("matter input");
+        console.log("item: " + value);
+        console.log("value: " + item);
+        return value;
     }
     regularUpdate() {
         if (this.config.regularUpdates) {
@@ -290,7 +267,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                 }
                 else {
                     if (this.heating_coolingState) {
-                        if (this.context.ocalTemperature < this.context.occupiedHeatingSetpoint) {
+                        if (this.context.localTemperature < this.context.occupiedHeatingSetpoint) {
                             return true;
                         }
                         else {
