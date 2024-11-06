@@ -31,11 +31,14 @@ export class BaseEndpoint {
         this.attributes = {
             id: this.node.id,
             bridgedDeviceBasicInformation: {
+                vendorName: "matter.js virtual device",
                 nodeLabel: this.name,
                 productName: this.name,
                 productLabel: this.name,
+                productId: this.node.id,
                 serialNumber: `${node.id}`.substring(0, 32),
                 reachable: true,
+                uniqueId: this.node.id
             }
         }
         this.node.status({
