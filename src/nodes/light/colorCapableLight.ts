@@ -173,7 +173,9 @@ export class colorLight extends dimmableLight {
         import("color-2-name")
             .then((C) => {
                 try {
-                    let c = C.closest(this.context.hue, this.context.saturation, this.context.brightness);
+                    let { r, g, b } = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness / 2.55);
+                    let c = C.closest(`rgb(${r}, ${g}, ${b})`);
+                    console.log("color name: " + c.name);
                     let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c.name}`;
                     this.node.status({
                         fill: "green",
