@@ -92,6 +92,8 @@ export class colorLight extends dimmableLight {
 
     override preProcessOutputReport(report: any) {
         if (this.context.colorSpace == "xyY") {
+            console.log("color report");
+            console.log(report);
             if (Object.hasOwn(report, "hue")) {
                 const xy = this.convertHSVtoXY(report.hue, this.context.saturation, this.context.brightness);
                 report.colorX = xy.x;
@@ -105,7 +107,10 @@ export class colorLight extends dimmableLight {
             }
             return report;
         } else if (this.context.colorSpace = "hsv") {
+            console.log("color report");
+            console.log(report);
             if (Object.hasOwn(report, "colorX")) {
+
                 const hsv = this.convertXYtoHSV(report.colorX, this.context.colorY);
                 report.hue = hsv.hue
                 report.saturation = hsv.saturation;
@@ -124,13 +129,21 @@ export class colorLight extends dimmableLight {
     override setStatus() {
         import("color-2-name")
             .then((C) => {
-                let c = C.closest(this.context.hue, this.context.saturation, this.context.brightness);
-                let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
-                this.node.status({
-                    fill: "green",
-                    shape: "dot",
-                    text: text
-                });
+                try {
+                    let c = C.closest(this.context.hue, this.context.saturation, this.context.brightness);
+                    let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
+                    this.node.status({
+                        fill: "green",
+                        shape: "dot",
+                        text: text
+                    });
+                } catch (e) {
+                    console.log(e);
+                }
+            })
+            .catch((e) => {
+                console.log("problem important color2name");
+                console.log(e);
             });
     };
 

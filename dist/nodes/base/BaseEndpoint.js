@@ -29,7 +29,7 @@ class BaseEndpoint {
         this.context = this.Context.get("attributes") || {};
         this.name = name;
         this.attributes = {
-            id: node.id,
+            id: this.node.id,
             bridgedDeviceBasicInformation: {
                 nodeLabel: this.name,
                 productName: this.name,

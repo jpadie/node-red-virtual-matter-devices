@@ -35,19 +35,19 @@ class MatterHub {
         this.passcode = environment.vars.number("passcode") ?? (await this.deviceStorage.get("passcode", this.randomNumber(0, 0x3FFFFFF)));
         this.discriminator = environment.vars.number("discriminator") ?? (await this.deviceStorage.get("discriminator", this.randomNumber(0, 0xFFF)));
         this.id = environment.vars.string("uniqueid") ?? (await this.deviceStorage.get("uniqueid", this.getID()));
-        await this.deviceStorage.set({
+        this.deviceStorage.set({
             passcode: this.passcode,
             discriminator: this.discriminator,
             uniqueid: this.id
-        });
+        })
     }
 
-    private async saveVars() {
-        await this.deviceStorage.set({
+    private saveVars() {
+        this.deviceStorage.set({
             passcode: this.passcode,
             discriminator: this.discriminator,
             uniqueid: this.id
-        });
+        })
     }
 
     private async init() {
@@ -100,7 +100,7 @@ class MatterHub {
                 uniqueId: this.id.substring(0, 30),
             }
         };
-
+        console.log(serverOpts);
         ServerNode
             .create(serverOpts)
             .then((resolve) => {
@@ -162,9 +162,9 @@ class MatterHub {
 
     public async reInitialise() {
         await this.matterServer.cancel();
-        await this.matterServer.factoryReset();
+        // await this.matterServer.factoryReset();
         this.id = this.getID();
-        await this.saveVars();
+        this.saveVars();
         this.deploy();
     }
 

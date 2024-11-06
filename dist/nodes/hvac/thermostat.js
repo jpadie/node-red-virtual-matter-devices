@@ -182,12 +182,14 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                         update[`${item}_in_words`] = value;
                     }
                 }
+                let onOff = this.deriveOnOff();
                 this.node.send([{
                         payload: { ...this.context, ...update },
                         topic: "regular update"
                     }, {
                         payload: {
-                            onOff: this.deriveOnOff()
+                            onOffBoolean: onOff,
+                            onOff: onOff ? "on" : "off"
                         }
                     }]);
             }, this.config.telemetryInterval * 1000);
@@ -198,48 +200,49 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         this.node.send([null, { payload: { onOff: onOff ? "on" : "off", onOffBoolean: onOff ? true : false } }]);
     }
     deriveOnOff() {
+        let ret = false;
         switch (this.context.systemMode) {
             case cluster_1.Thermostat.SystemMode.Off:
-                return false;
+                ret = false;
                 break;
             case cluster_1.Thermostat.SystemMode.Cool:
                 if (this.config.supportsOccupancy && !this.context.occupied) {
                     if (this.heating_coolingState) {
                         if (this.context.localTemperature > this.context.unoccupiedCoolingSetpoint) {
-                            return true;
+                            ret = true;
                         }
                         else {
                             this.heating_coolingState = 0;
-                            return false;
+                            ret = false;
                         }
                     }
                     else {
                         if (this.context.localTemperature > this.context.unoccupiedSetback + this.context.unoccupiedCoolingSetpoint) {
                             this.heating_coolingState = 1;
-                            return true;
+                            ret = true;
                         }
                         else {
-                            return false;
+                            ret = false;
                         }
                     }
                 }
                 else {
                     if (this.heating_coolingState) {
                         if (this.context.localTemperature > this.context.occupiedCoolingSetpoint) {
-                            return true;
+                            ret = true;
                         }
                         else {
                             this.heating_coolingState = 0;
-                            return false;
+                            ret = false;
                         }
                     }
                     else {
                         if (this.context.localTemperature > this.context.occupiedSetback + this.context.occupiedCoolingSetpoint) {
                             this.heating_coolingState = 1;
-                            return true;
+                            ret = true;
                         }
                         else {
-                            return false;
+                            ret = false;
                         }
                     }
                 }
@@ -248,45 +251,48 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                 if (this.config.supportsOccupancy && !this.context.occupied) {
                     if (this.heating_coolingState) {
                         if (this.context.localTemperature > this.context.unoccupiedHeatingSetpoint) {
-                            return true;
+                            ret = true;
                         }
                         else {
                             this.heating_coolingState = 0;
-                            return false;
+                            ret = false;
                         }
                     }
                     else {
                         if (this.context.localTemperature > this.context.unoccupiedSetback + this.context.unoccupiedHeatingSetpoint) {
                             this.heating_coolingState = 1;
-                            return true;
+                            ret = true;
                         }
                         else {
-                            return false;
+                            ret = false;
                         }
                     }
                 }
                 else {
                     if (this.heating_coolingState) {
                         if (this.context.localTemperature < this.context.occupiedHeatingSetpoint) {
-                            return true;
+                            ret = true;
                         }
                         else {
                             this.heating_coolingState = 0;
-                            return false;
+                            ret = false;
                         }
                     }
                     else {
                         if (this.context.localTemperature < this.context.occupiedHeatingSetpoint - this.context.occupiedSetback) {
                             this.heating_coolingState = 1;
-                            return true;
+                            ret = true;
                         }
                         else {
-                            return false;
+                            ret = false;
                         }
                     }
                 }
                 break;
         }
+        this.context.heating_coolingState = this.heating_coolingState;
+        this.saveContext();
+        return ret;
     }
     async deploy() {
         this.endpoint = new endpoint_1.Endpoint(ThermostatDevice_1.ThermostatDevice.with(...this.withs), this.attributes);

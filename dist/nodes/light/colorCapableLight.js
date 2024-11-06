@@ -50,31 +50,75 @@ class colorLight extends dimmableLight_1.dimmableLight {
     convertHSVtoXY(h, s, v) {
         import("c0lor")
             .then((C) => {
-            let color = C.hsv(h, s / 100, v / 255);
-            let colorXY = color.xyY();
-            return { x: colorXY.x, y: colorXY.y };
-        })
+                let color = C.hsv(h, s / 100, v / 255);
+                let colorXY = color.xyY();
+                return { x: colorXY.x, y: colorXY.y };
+            })
             .catch((e) => {
-            console.log(e);
-            return { x: 0, y: 0 };
-        });
+                console.log(e);
+                return { x: 0, y: 0 };
+            });
         return { x: 0, y: 0 };
     }
     convertXYtoHSV(x, y) {
         import("c0lor")
             .then((C) => {
-            let color = C.xyY(x, y, 1 - x - y);
-            let colorHSV = color.hsv();
-            return { hue: colorHSV.h, saturation: colorHSV.s };
-        })
+                let color = C.xyY(x, y, 1 - x - y);
+                let colorHSV = color.hsv();
+                return { hue: colorHSV.h, saturation: colorHSV.s };
+            })
             .catch((e) => {
-            console.log(e);
-            return { hue: 0, saturation: 0 };
-        });
+                console.log(e);
+                return { hue: 0, saturation: 0 };
+            });
         return { hue: 0, saturation: 0 };
+    }
+    convertHSVtoRGB(h, s, v) {
+        const chroma = s / 100 * v / 100;
+        const C = chroma;
+        const h1 = h / 60;
+        const x1 = chroma * (1 - Maths.abs(Maths.mod(h1 / 2) - 1));
+        let R1, G1, B1 = 0;
+        if (h1 < 1) {
+            R1 = C;
+            G1 = x1;
+            B1 = 0;
+        }
+        else if (h1 < 2) {
+            R1 = x1;
+            G1 = C;
+            B1 = 0;
+        }
+        else if (h1 < 3) {
+            R1 = 0;
+            G1 = C;
+            B1 = x1;
+        }
+        else if (h1 < 4) {
+            R1 = 0;
+            G1 = x1;
+            B1 = C;
+        }
+        else if (h1 < 5) {
+            R1 = x1;
+            G1 = 0;
+            B1 = C;
+        }
+        else if (h1 < 6) {
+            R1 = C;
+            G1 = 0;
+            B1 = x1;
+        }
+        const m = v - C;
+        let r = R1 + m;
+        let g = G1 + m;
+        let b = B1 + m;
+        return { r: r, g: g, b: b };
     }
     preProcessOutputReport(report) {
         if (this.context.colorSpace == "xyY") {
+            console.log("color report");
+            console.log(report);
             if (Object.hasOwn(report, "hue")) {
                 const xy = this.convertHSVtoXY(report.hue, this.context.saturation, this.context.brightness);
                 report.colorX = xy.x;
@@ -90,6 +134,8 @@ class colorLight extends dimmableLight_1.dimmableLight {
             return report;
         }
         else if (this.context.colorSpace = "hsv") {
+            console.log("color report");
+            console.log(report);
             if (Object.hasOwn(report, "colorX")) {
                 const hsv = this.convertXYtoHSV(report.colorX, this.context.colorY);
                 report.hue = hsv.hue;
@@ -105,17 +151,28 @@ class colorLight extends dimmableLight_1.dimmableLight {
             return report;
         }
     }
+
     setStatus() {
         import("color-2-name")
             .then((C) => {
-            let c = C.closest(this.context.hue, this.context.saturation, this.context.brightness);
-            let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
-            this.node.status({
-                fill: "green",
-                shape: "dot",
-                text: text
+                try {
+                    let { r, g, b } = this.convertHSVtoRGB(this.context.hue, this.context, saturation, this.context.brightness / 2.55);
+                    let c = C.closest(`rgb(${r},${g},${b})`);
+                    let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c}`;
+                    this.node.status({
+                        fill: "green",
+                        shape: "dot",
+                        text: text
+                    });
+                }
+                catch (e) {
+                    console.log(e);
+                }
+            })
+            .catch((e) => {
+                console.log("problem important color2name");
+                console.log(e);
             });
-        });
     }
     ;
     listenForChange_postProcess(report = null) {
