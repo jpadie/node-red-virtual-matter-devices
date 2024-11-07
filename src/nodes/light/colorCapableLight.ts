@@ -6,7 +6,7 @@ import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight";
 import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
 import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
-
+import colourList from "./colourList"
 
 export class colorLight extends dimmableLight {
 
@@ -89,49 +89,20 @@ export class colorLight extends dimmableLight {
             })
         return { hue: 0, saturation: 0 }
     }
+
     convertHSVtoRGB(h, s, v) {
-        const chroma = s / 100 * v / 100;
-        const C = chroma;
-        const h1 = h / 60;
-        const x1 = chroma * (1 - Math.abs((h1 % 2) - 1));
-        let R1, G1, B1 = 0;
-        if (h1 < 1) {
-            R1 = C;
-            G1 = x1;
-            B1 = 0;
-        }
-        else if (h1 < 2) {
-            R1 = x1;
-            G1 = C;
-            B1 = 0;
-        }
-        else if (h1 < 3) {
-            R1 = 0;
-            G1 = C;
-            B1 = x1;
-        }
-        else if (h1 < 4) {
-            R1 = 0;
-            G1 = x1;
-            B1 = C;
-        }
-        else if (h1 < 5) {
-            R1 = x1;
-            G1 = 0;
-            B1 = C;
-        }
-        else if (h1 < 6) {
-            R1 = C;
-            G1 = 0;
-            B1 = x1;
-        }
-        const m = v - C;
-        let r = R1 + m;
-        let g = G1 + m;
-        let b = B1 + m;
-        return { r: r, g: g, b: b };
+        s /= 100;
+        v /= 100;
+        let f = (n, k = (n + h / 60) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+        return { r: f(5) * 255, g: f(3) * 255, b: f(1) * 255 };
     }
 
+    async getColorName(r, g, b) {
+        const c2n = await import("color-2-name")
+        let colorString = `rgb(${r}, ${g}, ${b})`;
+        let c = c2n.closest(colorString, colourList);
+        return c;
+    }
 
     override preProcessOutputReport(report: any) {
         if (this.context.colorSpace == "xyY") {
@@ -169,30 +140,25 @@ export class colorLight extends dimmableLight {
         }
     }
 
-    override setStatus() {
-        import("color-2-name")
-            .then((C) => {
-                try {
-                    let { r, g, b } = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
-                    let c = C.closest(`rgb(${r}, ${g}, ${b})`);
-                    console.log("color name: " + c.name);
-                    this.node.warn(c);
+    async getStatusText() {
+        if (Object.hasOwn(this.context, "colorName") && this.context.colorName) {
+            return this.context.colorName;
+        }
+        const col = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness)
+        let c = await this.getColorName(col.r, col.g, col.b);
+        this.context.colorName = c.name;
+        this.saveContext();
+        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c.name}`;
+    }
 
-                    let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c.name}`;
-                    this.node.status({
-                        fill: "green",
-                        shape: "dot",
-                        text: text
-                    });
-                } catch (e) {
-                    console.log(e);
-                }
-            })
-            .catch((e) => {
-                console.log("problem important color2name");
-                console.log(e);
-            });
-    };
+    override async setStatus() {
+        let text = await this.getStatusText();
+        this.node.status({
+            fill: "green",
+            shape: "dot",
+            text: text
+        })
+    }
 
 
     override listenForChange_postProcess(report: any = null) {
