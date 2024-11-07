@@ -103,6 +103,8 @@ export class BaseEndpoint {
                 //setTimeout(() => { this.setStatus() }, 1000);
                 this.setDefault("lastHeardFrom", "");
                 this.saveContext();
+                console.log("attributes");
+                console.log(this.attributes);
                 matterHub.addDevice(this.endpoint);
             } catch (e) {
                 console.error(e);
@@ -390,9 +392,10 @@ export class BaseEndpoint {
         this.listenForClose();
     }
     listenForClose() {
-        this.node.on("close", () => {
+        /*this.node.on("close", () => {
             matterHub.removeDevice(this.node.id);
         });
+        */
     }
     lcFirst(val) {
         return val.charAt(0).toLowerCase() + val.slice(1);

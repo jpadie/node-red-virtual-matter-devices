@@ -24,9 +24,9 @@ class dimmableLight extends onOffLight_1.onOffLight {
         };
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 1, unit: "" }
+            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
         };
-        this.setSerialNumber("dmLt-");
+        this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
     }
     getVerbose(item, value) {
         switch (item) {

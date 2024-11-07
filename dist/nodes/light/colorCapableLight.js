@@ -31,10 +31,10 @@ class colorLight extends dimmableLight_1.dimmableLight {
             ...this.mapping,
             colorX: { colorControl: "currentX", multiplier: 65536, unit: "" },
             colorY: { colorControl: "currentY", multiplier: 65536, unit: "" },
-            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "" },
-            saturation: { colorControl: "currentSaturation", multiplier: 1, unit: "" }
+            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg" },
+            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%" }
         };
-        this.setSerialNumber("clLt-");
+        this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
         this.setDefault("hue", 0);
         this.setDefault("saturation", 0);
         this.setDefault("colorX", 0);
@@ -155,9 +155,10 @@ class colorLight extends dimmableLight_1.dimmableLight {
         import("color-2-name")
             .then((C) => {
             try {
-                let { r, g, b } = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness / 2.55);
+                let { r, g, b } = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
                 let c = C.closest(`rgb(${r}, ${g}, ${b})`);
                 console.log("color name: " + c.name);
+                this.node.warn(c);
                 let text = `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${c.name}`;
                 this.node.status({
                     fill: "green",

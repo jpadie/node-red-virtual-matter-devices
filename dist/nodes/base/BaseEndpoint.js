@@ -96,6 +96,8 @@ class BaseEndpoint {
                 this.setStatus();
                 this.setDefault("lastHeardFrom", "");
                 this.saveContext();
+                console.log("attributes");
+                console.log(this.attributes);
                 server_1.matterHub.addDevice(this.endpoint);
             }
             catch (e) {
@@ -367,9 +369,6 @@ class BaseEndpoint {
         this.listenForClose();
     }
     listenForClose() {
-        this.node.on("close", () => {
-            server_1.matterHub.removeDevice(this.node.id);
-        });
     }
     lcFirst(val) {
         return val.charAt(0).toLowerCase() + val.slice(1);

@@ -169,6 +169,9 @@ class MatterHub {
     }
 
     public async killDevice(id: string) {
+        console.log("in kill device for " + id);
+        console.log("++++++++++++++++++");
+        return;
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].destroy();
             delete (this.endpoints[id]);
@@ -176,6 +179,9 @@ class MatterHub {
     }
 
     public async removeDevice(id: string): Promise<Boolean> {
+        return true;
+        console.log("removing device " + id);
+        console.log("+++++++++++++++++++++++++++++++++++");
         let response = false;
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].close();
@@ -185,9 +191,12 @@ class MatterHub {
             console.debug("Not removing endpoint as endpoint ID does not exist: " + id);
         }
         if (Object.keys(this.endpoints).length == 0) {
+
             await this.shutDown();
         }
         return response;
+
+
     }
 
     public async shutDown() {

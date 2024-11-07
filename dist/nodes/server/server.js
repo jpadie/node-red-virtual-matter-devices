@@ -157,12 +157,18 @@ class MatterHub {
         this.deploy();
     }
     async killDevice(id) {
+        console.log("in kill device for " + id);
+        console.log("++++++++++++++++++");
+        return;
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].destroy();
             delete (this.endpoints[id]);
         }
     }
     async removeDevice(id) {
+        return true;
+        console.log("removing device " + id);
+        console.log("+++++++++++++++++++++++++++++++++++");
         let response = false;
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].close();
