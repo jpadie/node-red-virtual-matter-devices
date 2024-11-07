@@ -23,9 +23,14 @@ class MatterHub {
     private matterServer: any;
     private endpoints: {} = {};
     private deviceStorage: any;
+    private shuttingDown: boolean = false;
 
     private constructor() {
         this.init();
+        console.log("++++++++++++++++");
+        console.log("restarting matterHub")
+        console.log("++++++++++++++++");
+
     }
 
     private async loadVars() {
@@ -137,6 +142,10 @@ class MatterHub {
 
     }
     public addDevice(endpoint: Endpoint) {
+        if (this.shuttingDown) {
+            this.shuttingDown = false;
+            this.deploy();
+        }
         if (!this.started || !this.aggregator) {
             this.endpoints[endpoint.id] = endpoint;
         } else {
@@ -199,7 +208,15 @@ class MatterHub {
 
     }
 
+    public timeToClose() {
+        if (!this.shuttingDown) {
+            this.shuttingDown = true;
+
+            this.shutDown();
+        }
+    }
     public async shutDown() {
+        this.started = false;
         await this.matterServer.cancel();
     }
 }

@@ -369,6 +369,9 @@ class BaseEndpoint {
         this.listenForClose();
     }
     listenForClose() {
+        this.node.on("close", () => {
+            server_1.matterHub.timeToClose();
+        });
     }
     lcFirst(val) {
         return val.charAt(0).toLowerCase() + val.slice(1);

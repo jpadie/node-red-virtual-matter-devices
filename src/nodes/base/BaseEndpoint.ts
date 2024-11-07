@@ -392,10 +392,9 @@ export class BaseEndpoint {
         this.listenForClose();
     }
     listenForClose() {
-        /*this.node.on("close", () => {
-            matterHub.removeDevice(this.node.id);
+        this.node.on("close", () => {
+            matterHub.timeToClose();
         });
-        */
     }
     lcFirst(val) {
         return val.charAt(0).toLowerCase() + val.slice(1);
