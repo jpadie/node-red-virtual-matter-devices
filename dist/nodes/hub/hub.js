@@ -6,11 +6,15 @@ const server_1 = require("../server/server");
 module.exports = (RED) => {
     function MatterHub(config) {
         RED.nodes.createNode(this, config);
+        this.status({
+            fill: "green",
+            shape: "dot",
+            text: server_1.matterHub.getStatus().commissioned ? "Commissioned" : "Not commissioned"
+        });
     }
     RED.nodes.registerType('matter-hub-status', MatterHub);
     RED.httpAdmin.post("/matter-hub/:id", function (req, res) {
         const node = RED.nodes.getNode(req.params.id);
-        console.log(req.body);
         if (node == null) {
             res.sendStatus(404);
             return;

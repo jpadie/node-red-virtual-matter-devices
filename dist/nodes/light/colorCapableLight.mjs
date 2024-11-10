@@ -1,14 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.colorLight = void 0;
-require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const dimmableLight_js_1 = require("./dimmableLight.js");
-const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
-const color_control_1 = require("@project-chip/matter.js/behaviors/color-control");
-const colourList_js_1 = require("./colourList.js");
-class colorLight extends dimmableLight_js_1.dimmableLight {
+import "@project-chip/matter-node.js";
+import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
+import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { dimmableLight } from "node-red-contrib-matter.js/src/nodes/light/dimmableLight.js";
+import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
+import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
+import { colourList } from "node-red-contrib-matter.js/src/nodes/light/colourList.js";
+import { closest } from 'color-2-name';
+export class colorLight extends dimmableLight {
     constructor(node, config, _name = '') {
         let name = config.name || _name || "Color Light";
         super(node, config, name);
@@ -30,10 +28,10 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         };
         this.mapping = {
             ...this.mapping,
-            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 255 },
-            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 255 }
+            colorX: { colorControl: "currentX", multiplier: 65536, unit: "" },
+            colorY: { colorControl: "currentY", multiplier: 65536, unit: "" },
+            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg" },
+            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%" }
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
         this.setDefault("hue", 0);
@@ -92,10 +90,9 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         let f = (n, k = (n + h / 60) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
         return { r: f(5) * 255, g: f(3) * 255, b: f(1) * 255 };
     }
-    async getColorName(r, g, b) {
-        const c2n = await import("color-2-name");
+    getColorName(r, g, b) {
         let colorString = `rgb(${r}, ${g}, ${b})`;
-        let c = c2n.closest(colorString, colourList_js_1.colourList);
+        let c = closest(colorString, colourList);
         return c.name;
     }
     convertXYtoHSV(x, y) {
@@ -136,51 +133,42 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
             v: percentRoundFn(v * 100)
         };
     }
-    async preProcessOutputReport(report) {
+    preProcessOutputReport(report) {
+        this.node.warn(report);
         if (Object.hasOwn(report, "colorX")) {
             report.colorY = this.context.colorY;
             const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
-            const color = await this.getColorName(rgb.r, rgb.g, rgb.b);
+            const color = this.getColorName(rgb.r, rgb.g, rgb.b);
             this.context.colorName = color;
             this.saveContext();
         }
         else if (Object.hasOwn(report, "colorY")) {
-            report.colorX = this.context.colorX;
+            report.colorX = this.context.colorY;
             const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
-            this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
+            this.context.colorName = this.getColorName(rgb.r, rgb.g, rgb.b);
             this.saveContext();
         }
         else if (Object.hasOwn(report, "hue") || Object.hasOwn(report, "saturation")) {
             const rgb = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
-            this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
+            this.context.colorName = this.getColorName(rgb.r, rgb.g, rgb.b);
             this.saveContext();
         }
+        this.node.warn(report);
         return report;
     }
     async getStatusText() {
         if (Object.hasOwn(this.context, "colorName") && this.context.colorName) {
         }
         else {
-            let col, c;
-            switch (this.context.colorSpace) {
-                case "xyY":
-                    col = this.convertXYtoRGB(this.context.colorX, this.context.colorY);
-                    c = await this.getColorName(col.r, col.g, col.b);
-                    break;
-                case "hsv":
-                    col = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
-                    c = await this.getColorName(col.r, col.g, col.b);
-                    break;
-                default:
-                    c = "unknown";
-            }
+            const col = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
+            let c = await this.getColorName(col.r, col.g, col.b);
             this.context.colorName = c;
             this.saveContext();
         }
-        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: ${this.context.colorName}`;
+        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)} Color: ${this.context.colorName}`;
     }
     async setStatus() {
-        const text = await this.getStatusText();
+        let text = await this.getStatusText();
         this.node.status({
             fill: "green",
             shape: "dot",
@@ -223,7 +211,7 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, color_control_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
+            this.endpoint = await new Endpoint(DimmableLightDevice.with(BridgedDeviceBasicInformationServer, ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
         }
         catch (e) {
             this.node.error(e);
@@ -231,5 +219,4 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         }
     }
 }
-exports.colorLight = colorLight;
-//# sourceMappingURL=colorCapableLight.js.map
+//# sourceMappingURL=colorCapableLight.mjs.map

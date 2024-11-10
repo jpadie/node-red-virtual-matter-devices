@@ -7,7 +7,7 @@ export interface RGBVALUE {
 export type RGBCOLORDEF = [number, number, number, string];
 export type RGBDEF = [number, number, number];
 
-const colourList: RGBCOLORDEF[] = [
+export const colourList: RGBCOLORDEF[] = [
     [
         201,
         63,
@@ -181455,5 +181455,3 @@ const colourList: RGBCOLORDEF[] = [
         "Zürich White"
     ]
 ]
-
-export default colourList

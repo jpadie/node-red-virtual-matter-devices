@@ -10,7 +10,14 @@ module.exports = (RED: NodeAPI): void => {
     function MatterHub(this: Node, config: any) {
 
 
+
         RED.nodes.createNode(this, config);
+
+        this.status({
+            fill: "green",
+            shape: "dot",
+            text: matterHub.getStatus().commissioned ? "Commissioned" : "Not commissioned"
+        })
 
     }
     RED.nodes.registerType('matter-hub-status', MatterHub);
@@ -19,7 +26,7 @@ module.exports = (RED: NodeAPI): void => {
         "/matter-hub/:id",
         function (req, res) {
             const node = RED.nodes.getNode(req.params.id);
-            console.log(req.body);
+            //console.log(req.body);
             if (node == null) {
                 res.sendStatus(404);
                 return;

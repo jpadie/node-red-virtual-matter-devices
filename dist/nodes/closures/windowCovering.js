@@ -18,40 +18,64 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
             tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%" }
         };
         let withs = [];
-        this.attributes.windowCovering = {};
-        switch (this.config.windowCoveringType) {
-            case cluster_1.WindowCovering.WindowCoveringType.TiltBlindTiltOnly:
+        let windowCovering;
+        let conformance = {
+            [cluster_1.WindowCovering.WindowCoveringType.Rollershade]: "LF",
+            [cluster_1.WindowCovering.WindowCoveringType.Rollershade2Motor]: "LF",
+            [cluster_1.WindowCovering.WindowCoveringType.RollershadeExterior]: "LF",
+            [cluster_1.WindowCovering.WindowCoveringType.RollershadeExterior2Motor]: "LF",
+            [cluster_1.WindowCovering.WindowCoveringType.Drapery]: "LF",
+            [cluster_1.WindowCovering.WindowCoveringType.Awning]: "LF",
+            [cluster_1.WindowCovering.WindowCoveringType.Shutter]: "LF|TL",
+            [cluster_1.WindowCovering.WindowCoveringType.TiltBlindTiltOnly]: "TL",
+            [cluster_1.WindowCovering.WindowCoveringType.TiltBlindLift]: "LFTL",
+            [cluster_1.WindowCovering.WindowCoveringType.ProjectorScreen]: "LF"
+        };
+        switch (conformance[this.config.windowCoveringType]) {
+            case "TL":
                 withs.push(cluster_1.WindowCovering.Feature.Tilt);
                 withs.push(cluster_1.WindowCovering.Feature.PositionAwareTilt);
                 this.setDefault("tilt", 0);
-                this.attributes.windowCovering.currentPositionTiltPercentage = this.context.tilt;
                 this.prune("lift");
-                this.attributes.windowCovering.type = cluster_1.WindowCovering.WindowCoveringType.TiltBlindTiltOnly;
+                windowCovering = {
+                    currentPositionTiltPercentage: this.context.tilt,
+                    type: this.config.windowCoveringType,
+                    endProductType: cluster_1.WindowCovering.EndProductType.TiltOnlyInteriorBlind
+                };
                 break;
-            case cluster_1.WindowCovering.WindowCoveringType.TiltBlindLift:
+            case "LFTL":
                 withs.push(cluster_1.WindowCovering.Feature.Tilt);
                 withs.push(cluster_1.WindowCovering.Feature.PositionAwareTilt);
                 this.setDefault("tilt", 0);
-                this.attributes.windowCovering.currentPositionTiltPercentage = this.context.tilt;
                 withs.push(cluster_1.WindowCovering.Feature.Lift);
                 withs.push(cluster_1.WindowCovering.Feature.PositionAwareLift);
                 this.setDefault("lift", 0);
-                this.attributes.windowCovering.currentPositionTiltPercentage = this.context.lift;
-                this.attributes.windowCovering.type = cluster_1.WindowCovering.WindowCoveringType.TiltBlindLift;
+                windowCovering = {
+                    currentPositionLiftPercentage: this.context.lift,
+                    type: this.config.windowCoveringType,
+                    currentPositionTiltPercentage: this.context.tilt,
+                    endProductType: cluster_1.WindowCovering.EndProductType.InteriorBlind
+                };
                 break;
+            case "LF":
+            case "LF|TL":
             default:
                 withs.push(cluster_1.WindowCovering.Feature.Lift);
                 withs.push(cluster_1.WindowCovering.Feature.PositionAwareLift);
                 this.setDefault("lift", 0);
-                this.attributes.windowCovering.currentPositionTiltPercentage = this.context.lift;
                 this.prune("tilt");
-                this.attributes.windowCovering.type = this.config.windowCoveringType;
+                windowCovering = {
+                    currentPositionLiftPercentage: this.context.lift,
+                    type: this.config.windowCoveringType,
+                    endProductType: cluster_1.WindowCovering.EndProductType.RollerShutter
+                };
                 break;
         }
-        this.attributes.serialNumber = "wcv-" + this.attributes.serialNumber;
+        this.setSerialNumber("wcv-");
         this.withs = withs;
+        this.attributes.windowCovering = windowCovering;
     }
-    setStatus() {
+    getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {
             text += `Lift: ${this.context.lift} `;
@@ -59,11 +83,14 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         if (Object.hasOwn(this.context, "tilt")) {
             text += `Tilt: ${this.context.tilt} `;
         }
+        return text;
+    }
+    setStatus() {
         try {
             this.node.status({
                 fill: "green",
                 shape: "dot",
-                text: text
+                text: this.getStatusText()
             });
         }
         catch (e) {

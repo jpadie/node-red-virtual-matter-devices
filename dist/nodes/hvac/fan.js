@@ -156,6 +156,9 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
     async deploy() {
         try {
             this.endpoint = await new endpoint_1.Endpoint(FanDevice_1.FanDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, FanDevice_2.FanRequirements.FanControlServer.with(...this.features)), this.attributes);
+            this.endpoint.set({
+                fanControl: {}
+            });
         }
         catch (e) {
             this.node.error(e);

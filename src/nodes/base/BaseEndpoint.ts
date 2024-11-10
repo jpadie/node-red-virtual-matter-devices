@@ -59,9 +59,14 @@ export class BaseEndpoint {
         this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
     }
     prune(item) {
+        //console.log("in prune");
+        //console.log(item);
         if (Object.hasOwn(this.mapping, item)) {
             if (!delete this.mapping[item]) {
                 console.log("Error deleting mapping item: " + item)
+            } else {
+                //      console.log("deleted mapping item");
+                //    console.log(this.mapping);
             }
         }
         if (Object.hasOwn(this.context, item)) {
@@ -103,8 +108,8 @@ export class BaseEndpoint {
                 //setTimeout(() => { this.setStatus() }, 1000);
                 this.setDefault("lastHeardFrom", "");
                 this.saveContext();
-                console.log("attributes");
-                console.log(this.attributes);
+                // console.log("attributes");
+                //   console.log(this.attributes);
                 matterHub.addDevice(this.endpoint);
             } catch (e) {
                 console.error(e);
@@ -151,13 +156,20 @@ export class BaseEndpoint {
         if (item) return value;
         return value;
     }
-    preProcessOutputReport(report) {
+    async preProcessOutputReport(report) {
         return report;
     }
+    /**
+     * This method listens for changes established by the matter subsystem.
+     * Typically it will only ever receive one change at a time.
+     * 
+     * @returns 
+     */
     listenForChange() {
         if (!this.endpoint) {
-            console.error("endpoint is not established");
+            console.error("endpoint is not established.  Waiting 0.5 seconds");
             console.log(this.endpoint);
+            setInterval(this.listenForChange, 500);
             return;
         }
 
@@ -167,9 +179,9 @@ export class BaseEndpoint {
 
             if (typeof this.mapping[item][key] == "string") {
                 let s: string = `${this.mapping[item][key]}$Changed`;
-                console.log(`listening at ${key}.${s}`);
+                //console.log(`listening at ${key}.${s}`);
                 try {
-                    this.endpoint.events[key][s].on((value) => {
+                    this.endpoint.events[key][s].on(async (value) => {
                         // this.node.warn({ key: key, item: s, value: value });
                         value = this.preProcessDeviceChanges(value, s)
                         if ((this.skip)) {
@@ -194,6 +206,7 @@ export class BaseEndpoint {
                             }
                             if (this.mapping[item].unit == "") delete report.unit;
                             //reports.push(report);
+                            report = await this.preProcessOutputReport(report)
                             this.node.send({ payload: report });
 
                             this.listenForChange_postProcess(report);
@@ -214,9 +227,9 @@ export class BaseEndpoint {
                 let k = ks[0];
 
                 let s: string = `${k}$Changed`;
-                console.log(`listening at ${key}.${s}`);
+                //console.log(`listening at ${key}.${s}`);
                 try {
-                    this.endpoint.events[key][s].on((value) => {
+                    this.endpoint.events[key][s].on(async (value) => {
                         value = this.preProcessDeviceChanges(value, s)
                         if (this.skip) {
                             this.skip = false;
@@ -240,7 +253,7 @@ export class BaseEndpoint {
 
                             if (this.mapping[item].unit == "") delete report.unit;
 
-                            report = this.preProcessOutputReport(report)
+                            report = await this.preProcessOutputReport(report)
                             this.node.send({ payload: report });
 
                             this.listenForChange_postProcess(report);
@@ -281,16 +294,35 @@ export class BaseEndpoint {
                     if (this.mapping[item].multiplier[0] != 1) {
                         value = Math.round(this.mapping[item].multiplier[0] * value);
                     }
+                    if (Object.hasOwn(this.mapping[item], "min")) {
+                        value = Math.max(this.mapping[item].min, value);
+                    }
+                    if (Object.hasOwn(this.mapping[item], "max")) {
+                        value = Math.min(this.mapping[item].max, value);
+                    }
+                    //now check if needs an update
+
+                    //if (this.context[item] != value) {
+                    //    console.log("value is different");
                     updates.push({
                         [key]: { [this.mapping[item][key]]: value }
                     });
+                    //}
                 } else {
                     if (this.mapping[item].multiplier != 1) {
                         value = Math.round(this.mapping[item].multiplier * value);
                     }
+                    if (Object.hasOwn(this.mapping[item], "min")) {
+                        value = Math.max(this.mapping[item].min, value);
+                    }
+                    if (Object.hasOwn(this.mapping[item], "max")) {
+                        value = Math.min(this.mapping[item].max, value);
+                    }
+                    //if (this.context[item] != value) {
                     updates.push({
                         [key]: { [this.mapping[item][key]]: value }
                     });
+                    //}
                 }
             } else if (typeof this.mapping[item][key] == "object") {
                 //        console.log("key value is an object");
@@ -300,6 +332,13 @@ export class BaseEndpoint {
                     if (this.mapping[item].multiplier[0] != 1) {
                         value = Math.round(this.mapping[item].multiplier[0] * value);
                     }
+                    if (Object.hasOwn(this.mapping[item], "min")) {
+                        value = Math.max(this.mapping[item].min, value);
+                    }
+                    if (Object.hasOwn(this.mapping[item], "max")) {
+                        value = Math.min(this.mapping[item].max, value);
+                    }
+                    //if (this.context[item] != value) {
                     updates.push({
                         [key]: {
                             [this.mapping[item][key]]: {
@@ -307,10 +346,18 @@ export class BaseEndpoint {
                             }
                         }
                     });
+                    // }
                 } else {
                     if (this.mapping[item].multiplier != 1) {
                         value = Math.round(this.mapping[item].multiplier * value);
                     }
+                    if (Object.hasOwn(this.mapping[item], "min")) {
+                        value = Math.max(this.mapping[item].min, value);
+                    }
+                    if (Object.hasOwn(this.mapping[item], "max")) {
+                        value = Math.min(this.mapping[item].max, value);
+                    }
+                    //if (this.context[item] != value) {
                     updates.push({
                         [key]: {
                             [this.mapping[item][key]]: {
@@ -318,6 +365,7 @@ export class BaseEndpoint {
                             }
                         }
                     });
+                    //}
                 }
 
             }
@@ -330,7 +378,11 @@ export class BaseEndpoint {
                 u = Object.assign(u, updates[i]);
             }
             try {
-                this.endpoint.set(u);
+                if (this.endpoint.lifecycle.isReady) {
+                    //    console.log("requested update");
+                    //     console.log(u);
+                    this.endpoint.set(u);
+                }
             } catch (e) {
                 console.log(e);
                 console.log(updates);
@@ -342,13 +394,6 @@ export class BaseEndpoint {
 
 
     processIncomingMessages(msg, send, done) {
-        if (Object.hasOwn(msg.payload, "payload_raw")) {
-            msg.payload.messageSource = "Z2M";
-        }
-        if (!Object.hasOwn(msg.payload, "messageSource")) {
-            msg.payload.messageSource = "Manual Input";
-        }
-
 
         if (this.config.passThroughMessage) {
             //this.node.warn("message received");
@@ -379,10 +424,16 @@ export class BaseEndpoint {
         }
     }
 
+    /**
+     * this method listens for messages received by node-red on the input to the node
+     */
     listenForMessages() {
-        this.node.on("input", (msg, send, done) => {
+        this.node.on("input", (msg: any, send, done) => {
             //console.log("incoming message in listen for messages");
             //console.log(msg);
+            if (Object.hasOwn(msg, "payload") && typeof msg.payload == "object") {
+                msg.payload = Object.assign(msg.payload, { messageSource: "node-red input" });
+            }
             this.processIncomingMessages(msg, send, done);
         });
     }

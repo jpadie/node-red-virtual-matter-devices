@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const colourList = [
+exports.colourList = void 0;
+exports.colourList = [
     [
         201,
         63,
@@ -181448,5 +181449,4 @@ const colourList = [
         "Zürich White"
     ]
 ];
-exports.default = colourList;
 //# sourceMappingURL=colourList.js.map

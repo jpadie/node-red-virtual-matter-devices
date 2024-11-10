@@ -187,7 +187,16 @@ export class fan extends BaseEndpoint {
                 FanDevice.with(
                     BridgedDeviceBasicInformationServer,
                     FanRequirements.FanControlServer.with(...this.features)
-                ), this.attributes);
+                ),
+                this.attributes);
+
+            this.endpoint.set(
+                {
+                    fanControl: {
+
+                    }
+                });
+
         } catch (e) {
             this.node.error(e);
         }
