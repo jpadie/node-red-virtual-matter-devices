@@ -67,7 +67,7 @@ To install, navigate to your node-red folder (typically ~/.node-red) and run thi
 
     npm i @jpadie/node-red-node-red-virtual-matter-devices@latest
 
-Once out of testing this project will be available via the Node-Red package manager.
+Once out of testing this project will be available via the Node-Red package manager.  
 
 
 ## Getting started
@@ -263,4 +263,3 @@ Depending on the configuration of your air purifier one or more of these paramet
 
     }
     
-
