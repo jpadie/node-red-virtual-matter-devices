@@ -47,8 +47,8 @@ class MatterHub {
         })
     }
 
-    private saveVars() {
-        this.deviceStorage.set({
+    private async saveVars() {
+        await this.deviceStorage.set({
             passcode: this.passcode,
             discriminator: this.discriminator,
             uniqueid: this.id
@@ -105,42 +105,37 @@ class MatterHub {
                 uniqueId: this.id.substring(0, 30),
             }
         };
-        console.log(serverOpts);
-        ServerNode
-            .create(serverOpts)
-            .then((resolve) => {
-                this.matterServer = resolve;
-                this.aggregator = new Endpoint(AggregatorEndpoint, { id: "matterHub" });
-                this.matterServer.add(this.aggregator)
-                    .then(() => {
-                        this.started = true;
-                        for (const e in this.endpoints) {
-                            this.addDevice(this.endpoints[e]);
-                        }
-                        this.matterServer.bringOnline().then(() => {
-                            setTimeout(() => {
-                                logEndpoint(EndpointServer.forEndpoint(this.matterServer));
-                            }, 3500);
-                        }).catch((error) => {
-                            console.log("problem bringing matter server online", error);
-                        })
-                    }).catch((e) => {
-                        console.log(e)
-                    });
+        //console.log(serverOpts);
 
+        try {
+            this.matterServer = await ServerNode.create(serverOpts);
 
-                this.commissioned = this.matterServer.lifecycle.isCommissioned;
-                this.online = this.matterServer.lifecycle.isOnline;
+            this.aggregator = new Endpoint(AggregatorEndpoint, { id: "matterHub" });
+            await this.matterServer.add(this.aggregator);
 
-                const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
-                this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
-                this.qrcode = QrCode.get(qrPairingCode);
-                this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
-            }).catch((error) => {
-                console.error("Issue with matter server deployment", error);
-            });
+            this.started = true;
+            for (const e in this.endpoints) {
+                this.addDevice(this.endpoints[e]);
+            }
 
+            await this.matterServer.bringOnline();
+            setTimeout(() => {
+                logEndpoint(EndpointServer.forEndpoint(this.matterServer));
+            }, 3500);
+
+            this.commissioned = this.matterServer.lifecycle.isCommissioned;
+            this.online = this.matterServer.lifecycle.isOnline;
+
+            const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
+            this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
+            this.qrcode = QrCode.get(qrPairingCode);
+            this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
+        } catch (error) {
+            console.log(`[Matter Hub]: Error creating MatterHub. ${error}`);
+            console.trace();
+        }
     }
+
     public addDevice(endpoint: Endpoint) {
         if (this.shuttingDown) {
             this.shuttingDown = false;
@@ -170,11 +165,15 @@ class MatterHub {
     }
 
     public async reInitialise() {
-        await this.matterServer.cancel();
+        for (let endpoint in this.endpoints) {
+            await this.endpoints[endpoint].close();
+        }
+        await this.matterServer.destroy();
         // await this.matterServer.factoryReset();
+        //regenerate a new ID
         this.id = this.getID();
-        this.saveVars();
-        this.deploy();
+        await this.saveVars();
+        await this.deploy();
     }
 
     public async killDevice(id: string) {

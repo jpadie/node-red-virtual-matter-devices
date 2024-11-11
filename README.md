@@ -13,9 +13,9 @@ Some devices and features remain work in progress.
 Help files for the node input and outputs need to be double checked and tidied up.
 Internationalisation may be needed. 
 
-# Errors and Issues
+# Errors, Issues & Feature Requests
 
-Please log all errors and issues via [github](https://github.com/jpadie/node-red-virtual-matter-devices/issues).
+Please log all errors, issues and feature requests via [github](https://github.com/jpadie/node-red-virtual-matter-devices/issues).
 
 # Supported Devices
 
@@ -71,6 +71,7 @@ Once out of testing this project will be available via the Node-Red package mana
 
 
 ## Getting started
+
 Place a Status node on your canvas.  This is not a hard requirement but the status node will show the QR Code you need for commissioning.
 
 Add device nodes as you want.  Most devices need configuration in the editor dialog (double click the node).
@@ -78,7 +79,21 @@ Add device nodes as you want.  Most devices need configuration in the editor dia
 It will help you to give each device a unique and meaningful name, although most controllers support changing the name in their UI.  
 
 ## Status Node
-The status node will provide information about the commissioning and status of the matter server.  If the server is not commissioned, a QR code is displayed in the edit dialog. 
+
+The status node will provide information about the commissioning and status of the matter server.  
+
+If the Matter Hub is not commissioned, a QR code is displayed in the edit dialog.  Flash this code (or use the manual pairing code) into your controller app and the pairing should occur automatically.  Many controllers complain that a device is not standards compliant ("certified"). This warning can be ignored. 
+
+If you run into unsolvable trouble and want to do a "factory reset" then this can be done by clicking ReInit in the Edit Dialog of the Status Node.  
+
+A ReInit:
+1. removes each device from the Matter Hub (_some_ of the device state is maintained by Node-Red but measured values (for example) will be lost.
+2.  deletes the Matter Hub; and
+3.  recreates the Matter Hub and adds the endpoints afresh.
+
+You will need to recommission the Matter Hub after a ReInit. 
+
+NB Only do this as a last resort after checking all the detailed logs (make sure that node-red logging is set to Debug).  
 
 ## Outputs
 
@@ -263,3 +278,31 @@ Depending on the configuration of your air purifier one or more of these paramet
 
     }
     
+
+# Help! Node-Red won't start
+
+Your first port of call should be the log.  Checking your settings.js file and make sure that logging is set.  
+
+1.  Stop the node-red process.  If Node-Red is being run from the terminal then just use CTRL+C.  If it is being run as a service then use this command
+
+    sudo service nodered stop
+
+2.  Edit settings.js (typically in ~/.node-red/).  Use these settings
+
+    logging : {
+        console: {
+            level: "trace",
+            metrics: false,
+            audit: false
+        }
+    }
+
+3.  save the settings file. 
+
+4.  restart Node-Red and see what the errors are that are logged just before the process crashes.  Typically you will be able to identify the node/device that is causing an issue from the ID.  Make a node of this ID
+
+5.  Start Node-Red in safe mode
+
+    node-red --safe
+
+6.  in the Node-Red browser search for the ID that you noted down and remove the node.  If the issue persists then please raise an issue and be sure to provide information how you have configured that device.

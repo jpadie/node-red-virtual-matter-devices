@@ -45,8 +45,8 @@ class MatterHub {
             uniqueid: this.id
         });
     }
-    saveVars() {
-        this.deviceStorage.set({
+    async saveVars() {
+        await this.deviceStorage.set({
             passcode: this.passcode,
             discriminator: this.discriminator,
             uniqueid: this.id
@@ -98,37 +98,29 @@ class MatterHub {
                 uniqueId: this.id.substring(0, 30),
             }
         };
-        console.log(serverOpts);
-        node_1.ServerNode
-            .create(serverOpts)
-            .then((resolve) => {
-            this.matterServer = resolve;
+        try {
+            this.matterServer = await node_1.ServerNode.create(serverOpts);
             this.aggregator = new endpoint_2.Endpoint(AggregatorEndpoint_1.AggregatorEndpoint, { id: "matterHub" });
-            this.matterServer.add(this.aggregator)
-                .then(() => {
-                this.started = true;
-                for (const e in this.endpoints) {
-                    this.addDevice(this.endpoints[e]);
-                }
-                this.matterServer.bringOnline().then(() => {
-                    setTimeout(() => {
-                        (0, device_1.logEndpoint)(endpoint_1.EndpointServer.forEndpoint(this.matterServer));
-                    }, 3500);
-                }).catch((error) => {
-                    console.log("problem bringing matter server online", error);
-                });
-            }).catch((e) => {
-                console.log(e);
-            });
+            await this.matterServer.add(this.aggregator);
+            this.started = true;
+            for (const e in this.endpoints) {
+                this.addDevice(this.endpoints[e]);
+            }
+            await this.matterServer.bringOnline();
+            setTimeout(() => {
+                (0, device_1.logEndpoint)(endpoint_1.EndpointServer.forEndpoint(this.matterServer));
+            }, 3500);
             this.commissioned = this.matterServer.lifecycle.isCommissioned;
             this.online = this.matterServer.lifecycle.isOnline;
             const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
             this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
             this.qrcode = schema_1.QrCode.get(qrPairingCode);
             this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
-        }).catch((error) => {
-            console.error("Issue with matter server deployment", error);
-        });
+        }
+        catch (error) {
+            console.log(`[Matter Hub]: Error creating MatterHub. ${error}`);
+            console.trace();
+        }
     }
     addDevice(endpoint) {
         if (this.shuttingDown) {
@@ -159,10 +151,13 @@ class MatterHub {
         };
     }
     async reInitialise() {
-        await this.matterServer.cancel();
+        for (let endpoint in this.endpoints) {
+            await this.endpoints[endpoint].close();
+        }
+        await this.matterServer.destroy();
         this.id = this.getID();
-        this.saveVars();
-        this.deploy();
+        await this.saveVars();
+        await this.deploy();
     }
     async killDevice(id) {
         console.log("in kill device for " + id);
