@@ -2,11 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onOffLight = void 0;
 require("@project-chip/matter-node.js");
-const OnOffLightDevice_1 = require("@project-chip/matter.js/devices/OnOffLightDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+const devices_1 = require("@matter/main/devices");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
-const cluster_1 = require("@project-chip/matter.js/cluster");
+const clusters_1 = require("@matter/main/clusters");
 class onOffLight extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config, _name = '') {
         let name = config.name || _name || "On/Off Light";
@@ -15,7 +15,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
         this.attributes = {
             ...this.attributes,
             onOff: {
-                startUpOnOff: this.context.onoff ? cluster_1.OnOff.StartUpOnOff.On : cluster_1.OnOff.StartUpOnOff.Off,
+                startUpOnOff: this.context.onoff ? clusters_1.OnOff.StartUpOnOff.On : clusters_1.OnOff.StartUpOnOff.Off,
             },
         };
         this.mapping = {
@@ -66,7 +66,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(OnOffLightDevice_1.OnOffLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.OnOffLightDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
         }
         catch (e) {
             this.node.error(e);

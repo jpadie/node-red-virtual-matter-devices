@@ -3,12 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.fan = void 0;
 type: module;
 require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
-const FanDevice_1 = require("@project-chip/matter.js/devices/FanDevice");
-const FanDevice_2 = require("@project-chip/matter.js/devices/FanDevice");
-const cluster_1 = require("@project-chip/matter.js/cluster");
+const devices_1 = require("@matter/main/devices");
+const devices_2 = require("@matter/main/devices");
+const clusters_1 = require("@matter/main/clusters");
 class fan extends BaseEndpoint_1.BaseEndpoint {
     features = [];
     constructor(node, config, _name = "") {
@@ -30,7 +30,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
         this.setSerialNumber("fan-");
         this.attributes.fanControl = {};
         if (this.config.supportsRocking) {
-            this.features.push(cluster_1.FanControl.Feature.Rocking);
+            this.features.push(clusters_1.FanControl.Feature.Rocking);
             this.attributes.fanControl.rockSupport = {};
             this.attributes.fanControl.rockSetting = {};
             if ((this.config.supportsRocking & (1 << 0)) !== 0) {
@@ -64,7 +64,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.prune("rockUpDown");
         }
         if (this.config.supportsWind) {
-            this.features.push(cluster_1.FanControl.Feature.Wind);
+            this.features.push(clusters_1.FanControl.Feature.Wind);
             this.attributes.fanControl.windSupport = {};
             this.attributes.fanControl.windSetting = {};
             if ((this.config.supportsWind & (1 << 0)) !== 0) {
@@ -89,15 +89,15 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.prune("sleepWind");
         }
         if (this.config.supportsAirflow) {
-            this.features.push(cluster_1.FanControl.Feature.AirflowDirection);
-            this.setDefault("airFlow", cluster_1.FanControl.AirflowDirection.Forward);
+            this.features.push(clusters_1.FanControl.Feature.AirflowDirection);
+            this.setDefault("airFlow", clusters_1.FanControl.AirflowDirection.Forward);
             this.attributes.fanControl.airflowDirection = this.context.airFlow;
         }
         else {
             this.prune("airFlow");
         }
         if (this.config.supportsMultiSpeed) {
-            this.features.push(cluster_1.FanControl.Feature.MultiSpeed);
+            this.features.push(clusters_1.FanControl.Feature.MultiSpeed);
             this.setDefault("speedCurrent", 0);
             this.attributes.fanControl.speedCurrent = this.context.speedCurrent;
             this.setDefault("speedMax", 100);
@@ -108,8 +108,8 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.prune("speedSetting");
             this.prune("speedMax");
         }
-        this.attributes.fanControl.fanModeSequence = cluster_1.FanControl.FanModeSequence.OffLowMedHigh;
-        this.setDefault("fanMode", cluster_1.FanControl.FanMode.Off);
+        this.attributes.fanControl.fanModeSequence = clusters_1.FanControl.FanModeSequence.OffLowMedHigh;
+        this.setDefault("fanMode", clusters_1.FanControl.FanMode.Off);
         this.attributes.fanControl.fanMode = this.context.fanMode;
         this.setDefault("percentCurrent", 0);
         this.setDefault("percentSetting", 0);
@@ -129,7 +129,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
     getVerbose(item, value) {
         switch (item) {
             case "fanMode":
-                return (Object.keys(cluster_1.FanControl.FanMode)[Object.values(cluster_1.FanControl.FanMode).indexOf(value)]) || value;
+                return (Object.keys(clusters_1.FanControl.FanMode)[Object.values(clusters_1.FanControl.FanMode).indexOf(value)]) || value;
                 break;
             case "rockUpDown":
             case "rockLeftRight":
@@ -139,7 +139,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
                 return (value) ? "ON" : "OFF";
                 break;
             case "airFlow":
-                return (Object.keys(cluster_1.FanControl.AirflowDirection)[Object.values(cluster_1.FanControl.AirflowDirection).indexOf(value)]) || value;
+                return (Object.keys(clusters_1.FanControl.AirflowDirection)[Object.values(clusters_1.FanControl.AirflowDirection).indexOf(value)]) || value;
                 break;
             default:
                 return value;
@@ -155,7 +155,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(FanDevice_1.FanDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, FanDevice_2.FanRequirements.FanControlServer.with(...this.features)), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.FanDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, devices_2.FanRequirements.FanControlServer.with(...this.features)), this.attributes);
             this.endpoint.set({
                 fanControl: {}
             });

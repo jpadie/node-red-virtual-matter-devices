@@ -1,10 +1,12 @@
 import "@project-chip/matter-node.js";
-import { OnOffLightDevice } from "@project-chip/matter.js/devices/OnOffLightDevice";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { OnOffLightDevice } from "@matter/main/devices"
+    ;
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { OnOff } from "@project-chip/matter.js/cluster";
+import { OnOff } from "@matter/main/clusters";
+
 
 
 export class onOffLight extends BaseEndpoint {

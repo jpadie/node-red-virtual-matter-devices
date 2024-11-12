@@ -1,8 +1,8 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { HumiditySensorDevice } from "@project-chip/matter.js/devices/HumiditySensorDevice";
+import { HumiditySensorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 
 
 

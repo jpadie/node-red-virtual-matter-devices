@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.waterLeakDetector = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+require("@matter/node");
+const main_1 = require("@matter/main");
+const behaviors_1 = require("@matter/main/behaviors");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
-const WaterLeakDetectorDevice_1 = require("@project-chip/matter.js/devices/WaterLeakDetectorDevice");
 class waterLeakDetector extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
@@ -31,7 +32,7 @@ class waterLeakDetector extends BaseEndpoint_1.BaseEndpoint {
             stateValue: this.context.leaking ? true : false
         };
         try {
-            this.endpoint = await new endpoint_1.Endpoint(WaterLeakDetectorDevice_1.WaterLeakDetectorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.WaterLeakDetectorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
             this.listen();
             this.regularUpdate();
             this.setStatus();

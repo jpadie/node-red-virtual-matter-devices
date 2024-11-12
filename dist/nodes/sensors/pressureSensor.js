@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pressureSensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const PressureSensorDevice_1 = require("@project-chip/matter.js/devices/PressureSensorDevice");
+require("@matter/main");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 class pressureSensor extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
@@ -27,7 +28,7 @@ class pressureSensor extends BaseEndpoint_1.BaseEndpoint {
             }
         };
         try {
-            this.endpoint = await new endpoint_1.Endpoint(PressureSensorDevice_1.PressureSensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.PressureSensorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
             this.listen();
             this.regularUpdate();
             this.setStatus();

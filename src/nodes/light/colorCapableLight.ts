@@ -1,11 +1,11 @@
-import "@project-chip/matter-node.js";
-//import { ExtendedColorLightDevice } from "@project-chip/matter.js/devices/ExtendedColorLightDevice";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import "@matter/main";
+
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight.js";
-import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
-import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
+import { DimmableLightDevice } from "@matter/main/devices";
+import { ColorControlServer } from "@matter/main/behaviors";
 import { colourList } from "./colourList.js";
 
 

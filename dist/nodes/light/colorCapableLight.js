@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.colorLight = void 0;
-require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+require("@matter/main");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const dimmableLight_js_1 = require("./dimmableLight.js");
-const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
-const color_control_1 = require("@project-chip/matter.js/behaviors/color-control");
+const devices_1 = require("@matter/main/devices");
+const behaviors_2 = require("@matter/main/behaviors");
 const colourList_js_1 = require("./colourList.js");
 class colorLight extends dimmableLight_js_1.dimmableLight {
     constructor(node, config, _name = '') {
@@ -223,7 +223,7 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, color_control_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.DimmableLightDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, behaviors_2.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
         }
         catch (e) {
             this.node.error(e);

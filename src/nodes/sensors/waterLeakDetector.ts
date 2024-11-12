@@ -1,9 +1,9 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+require("@matter/node");
+import { Endpoint } from "@matter/main"
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { WaterLeakDetectorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { WaterLeakDetectorDevice } from "@project-chip/matter.js/devices/WaterLeakDetectorDevice";
-
 
 export class waterLeakDetector extends BaseEndpoint {
 

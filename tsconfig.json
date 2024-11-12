@@ -25,6 +25,7 @@
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "preserveConstEnums": true,
+        "strictPropertyInitialization": false
     },
     "include": [
         "src/nodes/hub/*.ts",

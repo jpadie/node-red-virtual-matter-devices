@@ -1,8 +1,8 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { LightSensorDevice } from "@project-chip/matter.js/devices/LightSensorDevice";
+import { LightSensorDevice } from "@matter/main/devices";
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 
 export class lightSensor extends BaseEndpoint {
 

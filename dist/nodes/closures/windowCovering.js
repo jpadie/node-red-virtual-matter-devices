@@ -2,11 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.windowCovering = void 0;
 require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const WindowCoveringDevice_1 = require("@project-chip/matter.js/devices/WindowCoveringDevice");
-const window_covering_1 = require("@project-chip/matter.js/behaviors/window-covering");
-const cluster_1 = require("@project-chip/matter.js/cluster");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
+const devices_1 = require("@matter/main/devices");
+const behaviors_2 = require("@matter/main/behaviors");
+const clusters_1 = require("@matter/main/clusters");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class windowCovering extends BaseEndpoint_1.BaseEndpoint {
     withs = [];
@@ -20,54 +20,54 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         let withs = [];
         let windowCovering;
         let conformance = {
-            [cluster_1.WindowCovering.WindowCoveringType.Rollershade]: "LF",
-            [cluster_1.WindowCovering.WindowCoveringType.Rollershade2Motor]: "LF",
-            [cluster_1.WindowCovering.WindowCoveringType.RollershadeExterior]: "LF",
-            [cluster_1.WindowCovering.WindowCoveringType.RollershadeExterior2Motor]: "LF",
-            [cluster_1.WindowCovering.WindowCoveringType.Drapery]: "LF",
-            [cluster_1.WindowCovering.WindowCoveringType.Awning]: "LF",
-            [cluster_1.WindowCovering.WindowCoveringType.Shutter]: "LF|TL",
-            [cluster_1.WindowCovering.WindowCoveringType.TiltBlindTiltOnly]: "TL",
-            [cluster_1.WindowCovering.WindowCoveringType.TiltBlindLift]: "LFTL",
-            [cluster_1.WindowCovering.WindowCoveringType.ProjectorScreen]: "LF"
+            [clusters_1.WindowCovering.WindowCoveringType.Rollershade]: "LF",
+            [clusters_1.WindowCovering.WindowCoveringType.Rollershade2Motor]: "LF",
+            [clusters_1.WindowCovering.WindowCoveringType.RollershadeExterior]: "LF",
+            [clusters_1.WindowCovering.WindowCoveringType.RollershadeExterior2Motor]: "LF",
+            [clusters_1.WindowCovering.WindowCoveringType.Drapery]: "LF",
+            [clusters_1.WindowCovering.WindowCoveringType.Awning]: "LF",
+            [clusters_1.WindowCovering.WindowCoveringType.Shutter]: "LF|TL",
+            [clusters_1.WindowCovering.WindowCoveringType.TiltBlindTiltOnly]: "TL",
+            [clusters_1.WindowCovering.WindowCoveringType.TiltBlindLift]: "LFTL",
+            [clusters_1.WindowCovering.WindowCoveringType.ProjectorScreen]: "LF"
         };
         switch (conformance[this.config.windowCoveringType]) {
             case "TL":
-                withs.push(cluster_1.WindowCovering.Feature.Tilt);
-                withs.push(cluster_1.WindowCovering.Feature.PositionAwareTilt);
+                withs.push(clusters_1.WindowCovering.Feature.Tilt);
+                withs.push(clusters_1.WindowCovering.Feature.PositionAwareTilt);
                 this.setDefault("tilt", 0);
                 this.prune("lift");
                 windowCovering = {
                     currentPositionTiltPercentage: this.context.tilt,
                     type: this.config.windowCoveringType,
-                    endProductType: cluster_1.WindowCovering.EndProductType.TiltOnlyInteriorBlind
+                    endProductType: clusters_1.WindowCovering.EndProductType.TiltOnlyInteriorBlind
                 };
                 break;
             case "LFTL":
-                withs.push(cluster_1.WindowCovering.Feature.Tilt);
-                withs.push(cluster_1.WindowCovering.Feature.PositionAwareTilt);
+                withs.push(clusters_1.WindowCovering.Feature.Tilt);
+                withs.push(clusters_1.WindowCovering.Feature.PositionAwareTilt);
                 this.setDefault("tilt", 0);
-                withs.push(cluster_1.WindowCovering.Feature.Lift);
-                withs.push(cluster_1.WindowCovering.Feature.PositionAwareLift);
+                withs.push(clusters_1.WindowCovering.Feature.Lift);
+                withs.push(clusters_1.WindowCovering.Feature.PositionAwareLift);
                 this.setDefault("lift", 0);
                 windowCovering = {
                     currentPositionLiftPercentage: this.context.lift,
                     type: this.config.windowCoveringType,
                     currentPositionTiltPercentage: this.context.tilt,
-                    endProductType: cluster_1.WindowCovering.EndProductType.InteriorBlind
+                    endProductType: clusters_1.WindowCovering.EndProductType.InteriorBlind
                 };
                 break;
             case "LF":
             case "LF|TL":
             default:
-                withs.push(cluster_1.WindowCovering.Feature.Lift);
-                withs.push(cluster_1.WindowCovering.Feature.PositionAwareLift);
+                withs.push(clusters_1.WindowCovering.Feature.Lift);
+                withs.push(clusters_1.WindowCovering.Feature.PositionAwareLift);
                 this.setDefault("lift", 0);
                 this.prune("tilt");
                 windowCovering = {
                     currentPositionLiftPercentage: this.context.lift,
                     type: this.config.windowCoveringType,
-                    endProductType: cluster_1.WindowCovering.EndProductType.RollerShutter
+                    endProductType: clusters_1.WindowCovering.EndProductType.RollerShutter
                 };
                 break;
         }
@@ -99,7 +99,7 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(WindowCoveringDevice_1.WindowCoveringDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, window_covering_1.WindowCoveringServer.with(...this.withs)), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.WindowCoveringDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, behaviors_2.WindowCoveringServer.with(...this.withs)), this.attributes);
         }
         catch (e) {
             this.node.error("Error creating endpoint: " + e);

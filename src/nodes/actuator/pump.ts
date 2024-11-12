@@ -1,15 +1,14 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { PumpDevice, PumpRequirements } from "@project-chip/matter.js/devices/PumpDevice";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors";
+import { PumpDevice, PumpRequirements } from "@matter/main/devices";
 import { onOffLight } from "../light/onOffLight";
-
 
 export class pump extends onOffLight {
 
     constructor(node: Node, config: any, _name: any = "") {
-        
-        let name = config.name || _name ||  "Pump"
+
+        let name = config.name || _name || "Pump"
         super(node, config, name);
         this.mapping = {   //must be a 1 : 1 mapping
             ...this.mapping,
@@ -33,7 +32,7 @@ export class pump extends onOffLight {
 
         this.attributes = {
             ...this.attributes,
-            
+
         }
     }
 
@@ -45,7 +44,7 @@ export class pump extends onOffLight {
             text: text
         });
     }
-    
+
     override async deploy() {
         try {
             this.endpoint = await new Endpoint(
@@ -53,7 +52,7 @@ export class pump extends onOffLight {
                     BridgedDeviceBasicInformationServer,
                     PumpRequirements.OnOffServer,
                     PumpRequirements.PumpConfigurationAndControlServer.with("Automatic", "CompensatedPressure", "ConstantFlow", "ConstantPressure", "ConstantSpeed", "ConstantTemperature", "LocalOperation"),
-                ), this.attributes);    
+                ), this.attributes);
         } catch (e) {
             this.node.error(e);
         }

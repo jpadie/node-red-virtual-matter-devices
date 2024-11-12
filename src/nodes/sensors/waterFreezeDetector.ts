@@ -1,7 +1,8 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { WaterFreezeDetectorDevice } from "@project-chip/matter.js/devices/WaterFreezeDetectorDevice";
+require("@matter/node");
+import { Endpoint } from "@matter/main"
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { WaterFreezeDetectorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 

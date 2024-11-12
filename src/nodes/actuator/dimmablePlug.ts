@@ -1,7 +1,7 @@
-import "@project-chip/matter-node.js";
-import { DimmablePlugInUnitDevice } from "@project-chip/matter.js/devices/DimmablePlugInUnitDevice";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import "@matter/main";
+import { DimmablePlugInUnitDevice } from "@matter/main/devices";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { dimmableLight } from "../light/dimmableLight"
 

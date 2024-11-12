@@ -1,12 +1,10 @@
-require("@project-chip/matter-node.js");
-import { VendorId } from "@project-chip/matter.js/datatype";
-import { ServerNode } from "@project-chip/matter.js/node";
-import { QrCode } from "@project-chip/matter.js/schema";
-import { logEndpoint } from "@project-chip/matter.js/device";
-import { EndpointServer } from "@project-chip/matter.js/endpoint";
-import { AggregatorEndpoint } from "@project-chip/matter.js/endpoints/AggregatorEndpoint";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { Environment, StorageService } from "@project-chip/matter.js/environment";
+require("@matter/node");
+
+import { Endpoint, EndpointServer, Environment, ServerNode, StorageService, VendorId } from "@matter/main";
+import { AggregatorEndpoint } from "@matter/main/endpoints" ///aggregator";
+import { logEndpoint } from "@matter/main/protocol";
+import { QrCode } from "@matter/types";
+
 
 class MatterHub {
     static #instance: MatterHub;
@@ -34,17 +32,31 @@ class MatterHub {
     }
 
     private async loadVars() {
+        const FORBIDDEN_PASSCODES = [
+            0,
+            11111111,
+            22222222,
+            33333333,
+            44444444,
+            55555555,
+            66666666,
+            77777777,
+            88888888,
+            99999999,
+            12345678,
+            87654321
+        ];
         const environment = Environment.default;
         const storageService = environment.get(StorageService);
         this.deviceStorage = (await storageService.open("matterHub")).createContext("data");
-        this.passcode = environment.vars.number("passcode") ?? (await this.deviceStorage.get("passcode", this.randomNumber(0, 0x3FFFFFF)));
+        let passcode;
+        do {
+            passcode = this.randomNumber(0, 0x3FFFFFF);
+        } while (FORBIDDEN_PASSCODES.includes(passcode));
+        this.passcode = environment.vars.number("passcode") ?? (await this.deviceStorage.get("passcode", passcode));
         this.discriminator = environment.vars.number("discriminator") ?? (await this.deviceStorage.get("discriminator", this.randomNumber(0, 0xFFF)));
         this.id = environment.vars.string("uniqueid") ?? (await this.deviceStorage.get("uniqueid", this.getID()));
-        this.deviceStorage.set({
-            passcode: this.passcode,
-            discriminator: this.discriminator,
-            uniqueid: this.id
-        })
+        await this.saveVars();
     }
 
     private async saveVars() {
@@ -64,7 +76,7 @@ class MatterHub {
         return Math.round(Math.random() * (max - min) + min);
     }
 
-    private getID() {
+    private async getID() {
         let bytes: any[] = [];
         for (let i = 0; i < 8; i++) {
             bytes.push(Math.round(0xff * Math.random()).toString(16).padStart(2, '0'));
@@ -118,18 +130,13 @@ class MatterHub {
                 this.addDevice(this.endpoints[e]);
             }
 
-            await this.matterServer.bringOnline();
+            await this.matterServer.start();
+            await this.matterServer.construction;
             setTimeout(() => {
                 logEndpoint(EndpointServer.forEndpoint(this.matterServer));
             }, 3500);
+            this.queryStatus();
 
-            this.commissioned = this.matterServer.lifecycle.isCommissioned;
-            this.online = this.matterServer.lifecycle.isOnline;
-
-            const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
-            this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
-            this.qrcode = QrCode.get(qrPairingCode);
-            this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
         } catch (error) {
             console.log(`[Matter Hub]: Error creating MatterHub. ${error}`);
             console.trace();
@@ -153,8 +160,21 @@ class MatterHub {
             }
         }
     }
+    private async queryStatus() {
+        await this.matterServer.construction;
+        if (this.matterServer.lifecycle.isOnline) {
+            this.commissioned = this.matterServer.lifecycle.isCommissioned;
+            this.online = this.matterServer.lifecycle.isOnline;
 
+            const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
+            this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
+            this.qrcode = QrCode.get(qrPairingCode);
+            this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
+        }
+    }
     public getStatus() {
+        if (!this.started) return {};
+        this.queryStatus();
         return {
             online: this.online,
             commissioned: this.commissioned,
@@ -165,21 +185,29 @@ class MatterHub {
     }
 
     public async reInitialise() {
-        for (let endpoint in this.endpoints) {
-            await this.endpoints[endpoint].close();
+        this.started = false;
+        if (this.matterServer.lifecycle.isOnline) {
+            await this.matterServer.cancel(); // offline if it was online
         }
-        await this.matterServer.destroy();
-        // await this.matterServer.factoryReset();
-        //regenerate a new ID
-        this.id = this.getID();
-        await this.saveVars();
-        await this.deploy();
+        await this.matterServer.erase();
+
+
+        console.log("about to redeploy");
+        await this.matterServer.start();
+        this.started = true;
+        console.log("finished redeploying");
+        //restarting advertisement
+        //this.matterServer.advertiseNow();
+        setTimeout(() => {
+            logEndpoint(EndpointServer.forEndpoint(this.matterServer));
+        }, 3500);
     }
 
     public async killDevice(id: string) {
+        return;
         console.log("in kill device for " + id);
         console.log("++++++++++++++++++");
-        return;
+
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].destroy();
             delete (this.endpoints[id]);

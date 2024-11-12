@@ -1,10 +1,12 @@
 import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { DoorLockDevice } from "@project-chip/matter.js/devices/DoorLockDevice";
-import { DoorLock } from "@project-chip/matter.js/cluster";
+import { DoorLockDevice } from "@matter/main/devices"
+    ;
+import { DoorLock } from "@matter/main/clusters";
+
 
 export class doorLock extends BaseEndpoint {
 

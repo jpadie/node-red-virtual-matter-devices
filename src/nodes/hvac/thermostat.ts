@@ -1,12 +1,12 @@
 type: module
 import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { ThermostatDevice } from "@project-chip/matter.js/devices/ThermostatDevice";
-import { ThermostatServer } from "@project-chip/matter.js/behaviors/thermostat";
-import { Thermostat } from "@project-chip/matter.js/cluster";
-import { RelativeHumidityMeasurementServer } from "@project-chip/matter.js/behaviors/relative-humidity-measurement";
+import { ThermostatDevice } from "@matter/main/devices"
+import { ThermostatServer } from "@matter/main/behaviors"
+import { Thermostat } from "@matter/main/clusters";
+import { RelativeHumidityMeasurementServer } from "@matter/main/behaviors"
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 

@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dimmableLight = void 0;
 require("@project-chip/matter-node.js");
-const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+const devices_1 = require("@matter/main/devices");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const onOffLight_1 = require("./onOffLight");
 class dimmableLight extends onOffLight_1.onOffLight {
     constructor(node, config, _name = '') {
@@ -65,7 +65,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.DimmableLightDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
         }
         catch (e) {
             this.node.error(e);

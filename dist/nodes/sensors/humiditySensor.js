@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.humiditySensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const HumiditySensorDevice_1 = require("@project-chip/matter.js/devices/HumiditySensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 class humiditySensor extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
@@ -24,7 +24,7 @@ class humiditySensor extends BaseEndpoint_1.BaseEndpoint {
             measuredValue: (this.context.humidity ?? 0) * 100
         };
         try {
-            this.endpoint = await new endpoint_1.Endpoint(HumiditySensorDevice_1.HumiditySensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.HumiditySensorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
             this.listen();
             this.regularUpdate();
             this.setStatus();

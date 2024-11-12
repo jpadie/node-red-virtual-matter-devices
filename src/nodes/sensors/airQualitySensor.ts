@@ -1,11 +1,10 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { AirQualitySensorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { AirQualitySensorDevice } from "@project-chip/matter.js/devices/AirQualitySensorDevice";
-import { AirQualitySensorRequirements } from "@project-chip/matter.js/devices/AirQualitySensorDevice";
-import { AirQuality } from "@project-chip/matter.js/cluster";
-import { ConcentrationMeasurement } from "@project-chip/matter.js/cluster";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 import { BaseEndpoint } from "../base/BaseEndpoint";
+import { AirQualitySensorRequirements } from "@matter/main/devices";
+import { AirQuality, ConcentrationMeasurement } from "@matter/main/clusters";
 
 
 export class airQualitySensor extends BaseEndpoint {

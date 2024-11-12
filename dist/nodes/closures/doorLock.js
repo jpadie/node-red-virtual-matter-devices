@@ -2,11 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doorLock = void 0;
 require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
-const DoorLockDevice_1 = require("@project-chip/matter.js/devices/DoorLockDevice");
-const cluster_1 = require("@project-chip/matter.js/cluster");
+const devices_1 = require("@matter/main/devices");
+const clusters_1 = require("@matter/main/clusters");
 class doorLock extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config, _name = "") {
         let name = _name || config.name || "Door Lock";
@@ -15,8 +15,8 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
             lock: { doorLock: "lockState", multiplier: 1, unit: "" },
             mode: { doorLock: "operatingMode", multiplier: 1, unit: "" }
         };
-        this.setDefault("lock", cluster_1.DoorLock.LockState.Unlocked);
-        this.setDefault("mode", cluster_1.DoorLock.OperatingMode.Normal);
+        this.setDefault("lock", clusters_1.DoorLock.LockState.Unlocked);
+        this.setDefault("mode", clusters_1.DoorLock.OperatingMode.Normal);
         this.attributes.serialNumber = "dlk-" + this.attributes.serialNumber;
         this.attributes.doorLock = {
             supportedOperatingModes: {
@@ -36,7 +36,7 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
         switch (item) {
             case "mode":
                 if (!Number.isNaN(value)) {
-                    return Object.keys(cluster_1.DoorLock.OperatingMode).find(key => cluster_1.DoorLock.OperatingMode[key] === value);
+                    return Object.keys(clusters_1.DoorLock.OperatingMode).find(key => clusters_1.DoorLock.OperatingMode[key] === value);
                 }
                 else {
                     return value;
@@ -44,7 +44,7 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
                 break;
             case "state":
                 if (!Number.isNaN(this.context.mode)) {
-                    return Object.keys(cluster_1.DoorLock.LockState).find(key => cluster_1.DoorLock.LockState[key] === value);
+                    return Object.keys(clusters_1.DoorLock.LockState).find(key => clusters_1.DoorLock.LockState[key] === value);
                 }
                 else {
                     return value;
@@ -69,7 +69,7 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(DoorLockDevice_1.DoorLockDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.DoorLockDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
         }
         catch (e) {
             this.node.error("Error creating endpoint: " + e);

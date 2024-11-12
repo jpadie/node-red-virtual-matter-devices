@@ -3,12 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.airPurifier = void 0;
 type: module;
 require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const AirPurifierDevice_1 = require("@project-chip/matter.js/devices/AirPurifierDevice");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
+const devices_1 = require("@matter/main/devices");
 const fan_1 = require("./fan");
-const cluster_1 = require("@project-chip/matter.js/cluster");
-const FanDevice_1 = require("@project-chip/matter.js/devices/FanDevice");
+const clusters_1 = require("@matter/main/clusters");
+const devices_2 = require("@matter/main/devices");
 class airPurifier extends fan_1.fan {
     constructor(node, config) {
         let name = config.name || "Air Purifier";
@@ -42,7 +42,7 @@ class airPurifier extends fan_1.fan {
     getVerbose(item, value) {
         switch (item) {
             case "changeIndication":
-                return Object.keys(cluster_1.ResourceMonitoring.ChangeIndication)[value];
+                return Object.keys(clusters_1.ResourceMonitoring.ChangeIndication)[value];
                 break;
             default:
                 return super.getVerbose(item, value);
@@ -58,13 +58,13 @@ class airPurifier extends fan_1.fan {
     async deploy() {
         let withs = [];
         if (Object.hasOwn(this.attributes, "hepaFilterMonitoring")) {
-            withs.push(AirPurifierDevice_1.AirPurifierRequirements.HepaFilterMonitoringServer);
+            withs.push(devices_1.AirPurifierRequirements.HepaFilterMonitoringServer);
         }
         if (Object.hasOwn(this.attributes, "ActivateCarbonFilterMonitoring")) {
-            withs.push(AirPurifierDevice_1.AirPurifierRequirements.ActivatedCarbonFilterMonitoringServer);
+            withs.push(devices_1.AirPurifierRequirements.ActivatedCarbonFilterMonitoringServer);
         }
         try {
-            this.endpoint = await new endpoint_1.Endpoint(AirPurifierDevice_1.AirPurifierDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, FanDevice_1.FanRequirements.FanControlServer.with(...this.features), ...withs), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.AirPurifierDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, devices_2.FanRequirements.FanControlServer.with(...this.features), ...withs), this.attributes);
         }
         catch (e) {
             this.node.error(e);

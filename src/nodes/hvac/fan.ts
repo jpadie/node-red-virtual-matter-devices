@@ -1,12 +1,13 @@
 type: module
 import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { FanDevice } from "@project-chip/matter.js/devices/FanDevice";
-import { FanRequirements } from "@project-chip/matter.js/devices/FanDevice";
-import { FanControl } from "@project-chip/matter.js/cluster";
+import { FanDevice } from "@matter/main/devices";
+import { FanRequirements } from "@matter/main/devices";
+import { FanControl } from "@matter/main/clusters";
+
 
 export class fan extends BaseEndpoint {
     public features: FanControl.Feature[] = [];

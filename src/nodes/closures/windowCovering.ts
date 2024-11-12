@@ -1,10 +1,13 @@
 import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { WindowCoveringDevice } from "@project-chip/matter.js/devices/WindowCoveringDevice";
-import { WindowCoveringServer } from "@project-chip/matter.js/behaviors/window-covering";
-import { WindowCovering } from "@project-chip/matter.js/cluster";
+import { WindowCoveringDevice } from "@matter/main/devices"
+    ;
+import { WindowCoveringServer } from "@matter/main/behaviors"
+    ;
+import { WindowCovering } from "@matter/main/clusters";
+
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 export class windowCovering extends BaseEndpoint {

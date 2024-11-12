@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.occupancySensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const OccupancySensorDevice_1 = require("@project-chip/matter.js/devices/OccupancySensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 class occupancySensor extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
@@ -79,7 +79,7 @@ class occupancySensor extends BaseEndpoint_1.BaseEndpoint {
         };
         this.saveContext();
         try {
-            this.endpoint = new endpoint_1.Endpoint(OccupancySensorDevice_1.OccupancySensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = new main_1.Endpoint(devices_1.OccupancySensorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
             this.listen();
             this.regularUpdate();
             this.setStatus();
