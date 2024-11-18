@@ -14,7 +14,7 @@ export class temperatureSensor extends BaseEndpoint {
         this.name = this.config.name || "Temperature Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C" }
+            temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         }
 
         this.attributes.serialNumber = "ts-" + this.attributes.serialNumber;

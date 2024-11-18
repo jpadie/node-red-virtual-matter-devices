@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.windowCovering = void 0;
-require("@project-chip/matter-node.js");
 const behaviors_1 = require("@matter/main/behaviors");
 const main_1 = require("@matter/main");
 const devices_1 = require("@matter/main/devices");

@@ -16,7 +16,9 @@ export class occupancySensor extends BaseEndpoint {
                     occupancy: "occupied"
                 },
                 multiplier: 1,
-                unit: ""
+                unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
             }
         }
         this.attributes.serialNumber = "occ-" + this.attributes.serialNumber;

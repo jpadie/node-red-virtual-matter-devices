@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dimmableLight = void 0;
-require("@project-chip/matter-node.js");
 const devices_1 = require("@matter/main/devices");
 const behaviors_1 = require("@matter/main/behaviors");
 const main_1 = require("@matter/main");
@@ -24,7 +23,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
         };
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
+            brightness: { levelControl: "currentLevel", multiplier: 2.55, unit: "%" }
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
     }
@@ -38,23 +37,6 @@ class dimmableLight extends onOffLight_1.onOffLight {
             default:
                 return super.getVerbose(item, value);
         }
-    }
-    listenForChange_postProcess(report = null) {
-        super.listenForChange_postProcess(report);
-    }
-    ;
-    preProcessNodeRedInput(item, value) {
-        let { a, b } = super.preProcessNodeRedInput(item, value);
-        if (this.zigbee()) {
-            switch (a) {
-                case "brightness":
-                    a = "brightness";
-                    b = Math.round(value * 100 / 255);
-                    break;
-                default:
-            }
-        }
-        return { a: a, b: b };
     }
     setStatus() {
         this.node.status({

@@ -15,8 +15,8 @@ export class airQualitySensor extends BaseEndpoint {
 
         this.mapping = {   //must be a 1 : 1 mapping
             airQuality: { airQuality: "airQuality", multiplier: 1, unit: "" },
-            temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C" },
-            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
+            temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
+            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
             COLevel: { carbonMonoxideConcentrationMeasurement: "measuredValue", multiplier: 1, unit: "PPM" },
             CO2Level: { carbonDioxideConcentrationMeasurement: "measuredValue", multiplier: 1, unit: "PPM" },
             NO2Level: { nitrogenDioxideConcentrationMeasurement: "measuredValue", multiplier: 1, unit: "PPM" },

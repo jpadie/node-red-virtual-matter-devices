@@ -1,4 +1,3 @@
-import "@project-chip/matter-node.js";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
@@ -19,8 +18,8 @@ export class windowCovering extends BaseEndpoint {
 
 
         this.mapping = {   //must be a 1 : 1 mapping
-            lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%" },
-            tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%" }
+            lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } },
+            tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         let withs: WindowCovering.Feature[] = [];

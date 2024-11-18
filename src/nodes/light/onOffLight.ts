@@ -1,6 +1,4 @@
-import "@project-chip/matter-node.js";
-import { OnOffLightDevice } from "@matter/main/devices"
-    ;
+import { OnOffLightDevice } from "@matter/main/devices";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
@@ -25,7 +23,7 @@ export class onOffLight extends BaseEndpoint {
         };
 
         this.mapping = {
-            onoff: { onOff: "onOff", multiplier: 1, unit: "" }
+            onoff: { onOff: "onOff", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.setSerialNumber("light-");
@@ -39,30 +37,6 @@ export class onOffLight extends BaseEndpoint {
             default:
                 return super.getVerbose(item, value);
         }
-    }
-    override listenForChange_postProcess(report: any = null) {
-        if (!this.zigbee()) return;
-        if (typeof report == "object" && Object.hasOwn(report, "onoff")) {
-            this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF", messageSource: "Matter" } }]);
-        }
-    };
-
-    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
-        let a: any;
-        let b: any;
-        if (this.zigbee()) {
-            switch (item) {
-                case "state":
-                    a = "onoff";
-                    b = value == "ON" ? 1 : 0;
-                    break;
-                default:
-                    a = item;
-                    b = value;
-            }
-            return { a: a, b: b };
-        }
-        return { a: item, b: value };
     }
 
     override setStatus() {

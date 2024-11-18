@@ -13,7 +13,7 @@ export class waterLeakDetector extends BaseEndpoint {
         this.name = this.config.name || "Water Leak Detector"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            leaking: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            leaking: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.serialNumber = "wld-" + this.attributes.serialNumber;

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseEndpoint = void 0;
-require("@project-chip/matter-node.js");
+require("@matter/main");
 const server_1 = require("../server/server");
 class BaseEndpoint {
     mapping = {};
@@ -14,6 +14,8 @@ class BaseEndpoint {
     name = "";
     state = false;
     skip = false;
+    waitingForConfirmation = {};
+    confirmations = [];
     constructor(node, config, name = "") {
         this.node = node;
         this.config = config;
@@ -113,6 +115,24 @@ class BaseEndpoint {
             });
         }
     }
+    clearConfirmation(item) {
+        if (Object.hasOwn(this.awaitConfirmation, item)) {
+            delete this.awaitConfirmation[item];
+            clearTimeout(this.confirmations[item]);
+            return true;
+        }
+        return false;
+    }
+    async awaitConfirmation(item, value) {
+        this.context[item] = value;
+        this.awaitConfirmation[item] = value;
+        this.confirmations[item] = setTimeout((item) => {
+            if (Object.hasOwn(this.awaitConfirmation, item)) {
+                delete this.awaitConfirmation[item];
+            }
+        }, 1000);
+        this.saveContext();
+    }
     now() {
         let n = Date.now();
         let d = new Date(n);
@@ -151,7 +171,7 @@ class BaseEndpoint {
         if (!this.endpoint) {
             console.error("endpoint is not established.  Waiting 0.5 seconds");
             console.log(this.endpoint);
-            setInterval(this.listenForChange, 500);
+            setTimeout(this.listenForChange, 500);
             return;
         }
         for (const item in this.mapping) {
@@ -161,11 +181,17 @@ class BaseEndpoint {
                 let s = `${this.mapping[item][key]}$Changed`;
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
+                        if (this.clearConfirmation(item))
+                            return;
                         value = this.preProcessDeviceChanges(value, s);
                         if ((this.skip)) {
                             this.skip = false;
                         }
                         else {
+                            if (Object.hasOwn(this.waitingForConfirmation, item)) {
+                                delete this.waitingForConfirmation[item];
+                                return;
+                            }
                             if (typeof value == "number") {
                                 if (typeof this.mapping[item].multiplier == "object") {
                                     this.context[item] = this.mapping[item].multiplier[1](value);
@@ -206,6 +232,8 @@ class BaseEndpoint {
                 let s = `${k}$Changed`;
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
+                        if (this.clearConfirmation(item))
+                            return;
                         value = this.preProcessDeviceChanges(value, s);
                         if (this.skip) {
                             this.skip = false;
@@ -254,8 +282,9 @@ class BaseEndpoint {
     preProcessNodeRedInput(item, value) {
         return { a: item, b: value };
     }
-    processIncomingItem(item, value) {
+    async processIncomingItem(item, value) {
         let updates = [];
+        const originalValue = value;
         if (Object.hasOwn(this.mapping, item)) {
             const keys = Object.keys(this.mapping[item]);
             let key = keys[0];
@@ -337,6 +366,9 @@ class BaseEndpoint {
             }
             try {
                 if (this.endpoint.lifecycle.isReady) {
+                    for (const key in u) {
+                        await this.awaitConfirmation(key, originalValue);
+                    }
                     this.endpoint.set(u);
                 }
             }
@@ -392,8 +424,8 @@ class BaseEndpoint {
         this.listenForClose();
     }
     listenForClose() {
-        this.node.on("close", () => {
-            server_1.matterHub.timeToClose();
+        this.node.on("close", async () => {
+            await server_1.matterHub.timeToClose();
         });
     }
     lcFirst(val) {

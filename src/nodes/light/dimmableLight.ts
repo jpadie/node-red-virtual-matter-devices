@@ -1,4 +1,3 @@
-import "@project-chip/matter-node.js";
 import { DimmableLightDevice } from "@matter/main/devices";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { Endpoint } from "@matter/main";
@@ -28,7 +27,7 @@ export class dimmableLight extends onOffLight {
 
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
+            brightness: { levelControl: "currentLevel", multiplier: 2.55, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
@@ -46,25 +45,7 @@ export class dimmableLight extends onOffLight {
                 return super.getVerbose(item, value);
         }
     }
-    override listenForChange_postProcess(report: any = null) {
-        super.listenForChange_postProcess(report);
-        //no need to do anything for zigbee
-    };
 
-    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
-        let { a, b } = super.preProcessNodeRedInput(item, value)
-        if (this.zigbee()) {
-            switch (a) {
-                case "brightness":
-                    a = "brightness";
-                    b = Math.round(value * 100 / 255);  //Math.ceil(b * 100 / 255)
-                    break;
-                default:
-
-            }
-        }
-        return { a: a, b: b };
-    }
 
     override setStatus() {
         this.node.status({

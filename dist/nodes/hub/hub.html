@@ -35,6 +35,7 @@
         oneditprepare: function () {
             const node = this;
             //console.log(node);
+            let interval;
             $(document).ready(() => {
                 //  $("fieldset.qrCode").hide();
                 $("#node-input-reInitialise").on("click", (e) => {
@@ -61,6 +62,7 @@
                                         data: JSON.stringify({ request: "reInitialise" }),
                                         success: function (data) {
                                             RED.notify("Hub reinitialised");
+                                            getStatus();
                                         }
                                     });
                                 }
@@ -88,8 +90,10 @@
 
                             if (data.commissioned) {
                                 $("fieldset.qrCode").hide();
+                                if (interval) clearInterval(interval);
                             } else {
                                 $("fieldset.qrCode").show();
+                                interval = setInterval(() => { getStatus(); }, 3500);
                             }
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
@@ -98,7 +102,7 @@
                     });
                 }
                 if (node.id) {
-                    setInterval(getStatus(), 5000);
+                    getStatus();
                 }
             });
         },
@@ -106,7 +110,7 @@
 
         },
         oneditsave: function () {
-
+            if (interval) clearInterval(interval);
         }
     });
 </script>
@@ -125,20 +129,27 @@
         }
         fieldset.matter div.form-row label {
             width: 9rem !important;
-            float: left;
+            display: inline-block;
+            vertical-align:middle
         }
         fieldset.matter div.form-row div.fR{
             margin-left: 1rem;
-            float:left;
             min-width: 15rem;
             width: fit-content;
             max-width: 55%;
+            display: inline-block;
+            vertical-align: middle;
         }
         fieldset.matter div.fR button.toggle{
             margin-right:0.5rem;
         }
         fieldset.matter .hidden, fieldset.hidden{
             display: none !important;
+        }
+        fieldset.matter div.fR button.reInitButton {
+            border-color: var(--red-ui-workspace-button-background-primary);
+            color: var(--red-ui-workspace-button-color-primary) !important;
+            background: var(--red-ui-workspace-button-background-primary);
         }
         
 
@@ -179,7 +190,7 @@
                 Reinitialise MatterHub
             </label>
             <div class="fR">
-                <button id="node-input-reInitialise" class="button ui-button ui-corner-all ui-widget">ReInit</button>
+                <button id="node-input-reInitialise" class="button ui-button ui-corner-all ui-widget primary reInitButton" >ReInit</button>
             </div>
         </div>
      

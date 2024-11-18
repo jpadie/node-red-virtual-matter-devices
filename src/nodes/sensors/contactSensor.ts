@@ -11,7 +11,7 @@ export class contactSensor extends BaseEndpoint {
         this.name = this.config.name || "Contact Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            contact: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            contact: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.serialNumber = "cs-" + this.attributes.serialNumber;

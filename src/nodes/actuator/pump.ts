@@ -1,8 +1,10 @@
+/*
 import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors";
 import { PumpDevice, PumpRequirements } from "@matter/main/devices";
 import { onOffLight } from "../light/onOffLight";
+
 
 export class pump extends onOffLight {
 
@@ -15,14 +17,17 @@ export class pump extends onOffLight {
 
         }
         this.attributes.serialNumber = "pump-" + this.attributes.serialNumber;
-        this.attributes.pumpConfigurationAndControl = {};
-        this.attributes.pumpConfigutationAndControl = {
-            maxSpeed: 65534,
-            maxPressure: 3276,
-            maxFlow: 6553.4,
-            effectiveControlMode: 0,
-            effectiveOperationMode: 0,
-            capacity: 0
+
+        this.attributes = {
+            ...this.attributes,
+            pumpConfigutationAndControl: {
+                maxSpeed: 65534,
+                maxPressure: 3276,
+                maxFlow: 6553.4,
+                effectiveControlMode: 0,
+                effectiveOperationMode: 0,
+                capacity: 0
+            }
         }
 
         this.context = Object.assign({
@@ -58,3 +63,4 @@ export class pump extends onOffLight {
         }
     }
 }
+    */

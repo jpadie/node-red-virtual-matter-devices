@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onOffLight = void 0;
-require("@project-chip/matter-node.js");
 const devices_1 = require("@matter/main/devices");
 const behaviors_1 = require("@matter/main/behaviors");
 const main_1 = require("@matter/main");
@@ -31,31 +30,6 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
             default:
                 return super.getVerbose(item, value);
         }
-    }
-    listenForChange_postProcess(report = null) {
-        if (!this.zigbee())
-            return;
-        if (typeof report == "object" && Object.hasOwn(report, "onoff")) {
-            this.node.send([null, { payload: { state: report.onoff ? "ON" : "OFF", messageSource: "Matter" } }]);
-        }
-    }
-    ;
-    preProcessNodeRedInput(item, value) {
-        let a;
-        let b;
-        if (this.zigbee()) {
-            switch (item) {
-                case "state":
-                    a = "onoff";
-                    b = value == "ON" ? 1 : 0;
-                    break;
-                default:
-                    a = item;
-                    b = value;
-            }
-            return { a: a, b: b };
-        }
-        return { a: item, b: value };
     }
     setStatus() {
         this.node.status({

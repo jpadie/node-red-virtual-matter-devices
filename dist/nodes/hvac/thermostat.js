@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.thermostat = void 0;
 type: module;
-require("@project-chip/matter-node.js");
 const behaviors_1 = require("@matter/main/behaviors");
 const main_1 = require("@matter/main");
 const devices_1 = require("@matter/main/devices");
@@ -143,7 +142,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             features.push(clusters_1.Thermostat.Feature.Heating);
         if (this.config.supportsOccupancy)
             features.push(clusters_1.Thermostat.Feature.Occupancy);
-        withs.push(behaviors_2.ThermostatServer.with(...features));
+        withs.push(behaviors_2.ThermostatServer.withFeatures(...features));
         if (this.config.supportsHumidity)
             withs.push(behaviors_3.RelativeHumidityMeasurementServer);
         withs.push(behaviors_1.BridgedDeviceBasicInformationServer);
@@ -295,7 +294,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         return ret;
     }
     async deploy() {
-        this.endpoint = new main_1.Endpoint(devices_1.ThermostatDevice.with(...this.withs), this.attributes);
+        this.endpoint = new main_1.Endpoint(devices_1.ThermostatDevice.withBehaviors(...this.withs), this.attributes);
     }
 }
 exports.thermostat = thermostat;

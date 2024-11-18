@@ -11,7 +11,7 @@ export class rainSensor extends BaseEndpoint {
         this.name = this.config.name || "Water Leak Detector"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            rain: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            rain: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.serialNumber = "rd-" + this.attributes.serialNumber;

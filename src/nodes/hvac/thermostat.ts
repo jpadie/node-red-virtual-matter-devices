@@ -1,5 +1,4 @@
 type: module
-import "@project-chip/matter-node.js";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
@@ -30,6 +29,23 @@ export class thermostat extends BaseEndpoint {
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
+        }
+        for (const i in this.mapping) {
+            switch (i) {
+                case "systemMode":
+                case "occupied":
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "int" }
+                    });
+                    break;
+                default:
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "float", valueDecimals: 2 }
+                    });
+                    break;
+            }
         }
 
         this.setSerialNumber("tstat-");
@@ -151,7 +167,7 @@ export class thermostat extends BaseEndpoint {
         if (this.config.supportsHeating) features.push(Thermostat.Feature.Heating);
         if (this.config.supportsOccupancy) features.push(Thermostat.Feature.Occupancy);
 
-        withs.push(ThermostatServer.with(...features));
+        withs.push(ThermostatServer.withFeatures(...features));
         if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
         withs.push(BridgedDeviceBasicInformationServer);
         this.withs = withs;
@@ -307,7 +323,7 @@ export class thermostat extends BaseEndpoint {
         return ret;
     }
     override async deploy() {
-        this.endpoint = new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
+        this.endpoint = new Endpoint(ThermostatDevice.withBehaviors(...this.withs), this.attributes);
 
     }
 }

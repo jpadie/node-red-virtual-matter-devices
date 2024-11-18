@@ -1,5 +1,5 @@
 type: module
-import "@project-chip/matter-node.js";
+import "@matter/main"
 import type { Node, NodeAPI } from 'node-red';
 import { colorLight } from "./colorCapableLight"
 import { dimmableLight } from "./dimmableLight"

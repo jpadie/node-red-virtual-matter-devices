@@ -25,8 +25,8 @@
             telemetryInterval: {
                 value: 60
             },
-            passThroughMessage: { value: 1 },
-            regularUpdates: { value: 1 },
+            passThroughMessage: { value: 0 },
+            regularUpdates: { value: 0 },
             occupiedSetback: { value: 0.75 },
             unoccupiedSetback: { value: 3 },
 
@@ -59,6 +59,7 @@
             for (const item of ["regularUpdates", "passThroughMessage", "reportAirQualityString"]) {
                 this[item] = [1, "1", true].includes($(`#node-input-${item}`).val()) ? 1 : 0;
             }
+            this.outputs = this.deviceType == "thermostat" ? 2 : 1
         },
         onpaletteadd: function () {
 
@@ -228,14 +229,16 @@
         }
         fieldset.matter div.form-row label {
             width: 9rem !important;
-            float: left;
+            display: inline-block;
+            vertical-align:middle
         }
         fieldset.matter div.form-row div.fR{
             margin-left: 1rem;
-            float:left;
             min-width: 15rem;
             width: fit-content;
             max-width: 55%;
+            display: inline-block;
+            vertical-align: middle;
         }
         fieldset.matter div.fR button.toggle{
             margin-right:0.5rem;

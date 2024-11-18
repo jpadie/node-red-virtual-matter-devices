@@ -1,4 +1,3 @@
-import "@project-chip/matter-node.js";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
@@ -15,8 +14,8 @@ export class doorLock extends BaseEndpoint {
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
-            lock: { doorLock: "lockState", multiplier: 1, unit: "" },
-            mode: { doorLock: "operatingMode", multiplier: 1, unit: "" }
+            lock: { doorLock: "lockState", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } },
+            mode: { doorLock: "operatingMode", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.setDefault("lock", DoorLock.LockState.Unlocked);

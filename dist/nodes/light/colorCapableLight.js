@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.colorLight = void 0;
-require("@matter/main");
 const behaviors_1 = require("@matter/main/behaviors");
 const main_1 = require("@matter/main");
 const dimmableLight_js_1 = require("./dimmableLight.js");
@@ -30,10 +29,10 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         };
         this.mapping = {
             ...this.mapping,
-            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 255 },
-            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 255 }
+            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
+            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
+            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 255, matter: { valueType: "int" }, context: { valueType: "int" } },
+            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 255, matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
         this.setDefault("hue", 0);
@@ -187,18 +186,6 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
             text: text
         });
     }
-    listenForChange_postProcess(report = null) {
-        super.listenForChange_postProcess(report);
-        if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
-            if (Object.hasOwn(report, "colorX")) {
-                this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
-            }
-            if (Object.hasOwn(report, "colorY")) {
-                this.context.colorY = Math.round(report.colorY * 100 / 65536) / 100;
-            }
-        }
-    }
-    ;
     preProcessNodeRedInput(item, value) {
         let { a, b } = super.preProcessNodeRedInput(item, value);
         if (a === "color") {

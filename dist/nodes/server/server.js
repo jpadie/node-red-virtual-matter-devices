@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.matterHub = void 0;
-require("@matter/node");
 const main_1 = require("@matter/main");
 const endpoints_1 = require("@matter/main/endpoints");
 const protocol_1 = require("@matter/main/protocol");
@@ -24,9 +23,6 @@ class MatterHub {
     shuttingDown = false;
     constructor() {
         this.init();
-        console.log("++++++++++++++++");
-        console.log("restarting matterHub");
-        console.log("++++++++++++++++");
     }
     async loadVars() {
         const FORBIDDEN_PASSCODES = [
@@ -109,6 +105,7 @@ class MatterHub {
             }
         };
         try {
+            console.log(this.started);
             this.matterServer = await main_1.ServerNode.create(serverOpts);
             this.aggregator = new main_1.Endpoint(endpoints_1.AggregatorEndpoint, { id: "matterHub" });
             await this.matterServer.add(this.aggregator);
@@ -128,7 +125,7 @@ class MatterHub {
             console.trace();
         }
     }
-    addDevice(endpoint) {
+    async addDevice(endpoint) {
         if (this.shuttingDown) {
             this.shuttingDown = false;
             this.deploy();
@@ -139,7 +136,7 @@ class MatterHub {
         else {
             try {
                 this.endpoints[endpoint.id] = endpoint;
-                this.aggregator.add(endpoint);
+                await this.aggregator.add(endpoint);
             }
             catch (e) {
                 console.log(e);
@@ -176,13 +173,10 @@ class MatterHub {
             await this.matterServer.cancel();
         }
         await this.matterServer.erase();
-        console.log("about to redeploy");
-        await this.matterServer.start();
         this.started = true;
-        console.log("finished redeploying");
         setTimeout(() => {
             (0, protocol_1.logEndpoint)(main_1.EndpointServer.forEndpoint(this.matterServer));
-        }, 3500);
+        }, 2000);
     }
     async killDevice(id) {
         return;
@@ -211,11 +205,14 @@ class MatterHub {
         }
         return response;
     }
-    timeToClose() {
+    async timeToClose() {
         if (!this.shuttingDown) {
+            console.log("Matter Hub shutting down");
             this.shuttingDown = true;
-            this.shutDown();
+            await this.shutDown();
+            return 1;
         }
+        return 1;
     }
     async shutDown() {
         this.started = false;

@@ -1,5 +1,3 @@
-require("@matter/node");
-
 import { Endpoint, EndpointServer, Environment, ServerNode, StorageService, VendorId } from "@matter/main";
 import { AggregatorEndpoint } from "@matter/main/endpoints" ///aggregator";
 import { logEndpoint } from "@matter/main/protocol";
@@ -25,10 +23,6 @@ class MatterHub {
 
     private constructor() {
         this.init();
-        console.log("++++++++++++++++");
-        console.log("restarting matterHub")
-        console.log("++++++++++++++++");
-
     }
 
     private async loadVars() {
@@ -120,6 +114,7 @@ class MatterHub {
         //console.log(serverOpts);
 
         try {
+            console.log(this.started)
             this.matterServer = await ServerNode.create(serverOpts);
 
             this.aggregator = new Endpoint(AggregatorEndpoint, { id: "matterHub" });
@@ -143,7 +138,7 @@ class MatterHub {
         }
     }
 
-    public addDevice(endpoint: Endpoint) {
+    public async addDevice(endpoint: Endpoint) {
         if (this.shuttingDown) {
             this.shuttingDown = false;
             this.deploy();
@@ -153,7 +148,7 @@ class MatterHub {
         } else {
             try {
                 this.endpoints[endpoint.id] = endpoint;
-                this.aggregator.add(endpoint);
+                await this.aggregator.add(endpoint);
             } catch (e) {
                 console.log(e);
                 console.log(endpoint);
@@ -190,17 +185,16 @@ class MatterHub {
             await this.matterServer.cancel(); // offline if it was online
         }
         await this.matterServer.erase();
-
-
-        console.log("about to redeploy");
-        await this.matterServer.start();
         this.started = true;
-        console.log("finished redeploying");
+        //await this.deploy();
+        //await this.matterServer.start();
+        //this.started = true;
+        //console.log("finished redeploying");
         //restarting advertisement
         //this.matterServer.advertiseNow();
         setTimeout(() => {
             logEndpoint(EndpointServer.forEndpoint(this.matterServer));
-        }, 3500);
+        }, 2000);
     }
 
     public async killDevice(id: string) {
@@ -235,12 +229,14 @@ class MatterHub {
 
     }
 
-    public timeToClose() {
+    public async timeToClose() {
         if (!this.shuttingDown) {
+            console.log("Matter Hub shutting down");
             this.shuttingDown = true;
-
-            this.shutDown();
+            await this.shutDown();
+            return 1;
         }
+        return 1;
     }
     public async shutDown() {
         this.started = false;
