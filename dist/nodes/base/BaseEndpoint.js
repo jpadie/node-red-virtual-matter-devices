@@ -59,9 +59,7 @@ class BaseEndpoint {
     prune(item) {
         if (Object.hasOwn(this.mapping, item)) {
             if (!delete this.mapping[item]) {
-                console.log("Error deleting mapping item: " + item);
-            }
-            else {
+                this.node.error("Error deleting mapping item: " + item);
             }
         }
         if (Object.hasOwn(this.context, item)) {
@@ -104,9 +102,13 @@ class BaseEndpoint {
                 setTimeout(async () => {
                     await this.syncContext();
                 }, 2000);
+                for (const item of ["config", "attributes", "context"]) {
+                    this.node.debug("item");
+                    this.node.debug(JSON.stringify(this[item], null, 2));
+                }
             }
             catch (e) {
-                console.error(e);
+                this.node.error(e);
                 console.trace();
             }
         }
@@ -167,9 +169,9 @@ class BaseEndpoint {
     }
     matterRefine(item, value) {
         let ret;
-        console.log("matter refine");
-        console.log("item: " + item);
-        console.log("value: " + value);
+        this.node.debug("refining values for matter");
+        this.node.debug("item: " + item);
+        this.node.debug("value: " + value);
         if (value == 0) {
             ret = 0;
         }
@@ -197,9 +199,9 @@ class BaseEndpoint {
                 }
             }
         }
-        console.log("matter refined");
-        console.log("item: " + item);
-        console.log("value: " + value);
+        this.node.debug("refined values for matter");
+        this.node.debug("item: " + item);
+        this.node.debug("value: " + value);
         return ret;
     }
     contextRefine(item, value) {
@@ -240,8 +242,8 @@ class BaseEndpoint {
     }
     listenForChange() {
         if (!this.endpoint) {
-            console.error("endpoint is not established.  Waiting 0.5 seconds");
-            console.log(this.endpoint);
+            this.node.debug("endpoint is not established.  Waiting 0.5 seconds");
+            this.node.debug(this.endpoint);
             setTimeout(this.listenForChange, 500);
             return;
         }
@@ -250,8 +252,10 @@ class BaseEndpoint {
             let key = keys[0];
             if (typeof this.mapping[item][key] == "string") {
                 let s = `${this.mapping[item][key]}$Changed`;
+                this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
+                        this.node.debug({ key: key, item: s, value: value });
                         value = this.preProcessDeviceChanges(value, s);
                         let v = value;
                         if ((this.skip)) {
@@ -271,7 +275,7 @@ class BaseEndpoint {
                                 value = this.contextRefine(item, value);
                             }
                             this.context[item] = v;
-                            console.log(`setting context item ${item} to ${value}`);
+                            this.node.debug(`setting context item ${item} to ${value}`);
                             this.context.lastHeardFrom = this.now();
                             if (!this.clearConfirmation(item)) {
                                 let report = {
@@ -292,8 +296,8 @@ class BaseEndpoint {
                     });
                 }
                 catch (e) {
-                    console.error("error in setting up listener");
-                    console.error(e);
+                    this.node.error("error in setting up listener");
+                    this.node.error(e);
                     console.trace();
                 }
             }
@@ -301,6 +305,7 @@ class BaseEndpoint {
                 let ks = Object.keys(this.mapping[item][key]);
                 let k = ks[0];
                 let s = `${k}$Changed`;
+                this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
                         if (this.clearConfirmation(item))
@@ -340,8 +345,8 @@ class BaseEndpoint {
                     });
                 }
                 catch (e) {
-                    console.error("error in setting up listener");
-                    console.error(e);
+                    this.node.error("error in setting up listener");
+                    this.node.error(e);
                     console.trace();
                 }
             }
@@ -356,6 +361,7 @@ class BaseEndpoint {
         return { a: item, b: value };
     }
     async processIncomingItem(item, value) {
+        this.node.debug(`after pre processing item is now ${item} value is now ${value}`);
         let updates = [];
         if (Object.hasOwn(this.mapping, item)) {
             const keys = Object.keys(this.mapping[item]);
@@ -432,22 +438,22 @@ class BaseEndpoint {
             }
         }
         if (updates.length > 0) {
-            console.log("raw updates");
-            console.log(updates);
+            this.node.debug("raw updates");
+            this.node.debug(updates);
             let u = {};
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
             }
             try {
                 if (this.endpoint.lifecycle.isReady) {
-                    console.log("requested update");
-                    console.log(JSON.stringify(u));
+                    this.node.debug("requested update");
+                    this.node.debug(JSON.stringify(u, null, 2));
                     await this.endpoint.set(u);
                 }
             }
             catch (e) {
-                console.log(e);
-                console.log(updates);
+                this.node.error(e);
+                this.node.error(JSON.stringify(updates, null, 2));
                 console.trace();
             }
         }
@@ -474,17 +480,23 @@ class BaseEndpoint {
         catch (e) {
             if (e instanceof Error) {
                 this.node.error(e);
-                done(e);
-                console.log(e.stack);
+                this.node.error(JSON.stringify(e.stack, null, 2));
+                if (done) {
+                    done(e);
+                }
             }
             else {
                 this.node.error(e);
-                done();
+                if (done) {
+                    done(e);
+                }
             }
         }
     }
     listenForMessages() {
         this.node.on("input", (msg, send, done) => {
+            this.node.debug("incoming message in listen for messages");
+            this.node.debug(JSON.stringify(msg, null, 2));
             if (Object.hasOwn(msg, "payload") && typeof msg.payload == "object") {
                 msg.payload = Object.assign(msg.payload, { messageSource: "node-red input" });
             }
