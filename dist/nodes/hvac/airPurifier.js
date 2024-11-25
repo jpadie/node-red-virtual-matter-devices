@@ -18,9 +18,18 @@ class airPurifier extends fan_1.fan {
             };
             this.mapping = {
                 ...this.mapping,
-                hepaChanged: { hepaFilterMonitoring: "changeIndication", multiplier: 1, unit: "" },
-                hepaCondition: { hepaFilterMonitoring: "condition", multiplier: 1, unit: "" },
-                hepaDegradationDirection: { hepaFilterMonitoring: "degradationDirection", multiplier: 1, unit: "" }
+                hepaChanged: {
+                    hepaFilterMonitoring: "changeIndication", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                },
+                hepaCondition: {
+                    hepaFilterMonitoring: "condition", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                },
+                hepaDegradationDirection: {
+                    hepaFilterMonitoring: "degradationDirection", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                }
             };
             this.setDefault("hepaChanged", 0);
             this.setDefault("hepaCondition", 0);

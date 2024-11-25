@@ -10,7 +10,7 @@ class rainSensor extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Water Leak Detector";
         this.mapping = {
-            rain: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            rain: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.serialNumber = "rd-" + this.attributes.serialNumber;
     }

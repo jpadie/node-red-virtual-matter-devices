@@ -10,7 +10,7 @@ class flowSensor extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Flow Sensor";
         this.mapping = {
-            flowRate: { flowMeasurement: "measuredValue", multiplier: 10, unit: "m3/h" }
+            flowRate: { flowMeasurement: "measuredValue", multiplier: 10, unit: "m3/h", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 1 } }
         };
         this.attributes.serialNumber = "fs-" + this.attributes.serialNumber;
     }

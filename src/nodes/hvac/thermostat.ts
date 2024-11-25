@@ -18,6 +18,7 @@ export class thermostat extends BaseEndpoint {
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
+            ...this.mapping,
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
@@ -158,7 +159,10 @@ export class thermostat extends BaseEndpoint {
             this.prune("humidity");
         }
 
-        this.attributes.thermostat = a;
+        this.attributes = {
+            ...this.attributes,
+            thermostat: a
+        }
 
         let withs: any = [];
         let features: Thermostat.Feature[] = [Thermostat.Feature.Setback];
@@ -167,9 +171,10 @@ export class thermostat extends BaseEndpoint {
         if (this.config.supportsHeating) features.push(Thermostat.Feature.Heating);
         if (this.config.supportsOccupancy) features.push(Thermostat.Feature.Occupancy);
 
-        withs.push(ThermostatServer.withFeatures(...features));
+        withs.push(ThermostatServer.with(...features));
         if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
         withs.push(BridgedDeviceBasicInformationServer);
+        //withs.push(OnOffBehavior);
         this.withs = withs;
         /*
         console.log("thermostat config");
@@ -323,7 +328,14 @@ export class thermostat extends BaseEndpoint {
         return ret;
     }
     override async deploy() {
-        this.endpoint = new Endpoint(ThermostatDevice.withBehaviors(...this.withs), this.attributes);
-
+        this.endpoint = new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
+        console.log("context");
+        console.log(this.context);
+        console.log("attributes");
+        console.log(this.attributes);
+        console.log("mapping");
+        console.log(this.mapping);
+        console.log("config");
+        console.log(this.config);
     }
 }

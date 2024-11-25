@@ -10,7 +10,7 @@ class contactSensor extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Contact Sensor";
         this.mapping = {
-            contact: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            contact: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.serialNumber = "cs-" + this.attributes.serialNumber;
     }

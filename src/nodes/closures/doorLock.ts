@@ -21,13 +21,14 @@ export class doorLock extends BaseEndpoint {
         this.setDefault("lock", DoorLock.LockState.Unlocked);
         this.setDefault("mode", DoorLock.OperatingMode.Normal);
 
-        this.attributes.serialNumber = "dlk-" + this.attributes.serialNumber;
+        this.setSerialNumber("dlk-");
+
         this.attributes.doorLock = {
             supportedOperatingModes: {
                 normal: true,
                 vacation: true,
                 noRemoteLockUnlock: true,
-                passage: false,
+                passage: true,
                 privacy: true
             },
             operatingMode: this.context.mode,
@@ -47,8 +48,8 @@ export class doorLock extends BaseEndpoint {
                     return value;
                 }
                 break;
-            case "state":
-                if (!Number.isNaN(this.context.mode)) {
+            case "lock":
+                if (!Number.isNaN(value)) {
                     return Object.keys(DoorLock.LockState).find(key => DoorLock.LockState[key] === value)
                 } else {
                     return value;
@@ -58,13 +59,17 @@ export class doorLock extends BaseEndpoint {
                 return value;
         }
     }
+    getStatusText() {
+        let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
+        return text;
+    }
     override setStatus() {
-        let text = "State: " + this.getVerbose("mode", this.context.mode);
+
         try {
             this.node.status({
                 fill: "green",
                 shape: "dot",
-                text: text
+                text: this.getStatusText()
             });
         } catch (e) {
             this.node.error(e);

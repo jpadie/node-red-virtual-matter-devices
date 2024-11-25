@@ -11,8 +11,8 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
         let name = _name || config.name || "Door Lock";
         super(node, config, name);
         this.mapping = {
-            lock: { doorLock: "lockState", multiplier: 1, unit: "" },
-            mode: { doorLock: "operatingMode", multiplier: 1, unit: "" }
+            lock: { doorLock: "lockState", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } },
+            mode: { doorLock: "operatingMode", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.setDefault("lock", clusters_1.DoorLock.LockState.Unlocked);
         this.setDefault("mode", clusters_1.DoorLock.OperatingMode.Normal);

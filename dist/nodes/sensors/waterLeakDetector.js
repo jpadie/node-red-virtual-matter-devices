@@ -11,7 +11,7 @@ class waterLeakDetector extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Water Leak Detector";
         this.mapping = {
-            leaking: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            leaking: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.serialNumber = "wld-" + this.attributes.serialNumber;
     }

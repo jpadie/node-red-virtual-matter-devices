@@ -13,8 +13,8 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         name = config.name || "Window Covering";
         super(node, config, name);
         this.mapping = {
-            lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%" },
-            tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%" }
+            lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } },
+            tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         let withs = [];
         let windowCovering;

@@ -14,17 +14,54 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
         let name = config.name || _name || "Fan";
         super(node, config, name);
         this.mapping = {
-            fanMode: { fanControl: "fanMode", multiplier: 1, unit: "" },
-            percentSetting: { fanControl: "percentSetting", multiplier: 1, unit: "" },
-            percentCurrent: { fanControl: "percentCurrent", multiplier: 1, unit: "" },
-            airFlow: { fanControl: "airflowDirection", multiplier: 1, unit: "" },
-            speedSetting: { fanControl: "speedSetting", multiplier: 1, unit: "" },
-            speedCurrent: { fanControl: "speedCurrent", multiplier: 1, unit: "" },
-            rockUpDown: { fanControl: { rockSetting: "rockUpDown" }, multiplier: 1, unit: '' },
-            rockLeftRight: { fanControl: { rockSetting: "rockLeftRight" }, multiplier: 1, unit: '' },
-            rockRound: { fanControl: { rockSetting: "rockRound" }, multiplier: 1, unit: '' },
-            sleepWind: { fanControl: { windSetting: "sleepWind" }, multiplier: 1, unit: '' },
-            naturalWind: { fanControl: { windSetting: "naturalWind" }, multiplier: 1, unit: '' }
+            fanMode: {
+                fanControl: "fanMode", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            percentSetting: {
+                fanControl: "percentSetting", multiplier: 1, unit: "", matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            percentCurrent: {
+                fanControl: "percentCurrent", multiplier: 1, unit: "", matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            airFlow: {
+                fanControl: "airflowDirection", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            speedSetting: {
+                fanControl: "speedSetting", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            speedCurrent: {
+                fanControl: "speedCurrent", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockUpDown: {
+                fanControl: { rockSetting: "rockUpDown" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockLeftRight: {
+                fanControl: { rockSetting: "rockLeftRight" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockRound: {
+                fanControl: { rockSetting: "rockRound" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            sleepWind: {
+                fanControl: { windSetting: "sleepWind" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            naturalWind: {
+                fanControl: { windSetting: "naturalWind" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            }
         };
         this.setSerialNumber("fan-");
         this.attributes.fanControl = {};

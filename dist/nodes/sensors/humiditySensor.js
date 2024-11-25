@@ -10,7 +10,7 @@ class humiditySensor extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Humidity Sensor";
         this.mapping = {
-            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" }
+            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         };
         this.attributes.serialNumber = "hs-" + this.attributes.serialNumber;
     }

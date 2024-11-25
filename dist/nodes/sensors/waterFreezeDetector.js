@@ -11,7 +11,7 @@ class waterFreezeDetectorDevice extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Water Freeze Sensor";
         this.mapping = {
-            frozen: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            frozen: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.serialNumber = "wfd-" + this.attributes.serialNumber;
     }

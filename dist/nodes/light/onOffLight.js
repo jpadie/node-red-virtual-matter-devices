@@ -18,7 +18,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
             },
         };
         this.mapping = {
-            onoff: { onOff: "onOff", multiplier: 1, unit: "" }
+            onoff: { onOff: "onOff", multiplier: 1, unit: "", min: 0, max: 1, matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.setSerialNumber("light-");
     }

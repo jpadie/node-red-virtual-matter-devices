@@ -35,7 +35,8 @@
         "src/nodes/closures/*.ts",
         "src/nodes/base/*.ts",
         "src/nodes/hvac/*.ts",
-        "src/nodes/actuator/*.ts"
+        "src/nodes/actuator/*.ts",
+        "src/nodes/converters/*.ts"
     ],
     "exclude": [
         "node_modules",

@@ -16,6 +16,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         let name = _name || config.name || "Thermostat";
         super(node, config, name);
         this.mapping = {
+            ...this.mapping,
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
@@ -28,6 +29,23 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
         };
+        for (const i in this.mapping) {
+            switch (i) {
+                case "systemMode":
+                case "occupied":
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "int" }
+                    });
+                    break;
+                default:
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "float", valueDecimals: 2 }
+                    });
+                    break;
+            }
+        }
         this.setSerialNumber("tstat-");
         let a = {};
         this.setDefault("localTemperature", 20);
@@ -133,7 +151,10 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         else {
             this.prune("humidity");
         }
-        this.attributes.thermostat = a;
+        this.attributes = {
+            ...this.attributes,
+            thermostat: a
+        };
         let withs = [];
         let features = [clusters_1.Thermostat.Feature.Setback];
         if (this.config.supportsCooling)
@@ -142,7 +163,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             features.push(clusters_1.Thermostat.Feature.Heating);
         if (this.config.supportsOccupancy)
             features.push(clusters_1.Thermostat.Feature.Occupancy);
-        withs.push(behaviors_2.ThermostatServer.withFeatures(...features));
+        withs.push(behaviors_2.ThermostatServer.with(...features));
         if (this.config.supportsHumidity)
             withs.push(behaviors_3.RelativeHumidityMeasurementServer);
         withs.push(behaviors_1.BridgedDeviceBasicInformationServer);
@@ -294,7 +315,15 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         return ret;
     }
     async deploy() {
-        this.endpoint = new main_1.Endpoint(devices_1.ThermostatDevice.withBehaviors(...this.withs), this.attributes);
+        this.endpoint = new main_1.Endpoint(devices_1.ThermostatDevice.with(...this.withs), this.attributes);
+        console.log("context");
+        console.log(this.context);
+        console.log("attributes");
+        console.log(this.attributes);
+        console.log("mapping");
+        console.log(this.mapping);
+        console.log("config");
+        console.log(this.config);
     }
 }
 exports.thermostat = thermostat;

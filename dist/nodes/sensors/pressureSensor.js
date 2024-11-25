@@ -11,7 +11,7 @@ class pressureSensor extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Pressure Sensor";
         this.mapping = {
-            pressure: { pressureMeasurement: "measuredValue", multiplier: 10, unit: "kPa" }
+            pressure: { pressureMeasurement: "measuredValue", multiplier: 10, unit: "kPa", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         };
         this.attributes.serialNumber = "ps-" + this.attributes.serialNumber;
     }

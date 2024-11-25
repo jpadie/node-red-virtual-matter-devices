@@ -1,0 +1,103 @@
+<script type="text/javascript">
+    RED.nodes.registerType("matter2Z2M", {
+        category: 'matter',
+        defaults: {
+            name: {
+                value: "Z2M <-> Matter"
+            },
+            direction: {
+                value: "toZ2M"
+            }
+        },
+        label: function () {
+            if (this.direction == "toZ2M") {
+                return this.name || "Matter -> Z2M";
+            } else {
+                return this.name || "Z2M -> Matter";
+            }
+        },
+        color: "#FF5F1F",
+        paletteLabel: "Z2M Converter",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+        onpaletteremove: function () {
+
+        },
+        oneditprepare: function () {
+            const node = this;
+        },
+        oneditdelete: function () {
+
+        },
+        oneditsave: function () {
+
+        }
+    });
+</script>
+<script type="text/html" data-template-name="matter2Z2M">
+    <style>
+        fieldset.matter button.red-ui-button {
+            background-color: lightsteelblue;
+        }
+        fieldset.matter button.selected{
+            background-color: darkturquoise !important;
+        }
+        fieldset.matter div.form-row{
+            clear:both;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            display: inline-block;
+            vertical-align:middle
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        fieldset.matter div.fR button.toggle{
+            margin-right:0.5rem;
+        }
+        fieldset.matter .hidden, fieldset.hidden{
+            display: none !important;
+        }
+       
+        
+
+    </style>
+    
+    <fieldset class="matter">
+        <legend>Conversion</legend>
+        <div class="form-row">
+            <label for="node-input-direction">QR Code</label>
+            <div class="fR">
+                <select id="node-input-direction">
+                    <option value="toZ2M">Matter -> Z2M</option>
+                    <option value="fromZ2M">Z2M -> Matter</option>
+                </select>
+            </div>
+        </div>
+        
+    </fieldset>
+    
+    <fieldset class="matter">
+        <legend>Basic Info</legend>
+        <div class="form-row">
+            <label for="node-input-name">
+                Name
+            </label>
+            <input type="text" id="node-input-name">
+        </div>
+    </fieldset>
+    
+</script>
+
+<script type="text/html" data-help-name="matter2Z2M">
+    <p>Convert to/from Z2M</p>
+    <p>Select the direction of conversion - that's all there is to it!</p>
+</script>
