@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dimmablePlug = void 0;
-require("@project-chip/matter-node.js");
-const DimmablePlugInUnitDevice_1 = require("@project-chip/matter.js/devices/DimmablePlugInUnitDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+require("@matter/main");
+const devices_1 = require("@matter/main/devices");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const dimmableLight_1 = require("../light/dimmableLight");
 class dimmablePlug extends dimmableLight_1.dimmableLight {
     constructor(node, config, _name = '') {
@@ -14,7 +14,7 @@ class dimmablePlug extends dimmableLight_1.dimmableLight {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmablePlugInUnitDevice_1.DimmablePlugInUnitDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.DimmablePlugInUnitDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
         }
         catch (e) {
             this.node.error(e);

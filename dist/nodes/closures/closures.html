@@ -5,16 +5,17 @@
         defaults: {
 
             name: { value: "Matter Closure Device" },
-            regularUpdates: { value: 1 },
+            regularUpdates: { value: 0 },
             telemetryInterval: { value: 60 },
-            passThroughMessage: { value: 1 },
+            passThroughMessage: { value: 0 },
             windowCoveringType: { value: 0 },
             deviceType: { value: "doorLock" },
             doorLockType: { value: 2 }
         },
         inputs: 1,
         outputs: 1,
-        color: "#F3B567",
+        color: "#ff711f",
+
         label: function () {
             return this.name || "Matter Closure Device";
         },
@@ -23,17 +24,7 @@
         align: "left",
 
         oneditdelete: function () {
-            //RED.warn("node deleted");
-            $.ajax({
-                url: "matter-hub/" + this.id,
-                type: "POST",
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify({ request: "removeNode", nodeID: this.id }),
-                success: function (data) {
-                    this.node.warn("Node successfully removed from Matter Hub");
-                    RED.nodes.dirty(true);
-                }
-            });
+
         },
         oneditprepare: () => {
             $(document).ready(() => {
@@ -106,14 +97,16 @@
         }
         fieldset.matter div.form-row label {
             width: 9rem !important;
-            float: left;
+            display: inline-block;
+            vertical-align:middle
         }
         fieldset.matter div.form-row div.fR{
             margin-left: 1rem;
-            float:left;
             min-width: 15rem;
             width: fit-content;
             max-width: 55%;
+            display: inline-block;
+            vertical-align: middle;
         }
         fieldset.matter div.fR button.toggle{
             margin-right:0.5rem;

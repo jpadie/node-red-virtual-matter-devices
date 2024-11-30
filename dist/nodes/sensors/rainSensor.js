@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.rainSensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const RainSensorDevice_1 = require("@project-chip/matter.js/devices/RainSensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class rainSensor extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
         this.name = this.config.name || "Water Leak Detector";
         this.mapping = {
-            rain: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            rain: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.serialNumber = "rd-" + this.attributes.serialNumber;
     }
@@ -31,7 +31,7 @@ class rainSensor extends BaseEndpoint_1.BaseEndpoint {
             stateValue: this.context.rain ? true : false
         };
         try {
-            this.endpoint = await new endpoint_1.Endpoint(RainSensorDevice_1.RainSensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.RainSensorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
             this.listen();
             this.regularUpdate();
             this.setStatus();

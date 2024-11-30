@@ -1,8 +1,8 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { LightSensorDevice } from "@project-chip/matter.js/devices/LightSensorDevice";
+import { LightSensorDevice } from "@matter/main/devices";
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 
 export class lightSensor extends BaseEndpoint {
 
@@ -20,7 +20,11 @@ export class lightSensor extends BaseEndpoint {
         this.name = this.config.name || "Temperature Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            brightness: { illuminanceMeasurement: "measuredValue", multiplier: [this.lx2val.bind(this), this.val2lx.bind(this)], unit: "lx" }
+            brightness: {
+                illuminanceMeasurement: "measuredValue",
+                multiplier: [this.lx2val.bind(this), this.val2lx.bind(this)],
+                unit: "lx"
+            }
         }
 
         this.attributes.serialNumber = "lxs-" + this.attributes.serialNumber;

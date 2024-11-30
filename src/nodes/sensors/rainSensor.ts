@@ -1,7 +1,7 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { RainSensorDevice } from "@project-chip/matter.js/devices/RainSensorDevice";
+import { RainSensorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 export class rainSensor extends BaseEndpoint {
@@ -11,7 +11,7 @@ export class rainSensor extends BaseEndpoint {
         this.name = this.config.name || "Water Leak Detector"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            rain: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            rain: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.serialNumber = "rd-" + this.attributes.serialNumber;

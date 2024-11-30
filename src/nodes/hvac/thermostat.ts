@@ -1,12 +1,11 @@
 type: module
-import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { ThermostatDevice } from "@project-chip/matter.js/devices/ThermostatDevice";
-import { ThermostatServer } from "@project-chip/matter.js/behaviors/thermostat";
-import { Thermostat } from "@project-chip/matter.js/cluster";
-import { RelativeHumidityMeasurementServer } from "@project-chip/matter.js/behaviors/relative-humidity-measurement";
+import { ThermostatDevice } from "@matter/main/devices"
+import { ThermostatServer } from "@matter/main/behaviors"
+import { Thermostat } from "@matter/main/clusters";
+import { RelativeHumidityMeasurementServer } from "@matter/main/behaviors"
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 
@@ -19,6 +18,7 @@ export class thermostat extends BaseEndpoint {
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
+            ...this.mapping,
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
@@ -30,6 +30,23 @@ export class thermostat extends BaseEndpoint {
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
+        }
+        for (const i in this.mapping) {
+            switch (i) {
+                case "systemMode":
+                case "occupied":
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "int" }
+                    });
+                    break;
+                default:
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "float", valueDecimals: 2 }
+                    });
+                    break;
+            }
         }
 
         this.setSerialNumber("tstat-");
@@ -142,7 +159,10 @@ export class thermostat extends BaseEndpoint {
             this.prune("humidity");
         }
 
-        this.attributes.thermostat = a;
+        this.attributes = {
+            ...this.attributes,
+            thermostat: a
+        }
 
         let withs: any = [];
         let features: Thermostat.Feature[] = [Thermostat.Feature.Setback];
@@ -154,6 +174,7 @@ export class thermostat extends BaseEndpoint {
         withs.push(ThermostatServer.with(...features));
         if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
         withs.push(BridgedDeviceBasicInformationServer);
+        //withs.push(OnOffBehavior);
         this.withs = withs;
         /*
         console.log("thermostat config");
@@ -181,6 +202,13 @@ export class thermostat extends BaseEndpoint {
             shape: "dot",
             text: text
         })
+    }
+
+    override matterRefine(item: any, value: any) {
+        if (['systemMode'].includes(item)) {
+            return value;
+        }
+        return super.matterRefine(item, value);
     }
 
     override preProcessDeviceChanges(value: any, item: any) {
@@ -308,6 +336,13 @@ export class thermostat extends BaseEndpoint {
     }
     override async deploy() {
         this.endpoint = new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
-
+        console.log("context");
+        console.log(this.context);
+        console.log("attributes");
+        console.log(this.attributes);
+        console.log("mapping");
+        console.log(this.mapping);
+        console.log("config");
+        console.log(this.config);
     }
 }

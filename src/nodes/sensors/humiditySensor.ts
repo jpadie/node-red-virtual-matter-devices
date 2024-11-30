@@ -1,8 +1,8 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { HumiditySensorDevice } from "@project-chip/matter.js/devices/HumiditySensorDevice";
+import { HumiditySensorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 
 
 
@@ -14,7 +14,7 @@ export class humiditySensor extends BaseEndpoint {
         this.name = this.config.name || "Humidity Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" }
+            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         }
 
         this.attributes.serialNumber = "hs-" + this.attributes.serialNumber;

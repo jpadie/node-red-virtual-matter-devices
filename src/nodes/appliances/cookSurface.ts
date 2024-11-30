@@ -1,12 +1,14 @@
 import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { CookSurfaceDevice } from "@project-chip/matter.js/devices/CookSurfaceDevice";
-import { CookSurfaceRequirements } from "@project-chip/matter.js/devices/CookSurfaceDevice";
+import { CookSurfaceDevice } from "@matter/main/devices"
+    ;
+import { CookSurfaceRequirements } from "@matter/main/devices"
+    ;
 
-
+/*
 export class cookSurface extends BaseEndpoint {
 
 
@@ -83,3 +85,4 @@ await this.endpoint.behaviors.activate(
 )
     }
 }
+*/

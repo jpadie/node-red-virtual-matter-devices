@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 type: module;
-require("@project-chip/matter-node.js");
 const thermostat_1 = require("./thermostat");
 const fan_1 = require("./fan");
 const airPurifier_1 = require("./airPurifier");

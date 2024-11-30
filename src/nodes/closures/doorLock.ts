@@ -1,10 +1,11 @@
-import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { DoorLockDevice } from "@project-chip/matter.js/devices/DoorLockDevice";
-import { DoorLock } from "@project-chip/matter.js/cluster";
+import { DoorLockDevice } from "@matter/main/devices"
+    ;
+import { DoorLock } from "@matter/main/clusters";
+
 
 export class doorLock extends BaseEndpoint {
 
@@ -13,20 +14,21 @@ export class doorLock extends BaseEndpoint {
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
-            lock: { doorLock: "lockState", multiplier: 1, unit: "" },
-            mode: { doorLock: "operatingMode", multiplier: 1, unit: "" }
+            lock: { doorLock: "lockState", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } },
+            mode: { doorLock: "operatingMode", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.setDefault("lock", DoorLock.LockState.Unlocked);
         this.setDefault("mode", DoorLock.OperatingMode.Normal);
 
-        this.attributes.serialNumber = "dlk-" + this.attributes.serialNumber;
+        this.setSerialNumber("dlk-");
+
         this.attributes.doorLock = {
             supportedOperatingModes: {
                 normal: true,
                 vacation: true,
                 noRemoteLockUnlock: true,
-                passage: false,
+                passage: true,
                 privacy: true
             },
             operatingMode: this.context.mode,
@@ -41,14 +43,16 @@ export class doorLock extends BaseEndpoint {
         switch (item) {
             case "mode":
                 if (!Number.isNaN(value)) {
-                    return Object.keys(DoorLock.OperatingMode).find(key => DoorLock.OperatingMode[key] === value)
+                    return this.getEnumKeyByEnumValue(DoorLock.OperatingMode, value);
+                    //return Object.keys().find(key => DoorLock.OperatingMode[key] === value)
                 } else {
                     return value;
                 }
                 break;
-            case "state":
-                if (!Number.isNaN(this.context.mode)) {
-                    return Object.keys(DoorLock.LockState).find(key => DoorLock.LockState[key] === value)
+            case "lock":
+                if (!Number.isNaN(value)) {
+                    return this.getEnumKeyByEnumValue(DoorLock.LockState, value);
+                    //return Object.keys(DoorLock.LockState).find(key => DoorLock.LockState[key] === value)
                 } else {
                     return value;
                 }
@@ -57,13 +61,17 @@ export class doorLock extends BaseEndpoint {
                 return value;
         }
     }
+    getStatusText() {
+        let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
+        return text;
+    }
     override setStatus() {
-        let text = "State: " + this.getVerbose("mode", this.context.mode);
+
         try {
             this.node.status({
                 fill: "green",
                 shape: "dot",
-                text: text
+                text: this.getStatusText()
             });
         } catch (e) {
             this.node.error(e);
@@ -73,7 +81,10 @@ export class doorLock extends BaseEndpoint {
         try {
             this.endpoint = await new Endpoint(DoorLockDevice.with(
                 BridgedDeviceBasicInformationServer
-            ), this.attributes);
+            ),
+                this.attributes
+            );
+
         } catch (e) {
             this.node.error("Error creating endpoint: " + e);
         }

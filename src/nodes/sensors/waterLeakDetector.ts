@@ -1,9 +1,9 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+require("@matter/node");
+import { Endpoint } from "@matter/main"
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { WaterLeakDetectorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { WaterLeakDetectorDevice } from "@project-chip/matter.js/devices/WaterLeakDetectorDevice";
-
 
 export class waterLeakDetector extends BaseEndpoint {
 
@@ -13,7 +13,7 @@ export class waterLeakDetector extends BaseEndpoint {
         this.name = this.config.name || "Water Leak Detector"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            leaking: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            leaking: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.serialNumber = "wld-" + this.attributes.serialNumber;

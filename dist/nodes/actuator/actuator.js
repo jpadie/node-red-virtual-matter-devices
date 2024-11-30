@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 type: module;
-require("@project-chip/matter-node.js");
+require("@matter/main");
 const onOffPlug_1 = require("./onOffPlug");
 const dimmablePlug_1 = require("./dimmablePlug");
 module.exports = (RED) => {

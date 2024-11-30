@@ -1,7 +1,6 @@
-import "@project-chip/matter-node.js";
-import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { DimmableLightDevice } from "@matter/main/devices";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { onOffLight } from "./onOffLight";
 
@@ -28,43 +27,20 @@ export class dimmableLight extends onOffLight {
 
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
-        }
-
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
-    }
-
-    override getVerbose(item, value) {
-        switch (item) {
-            case "currentLevel":
-            case "brightness":
-            case "level":
-                return Math.round(value);
-                break;
-
-            default:
-                return super.getVerbose(item, value);
-        }
-    }
-    override listenForChange_postProcess(report: any = null) {
-        super.listenForChange_postProcess(report);
-        //no need to do anything for zigbee
-    };
-
-    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
-        let { a, b } = super.preProcessNodeRedInput(item, value)
-        if (this.zigbee()) {
-            switch (a) {
-                case "brightness":
-                    a = "brightness";
-                    b = Math.round(value * 100 / 255);  //Math.ceil(b * 100 / 255)
-                    break;
-                default:
-
+            brightness: {
+                levelControl: "currentLevel",
+                multiplier: 2.55,
+                unit: "%",
+                min: 0,
+                max: 254,
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
             }
         }
-        return { a: a, b: b };
+
+        this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
     }
+
 
     override setStatus() {
         this.node.status({

@@ -1,5 +1,4 @@
 type: module
-import "@project-chip/matter-node.js";
 import type { Node, NodeAPI } from 'node-red';
 import { windowCovering } from "./windowCovering";
 import { doorLock } from "./doorLock";

@@ -1,11 +1,8 @@
 type: module
-import "@project-chip/matter-node.js";
 import type { Node, NodeAPI } from 'node-red';
 import { thermostat } from "./thermostat";
 import { fan } from "./fan";
 import { airPurifier } from "./airPurifier";
-
-
 
 /* tslint:disable */
 

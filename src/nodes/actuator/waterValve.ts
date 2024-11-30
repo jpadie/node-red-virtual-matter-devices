@@ -1,12 +1,12 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { BaseEndpoint } from "../base/BaseEndpoint"
-import { WaterValveDevice } from "@project-chip/matter.js/devices/WaterValveDevice";
-import { WaterValveRequirements } from "@project-chip/matter.js/devices/WaterValveDevice";
-import { ValveConfigurationAndControl } from "@project-chip/matter.js/cluster";
+import { WaterValveDevice } from "@matter/main/devices";
+import { WaterValveRequirements } from "@matter/main/devices";
+import { ValveConfigurationAndControl } from "@matter/main/clusters";
 
-
+/*
 export class waterValve extends BaseEndpoint {
 
     constructor(node: Node, config: any, _name: any = "") {
@@ -72,3 +72,4 @@ export class waterValve extends BaseEndpoint {
         }
     }
 }
+    */

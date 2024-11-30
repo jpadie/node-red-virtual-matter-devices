@@ -1,15 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.matterHub = void 0;
-require("@project-chip/matter-node.js");
-const datatype_1 = require("@project-chip/matter.js/datatype");
-const node_1 = require("@project-chip/matter.js/node");
-const schema_1 = require("@project-chip/matter.js/schema");
-const device_1 = require("@project-chip/matter.js/device");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const AggregatorEndpoint_1 = require("@project-chip/matter.js/endpoints/AggregatorEndpoint");
-const endpoint_2 = require("@project-chip/matter.js/endpoint");
-const environment_1 = require("@project-chip/matter.js/environment");
+const main_1 = require("@matter/main");
+const endpoints_1 = require("@matter/main/endpoints");
+const protocol_1 = require("@matter/main/protocol");
+const types_1 = require("@matter/types");
 class MatterHub {
     static #instance;
     started = false;
@@ -28,25 +23,36 @@ class MatterHub {
     shuttingDown = false;
     constructor() {
         this.init();
-        console.log("++++++++++++++++");
-        console.log("restarting matterHub");
-        console.log("++++++++++++++++");
     }
     async loadVars() {
-        const environment = environment_1.Environment.default;
-        const storageService = environment.get(environment_1.StorageService);
+        const FORBIDDEN_PASSCODES = [
+            0,
+            11111111,
+            22222222,
+            33333333,
+            44444444,
+            55555555,
+            66666666,
+            77777777,
+            88888888,
+            99999999,
+            12345678,
+            87654321
+        ];
+        const environment = main_1.Environment.default;
+        const storageService = environment.get(main_1.StorageService);
         this.deviceStorage = (await storageService.open("matterHub")).createContext("data");
-        this.passcode = environment.vars.number("passcode") ?? (await this.deviceStorage.get("passcode", this.randomNumber(0, 0x3FFFFFF)));
+        let passcode;
+        do {
+            passcode = this.randomNumber(0, 0x3FFFFFF);
+        } while (FORBIDDEN_PASSCODES.includes(passcode));
+        this.passcode = environment.vars.number("passcode") ?? (await this.deviceStorage.get("passcode", passcode));
         this.discriminator = environment.vars.number("discriminator") ?? (await this.deviceStorage.get("discriminator", this.randomNumber(0, 0xFFF)));
         this.id = environment.vars.string("uniqueid") ?? (await this.deviceStorage.get("uniqueid", this.getID()));
-        this.deviceStorage.set({
-            passcode: this.passcode,
-            discriminator: this.discriminator,
-            uniqueid: this.id
-        });
+        await this.saveVars();
     }
-    saveVars() {
-        this.deviceStorage.set({
+    async saveVars() {
+        await this.deviceStorage.set({
             passcode: this.passcode,
             discriminator: this.discriminator,
             uniqueid: this.id
@@ -59,7 +65,7 @@ class MatterHub {
     randomNumber(min, max) {
         return Math.round(Math.random() * (max - min) + min);
     }
-    getID() {
+    async getID() {
         let bytes = [];
         for (let i = 0; i < 8; i++) {
             bytes.push(Math.round(0xff * Math.random()).toString(16).padStart(2, '0'));
@@ -85,11 +91,11 @@ class MatterHub {
             },
             productDescription: {
                 name: name,
-                deviceType: AggregatorEndpoint_1.AggregatorEndpoint.deviceType,
+                deviceType: endpoints_1.AggregatorEndpoint.deviceType,
             },
             basicInformation: {
                 vendorName: "matter.js",
-                vendorId: (0, datatype_1.VendorId)(65521),
+                vendorId: (0, main_1.VendorId)(65521),
                 nodeLabel: name,
                 productName: name,
                 productLabel: name,
@@ -98,39 +104,28 @@ class MatterHub {
                 uniqueId: this.id.substring(0, 30),
             }
         };
-        console.log(serverOpts);
-        node_1.ServerNode
-            .create(serverOpts)
-            .then((resolve) => {
-            this.matterServer = resolve;
-            this.aggregator = new endpoint_2.Endpoint(AggregatorEndpoint_1.AggregatorEndpoint, { id: "matterHub" });
-            this.matterServer.add(this.aggregator)
-                .then(() => {
-                this.started = true;
-                for (const e in this.endpoints) {
-                    this.addDevice(this.endpoints[e]);
-                }
-                this.matterServer.bringOnline().then(() => {
-                    setTimeout(() => {
-                        (0, device_1.logEndpoint)(endpoint_1.EndpointServer.forEndpoint(this.matterServer));
-                    }, 3500);
-                }).catch((error) => {
-                    console.log("problem bringing matter server online", error);
-                });
-            }).catch((e) => {
-                console.log(e);
-            });
-            this.commissioned = this.matterServer.lifecycle.isCommissioned;
-            this.online = this.matterServer.lifecycle.isOnline;
-            const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
-            this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
-            this.qrcode = schema_1.QrCode.get(qrPairingCode);
-            this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
-        }).catch((error) => {
-            console.error("Issue with matter server deployment", error);
-        });
+        try {
+            console.log(this.started);
+            this.matterServer = await main_1.ServerNode.create(serverOpts);
+            this.aggregator = new main_1.Endpoint(endpoints_1.AggregatorEndpoint, { id: "matterHub" });
+            await this.matterServer.add(this.aggregator);
+            this.started = true;
+            for (const e in this.endpoints) {
+                this.addDevice(this.endpoints[e]);
+            }
+            await this.matterServer.start();
+            await this.matterServer.construction;
+            setTimeout(() => {
+                (0, protocol_1.logEndpoint)(main_1.EndpointServer.forEndpoint(this.matterServer));
+            }, 3500);
+            this.queryStatus();
+        }
+        catch (error) {
+            console.log(`[Matter Hub]: Error creating MatterHub. ${error}`);
+            console.trace();
+        }
     }
-    addDevice(endpoint) {
+    async addDevice(endpoint) {
         if (this.shuttingDown) {
             this.shuttingDown = false;
             this.deploy();
@@ -141,7 +136,7 @@ class MatterHub {
         else {
             try {
                 this.endpoints[endpoint.id] = endpoint;
-                this.aggregator.add(endpoint);
+                await this.aggregator.add(endpoint);
             }
             catch (e) {
                 console.log(e);
@@ -149,7 +144,21 @@ class MatterHub {
             }
         }
     }
+    async queryStatus() {
+        await this.matterServer.construction;
+        if (this.matterServer.lifecycle.isOnline) {
+            this.commissioned = this.matterServer.lifecycle.isCommissioned;
+            this.online = this.matterServer.lifecycle.isOnline;
+            const qrPairingCode = this.matterServer.state.commissioning.pairingCodes.qrPairingCode;
+            this.manualPairingCode = this.matterServer.state.commissioning.pairingCodes.manualPairingCode;
+            this.qrcode = types_1.QrCode.get(qrPairingCode);
+            this.qrcodeURL = `https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`;
+        }
+    }
     getStatus() {
+        if (!this.started)
+            return {};
+        this.queryStatus();
         return {
             online: this.online,
             commissioned: this.commissioned,
@@ -159,15 +168,20 @@ class MatterHub {
         };
     }
     async reInitialise() {
-        await this.matterServer.cancel();
-        this.id = this.getID();
-        this.saveVars();
-        this.deploy();
+        this.started = false;
+        if (this.matterServer.lifecycle.isOnline) {
+            await this.matterServer.cancel();
+        }
+        await this.matterServer.erase();
+        this.started = true;
+        setTimeout(() => {
+            (0, protocol_1.logEndpoint)(main_1.EndpointServer.forEndpoint(this.matterServer));
+        }, 2000);
     }
     async killDevice(id) {
+        return;
         console.log("in kill device for " + id);
         console.log("++++++++++++++++++");
-        return;
         if (Object.hasOwn(this.endpoints, id)) {
             await this.endpoints[id].destroy();
             delete (this.endpoints[id]);
@@ -191,11 +205,14 @@ class MatterHub {
         }
         return response;
     }
-    timeToClose() {
+    async timeToClose() {
         if (!this.shuttingDown) {
+            console.log("Matter Hub shutting down");
             this.shuttingDown = true;
-            this.shutDown();
+            await this.shutDown();
+            return 1;
         }
+        return 1;
     }
     async shutDown() {
         this.started = false;

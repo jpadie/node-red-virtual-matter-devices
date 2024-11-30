@@ -1,7 +1,8 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
-import { WaterFreezeDetectorDevice } from "@project-chip/matter.js/devices/WaterFreezeDetectorDevice";
+require("@matter/node");
+import { Endpoint } from "@matter/main"
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { WaterFreezeDetectorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 
@@ -13,7 +14,7 @@ export class waterFreezeDetectorDevice extends BaseEndpoint {
         this.name = this.config.name || "Water Freeze Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            frozen: { booleanState: "stateValue", multiplier: 1, unit: "" }
+            frozen: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         this.attributes.serialNumber = "wfd-" + this.attributes.serialNumber;

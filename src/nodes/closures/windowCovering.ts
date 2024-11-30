@@ -1,10 +1,12 @@
-import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { WindowCoveringDevice } from "@project-chip/matter.js/devices/WindowCoveringDevice";
-import { WindowCoveringServer } from "@project-chip/matter.js/behaviors/window-covering";
-import { WindowCovering } from "@project-chip/matter.js/cluster";
+import { WindowCoveringDevice } from "@matter/main/devices"
+    ;
+import { WindowCoveringServer } from "@matter/main/behaviors"
+    ;
+import { WindowCovering } from "@matter/main/clusters";
+
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 export class windowCovering extends BaseEndpoint {
@@ -16,8 +18,8 @@ export class windowCovering extends BaseEndpoint {
 
 
         this.mapping = {   //must be a 1 : 1 mapping
-            lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%" },
-            tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%" }
+            lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } },
+            tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
         let withs: WindowCovering.Feature[] = [];
@@ -95,6 +97,20 @@ export class windowCovering extends BaseEndpoint {
         //   console.log(this.config);
     }
 
+    override getVerbose(item: any, value: any) {
+        if (Number.isNaN(value)) {
+            return value;
+        }
+        switch (item) {
+            case "lift":
+                if (value == 0) return "Closed";
+                if (value == 100) return "Open";
+                break;
+            default:
+                return value;
+        }
+        return value;
+    }
     getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {

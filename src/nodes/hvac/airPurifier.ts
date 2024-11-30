@@ -1,12 +1,11 @@
 type: module
-import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { AirPurifierDevice, AirPurifierRequirements } from "@project-chip/matter.js/devices/AirPurifierDevice";
+import { AirPurifierDevice, AirPurifierRequirements } from "@matter/main/devices";
 import { fan } from "./fan";
-import { ResourceMonitoring } from "@project-chip/matter.js/cluster";
-import { FanRequirements } from "@project-chip/matter.js/devices/FanDevice";
+import { ResourceMonitoring } from "@matter/main/clusters";
+import { FanRequirements } from "@matter/main/devices";
 
 
 
@@ -22,9 +21,18 @@ export class airPurifier extends fan {
             };
             this.mapping = {
                 ...this.mapping,
-                hepaChanged: { hepaFilterMonitoring: "changeIndication", multiplier: 1, unit: "" },
-                hepaCondition: { hepaFilterMonitoring: "condition", multiplier: 1, unit: "" },
-                hepaDegradationDirection: { hepaFilterMonitoring: "degradationDirection", multiplier: 1, unit: "" }
+                hepaChanged: {
+                    hepaFilterMonitoring: "changeIndication", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                },
+                hepaCondition: {
+                    hepaFilterMonitoring: "condition", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                },
+                hepaDegradationDirection: {
+                    hepaFilterMonitoring: "degradationDirection", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                }
             }
             this.setDefault("hepaChanged", 0);
             this.setDefault("hepaCondition", 0)

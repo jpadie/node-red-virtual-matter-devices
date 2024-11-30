@@ -1,7 +1,8 @@
 type: module
-import "@project-chip/matter-node.js";
+require("@matter/main");
 import type { Node, NodeAPI } from 'node-red';
 /* tslint:disable */
+
 
 import { contactSensor } from "./contactSensor";
 import { flowSensor } from "./flowSensor";

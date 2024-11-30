@@ -1,8 +1,9 @@
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+require("@matter/main");
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { PressureSensorDevice } from "@project-chip/matter.js/devices/PressureSensorDevice";
+import { PressureSensorDevice } from "@matter/main/devices"
 import { BaseEndpoint } from "../base/BaseEndpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main"
 
 export class pressureSensor extends BaseEndpoint {
     constructor(node: Node, config: any) {
@@ -10,7 +11,7 @@ export class pressureSensor extends BaseEndpoint {
         this.name = this.config.name || "Pressure Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            pressure: { pressureMeasurement: "measuredValue", multiplier: 10, unit: "kPa" }
+            pressure: { pressureMeasurement: "measuredValue", multiplier: 10, unit: "kPa", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         }
 
         this.attributes.serialNumber = "ps-" + this.attributes.serialNumber;

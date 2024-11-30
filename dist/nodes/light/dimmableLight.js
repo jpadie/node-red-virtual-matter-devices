@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dimmableLight = void 0;
-require("@project-chip/matter-node.js");
-const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+const devices_1 = require("@matter/main/devices");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 const onOffLight_1 = require("./onOffLight");
 class dimmableLight extends onOffLight_1.onOffLight {
     constructor(node, config, _name = '') {
@@ -24,7 +23,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
         };
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
+            brightness: { levelControl: "currentLevel", multiplier: 2.55, unit: "%", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
     }
@@ -39,23 +38,6 @@ class dimmableLight extends onOffLight_1.onOffLight {
                 return super.getVerbose(item, value);
         }
     }
-    listenForChange_postProcess(report = null) {
-        super.listenForChange_postProcess(report);
-    }
-    ;
-    preProcessNodeRedInput(item, value) {
-        let { a, b } = super.preProcessNodeRedInput(item, value);
-        if (this.zigbee()) {
-            switch (a) {
-                case "brightness":
-                    a = "brightness";
-                    b = Math.round(value * 100 / 255);
-                    break;
-                default:
-            }
-        }
-        return { a: a, b: b };
-    }
     setStatus() {
         this.node.status({
             fill: "green",
@@ -65,7 +47,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
     }
     async deploy() {
         try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
+            this.endpoint = await new main_1.Endpoint(devices_1.DimmableLightDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
         }
         catch (e) {
             this.node.error(e);

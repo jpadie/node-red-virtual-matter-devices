@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 type: module;
-require("@project-chip/matter-node.js");
 const windowCovering_1 = require("./windowCovering");
 const doorLock_1 = require("./doorLock");
 module.exports = (RED) => {
