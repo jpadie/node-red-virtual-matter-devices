@@ -35,7 +35,7 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
         switch (item) {
             case "mode":
                 if (!Number.isNaN(value)) {
-                    return Object.keys(clusters_1.DoorLock.OperatingMode).find(key => clusters_1.DoorLock.OperatingMode[key] === value);
+                    return this.getEnumKeyByEnumValue(clusters_1.DoorLock.OperatingMode, value);
                 }
                 else {
                     return value;
@@ -43,7 +43,7 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
                 break;
             case "lock":
                 if (!Number.isNaN(value)) {
-                    return Object.keys(clusters_1.DoorLock.LockState).find(key => clusters_1.DoorLock.LockState[key] === value);
+                    return this.getEnumKeyByEnumValue(clusters_1.DoorLock.LockState, value);
                 }
                 else {
                     return value;

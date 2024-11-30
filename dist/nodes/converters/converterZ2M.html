@@ -1,12 +1,23 @@
 <script type="text/javascript">
     RED.nodes.registerType("matter2Z2M", {
         category: 'matter',
+        inputs: 1,
+
         defaults: {
             name: {
-                value: "Z2M <-> Matter"
+                value: ""
             },
             direction: {
                 value: "toZ2M"
+            },
+            numberOfGangs: {
+                value: 1
+            },
+            gang: {
+                value: 1
+            },
+            outputs: {
+                value: 1
             }
         },
         label: function () {
@@ -16,7 +27,7 @@
                 return this.name || "Z2M -> Matter";
             }
         },
-        color: "#FF5F1F",
+        color: "#1FADFF",
         paletteLabel: "Z2M Converter",
         icon: "matter-icon-seeklogo.svg",
         align: "left",
@@ -25,12 +36,59 @@
         },
         oneditprepare: function () {
             const node = this;
+            $(document).ready(() => {
+                console.log("in ready");
+                const sel = $("#node-input-numberOfGangs");
+                for (let i = 1; i <= 8; i++) {
+                    let o = new Option(i, i);
+                    sel.append(o);
+                }
+                sel.val(this.numberOfGangs);
+
+                $(sel).on("change", (e) => {
+                    let cV = $("#node-input-gang").val();
+                    let numOptions = $("#node-input-gang option").length;
+                    let newNumOptions = $(sel).val();
+                    if (newNumOptions == numOptions) {
+                        return;
+                    }
+                    if (newNumOptions > numOptions) {
+                        for (let i = numOptions + 1; i <= newNumOptions; i++) {
+                            let o = new Option(i, i);
+                            $("#node-input-gang").append(o);
+                        }
+                        $("#node-input-gang").val(cV);
+
+                    } else {
+                        for (let i = numOptions; i > newNumOptions; i--) {
+                            $(`#node-input-gang option[value="${i}"]`).remove();
+                        }
+                        if (cV > newNumOptions) {
+                            $("#node-input-gang").value(1);
+                        }
+                    }
+                }).trigger("change");
+
+                $("#node-input-direction").on("change", (e) => {
+                    if ($(e.target).val() == "toZ2M") {
+                        $(".which-gang").show();
+                    } else {
+                        $(".which-gang").hide();
+                    }
+                }).trigger("change");
+
+            });
         },
         oneditdelete: function () {
 
         },
         oneditsave: function () {
-
+            this.outputs = 1;
+            if ($("#node-input-direction").val() == "fromZ2M") {
+                const sel = $("#node-input-numberOfGangs");
+                this.outputs = sel.val();
+                console.log("changing output to " + this.outputs);
+            }
         }
     });
 </script>
@@ -74,30 +132,46 @@
     <fieldset class="matter">
         <legend>Conversion</legend>
         <div class="form-row">
-            <label for="node-input-direction">QR Code</label>
+            <label for="node-input-direction">Direction</label>
             <div class="fR">
                 <select id="node-input-direction">
-                    <option value="toZ2M">Matter -> Z2M</option>
                     <option value="fromZ2M">Z2M -> Matter</option>
+                    <option value="toZ2M">Matter -> Z2M</option>
                 </select>
             </div>
         </div>
-        
-    </fieldset>
-    
-    <fieldset class="matter">
-        <legend>Basic Info</legend>
         <div class="form-row">
-            <label for="node-input-name">
-                Name
-            </label>
-            <input type="text" id="node-input-name">
+            <label for="node-input-numberOfGangs">Number of gangs</label>
+            <div class="fR">
+                <select id="node-input-numberOfGangs">
+                </select>
+            </div>
         </div>
-    </fieldset>
-    
+        <div class="form-row which-gang">
+            <label for="node-input-gang">Which gang</label>
+            <div class="fR">
+                <select id="node-input-gang">
+                </select>
+            </div>
+        </div>
+</fieldset>
+
+<fieldset class="matter">
+    <legend>Basic Info</legend>
+    <div class="form-row">
+        <label for="node-input-name">
+            Name
+        </label>
+        <input type="text" id="node-input-name">
+    </div>
+</fieldset>
+
 </script>
 
 <script type="text/html" data-help-name="matter2Z2M">
     <p>Convert to/from Z2M</p>
-    <p>Select the direction of conversion - that's all there is to it!</p>
+    <p>Select the direction of conversion</p>
+    <p>If you have multiple gangs on the Z2M device (e.g. a two gang switch module) Z2M reports this as xxx_l1 etc.<br/>
+    For converting this from Z2M to Matter you should specify the number of gangs.  Each gang will have its own output on the node.<br/>
+For converting from Matter to Z2M you should specify the gang for the Z2M device that you are wanting to control.  The converter will append _lXX to the key in the payload when the event is signalled by Matter (i.e. a change instantiated by a controller).  Regular updates and telemetry passthru will not be suffixed</p>
 </script>

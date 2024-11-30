@@ -97,6 +97,20 @@ export class windowCovering extends BaseEndpoint {
         //   console.log(this.config);
     }
 
+    override getVerbose(item: any, value: any) {
+        if (Number.isNaN(value)) {
+            return value;
+        }
+        switch (item) {
+            case "lift":
+                if (value == 0) return "Closed";
+                if (value == 100) return "Open";
+                break;
+            default:
+                return value;
+        }
+        return value;
+    }
     getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {

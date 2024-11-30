@@ -86,12 +86,27 @@ class BaseEndpoint {
     zigbee() {
         return false;
     }
-    deploy() {
+    async deploy() {
         return;
+    }
+    cleanUp() {
+        let mappings = Object.keys(this.mapping);
+        for (let item in this.context) {
+            if (item == "lastHeardFrom")
+                continue;
+            if (item.includes("_in_words"))
+                continue;
+            if (!mappings.includes[item]) {
+                this.prune(item);
+                this.prune(`${item}_in_words`);
+            }
+        }
+        this.saveContext();
     }
     async getEndpoint() {
         if (server_1.matterHub) {
             try {
+                this.cleanUp();
                 await this.deploy();
                 this.regularUpdate();
                 this.listen();
@@ -158,14 +173,18 @@ class BaseEndpoint {
         }
     }
     refine(value, decimals = 0) {
-        if (!Number(value)) {
+        if (Number.isNaN(value)) {
             return value;
         }
-        if (decimals == 0) {
-            return Math.round(value);
+        else {
+            if (decimals == 0) {
+                return Math.round(value);
+            }
+            else {
+                const e = Math.pow(10, decimals);
+                return Math.round(e * value) / e;
+            }
         }
-        const e = Math.pow(10, decimals);
-        return Math.round(e * value) / e;
     }
     matterRefine(item, value) {
         let ret;
@@ -205,26 +224,30 @@ class BaseEndpoint {
         return ret;
     }
     contextRefine(item, value) {
-        let ret;
-        if (Object.hasOwn(this.mapping[item], "context")) {
-            if (Object.hasOwn(this.mapping[item].context, "valueType")) {
-                switch (this.mapping[item].context.valueType) {
-                    case "int":
-                        ret = this.refine(value);
-                        break;
-                    case "float":
-                        if (Object.hasOwn(this.mapping[item].context, "valueDecimals")) {
-                            ret = this.refine(value, this.mapping[item].context.valueDecimals);
-                        }
-                        else {
-                            ret = this.refine(value, 2);
-                        }
-                        break;
-                    default:
-                        ret = value;
+        let ret = value;
+        this.node.debug(`Refining value for context: item ${item} and value ${value}`);
+        if (Object.hasOwn(this.mapping, "item")) {
+            if (Object.hasOwn(this.mapping[item], "context")) {
+                if (Object.hasOwn(this.mapping[item].context, "valueType")) {
+                    switch (this.mapping[item].context.valueType) {
+                        case "int":
+                            ret = this.refine(value);
+                            break;
+                        case "float":
+                            if (Object.hasOwn(this.mapping[item].context, "valueDecimals")) {
+                                ret = this.refine(value, this.mapping[item].context.valueDecimals);
+                            }
+                            else {
+                                ret = this.refine(value, 2);
+                            }
+                            break;
+                        default:
+                            ret = value;
+                    }
                 }
             }
         }
+        this.node.debug(`Refined value for context: item ${item} and value ${ret}`);
         return ret;
     }
     getVerbose(item, value) {
@@ -439,7 +462,7 @@ class BaseEndpoint {
         }
         if (updates.length > 0) {
             this.node.debug("raw updates");
-            this.node.debug(updates);
+            this.node.debug(JSON.stringify(updates, null, 2));
             let u = {};
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
@@ -517,6 +540,7 @@ class BaseEndpoint {
         return val.charAt(0).toLowerCase() + val.slice(1);
     }
     matterToContext(value, item) {
+        this.node.debug(`Converting Matter value ${value} for item ${item} to Context value`);
         let v = value;
         if (typeof value == "number") {
             if (typeof this.mapping[item].multiplier == "object") {
@@ -526,7 +550,8 @@ class BaseEndpoint {
                 v = value / this.mapping[item].multiplier;
             }
         }
-        return this.refine(v, item);
+        this.node.debug(`Converted Matter value to Context value. Value: ${value} for item ${item} `);
+        return this.contextRefine(item, v);
     }
     contextToMatter(value, item) {
         let v = value;
@@ -560,16 +585,18 @@ class BaseEndpoint {
         for (let item in this.mapping) {
             const keys = Object.keys(this.mapping[item]);
             const key = keys[0];
-            const value = this.mapping[item][key];
+            const subkey = this.mapping[item][key];
             let c;
-            if (typeof value != "object") {
-                c = await this.endpoint.state[key][value];
+            if (typeof subkey != "object") {
+                c = this.endpoint.state[key][subkey];
+                this.node.debug(`retrieved state of ${key} ${subkey} (item: ${item}) as ${c}`);
             }
             else {
-                const _keys = Object.keys(value);
+                const _keys = Object.keys(subkey);
                 const _key = _keys[0];
-                const _value = value[_key];
-                c = await this.endpoint.state[key][_key][_value];
+                const _value = subkey[_key];
+                c = this.endpoint.state[key][_key][_value];
+                this.node.debug(`retrieved state of ${key} ${_key} ${_value} (item: ${item}) as ${c}`);
             }
             this.context[item] = this.matterToContext(c, item);
         }

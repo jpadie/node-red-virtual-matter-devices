@@ -43,14 +43,16 @@ export class doorLock extends BaseEndpoint {
         switch (item) {
             case "mode":
                 if (!Number.isNaN(value)) {
-                    return Object.keys(DoorLock.OperatingMode).find(key => DoorLock.OperatingMode[key] === value)
+                    return this.getEnumKeyByEnumValue(DoorLock.OperatingMode, value);
+                    //return Object.keys().find(key => DoorLock.OperatingMode[key] === value)
                 } else {
                     return value;
                 }
                 break;
             case "lock":
                 if (!Number.isNaN(value)) {
-                    return Object.keys(DoorLock.LockState).find(key => DoorLock.LockState[key] === value)
+                    return this.getEnumKeyByEnumValue(DoorLock.LockState, value);
+                    //return Object.keys(DoorLock.LockState).find(key => DoorLock.LockState[key] === value)
                 } else {
                     return value;
                 }
@@ -79,7 +81,10 @@ export class doorLock extends BaseEndpoint {
         try {
             this.endpoint = await new Endpoint(DoorLockDevice.with(
                 BridgedDeviceBasicInformationServer
-            ), this.attributes);
+            ),
+                this.attributes
+            );
+
         } catch (e) {
             this.node.error("Error creating endpoint: " + e);
         }

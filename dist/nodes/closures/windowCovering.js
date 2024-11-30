@@ -74,6 +74,22 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         this.withs = withs;
         this.attributes.windowCovering = windowCovering;
     }
+    getVerbose(item, value) {
+        if (Number.isNaN(value)) {
+            return value;
+        }
+        switch (item) {
+            case "lift":
+                if (value == 0)
+                    return "Closed";
+                if (value == 100)
+                    return "Open";
+                break;
+            default:
+                return value;
+        }
+        return value;
+    }
     getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {
