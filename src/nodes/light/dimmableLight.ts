@@ -27,23 +27,18 @@ export class dimmableLight extends onOffLight {
 
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 2.55, unit: "%", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } }
+            brightness: {
+                levelControl: "currentLevel",
+                multiplier: 2.55,
+                unit: "%",
+                min: 0,
+                max: 254,
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            }
         }
 
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
-    }
-
-    override getVerbose(item, value) {
-        switch (item) {
-            case "currentLevel":
-            case "brightness":
-            case "level":
-                return Math.round(value);
-                break;
-
-            default:
-                return super.getVerbose(item, value);
-        }
+        this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
     }
 
 

@@ -52,7 +52,7 @@ module.exports = (RED: NodeAPI): void => {
 
             let key;
             let value;
-            let j = 0;
+            //let j = 0;
             let Updates: any[] = [];
             this.debug(`Z2M->Matter:  Starting iteration`);
             for (let j = 1; j <= i; j++) {
@@ -164,28 +164,26 @@ module.exports = (RED: NodeAPI): void => {
                         updates = Object.assign(updates, { ["current_heating_setpoint" + suffix]: refine(value, 2) });
                         break;
                     case "brightness":
-                        value *= 2.55;
-                        value = Math.round(value);
-                        updates = Object.assign(updates, { ["brightness" + suffix]: value });
+                        updates = Object.assign(updates, { ["brightness" + suffix]: refine(2.5 * value, 0) });
                         break;
                     case "colorX":
                     case "colorY":
                         const colorX = refine(msg.payload.colorX, 3);
                         const colorY = refine(msg.payload.colorY, 3);
                         if (!Object.hasOwn(updates, "color")) {
-                            updates["color" + suffix] = {};
+                            updates = Object.assign(updates, { ["color" + suffix]: {} });
                         }
                         updates.color = Object.assign(updates["color" + suffix], { x: colorX, y: colorY });
                         break;
                     case "hue":
                         if (!Object.hasOwn(updates, "color")) {
-                            updates["color" + suffix] = {};
+                            updates = Object.assign(updates, { ["color" + suffix]: {} });
                         }
                         updates["color" + suffix] = Object.assign(updates["color" + suffix], { hue: refine(value) });
                         break;
                     case "saturation":
                         if (!Object.hasOwn(updates, "color")) {
-                            updates["color" + suffix] = {};
+                            updates = Object.assign(updates, { ["color" + suffix]: {} });
                         }
                         updates["color" + suffix] = Object.assign(updates["color" + suffix], { saturation: refine(value) });
                         break;

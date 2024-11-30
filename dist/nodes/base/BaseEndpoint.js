@@ -90,13 +90,17 @@ class BaseEndpoint {
         return;
     }
     cleanUp() {
+        this.node.debug("cleaning up old context entries");
         let mappings = Object.keys(this.mapping);
+        this.node.debug(`Permitted keys: ${JSON.stringify(mappings, null, 2)}`);
         for (let item in this.context) {
+            this.node.debug(`testing context item: ${item}`);
             if (item == "lastHeardFrom")
                 continue;
             if (item.includes("_in_words"))
                 continue;
-            if (!mappings.includes[item]) {
+            if (!mappings.includes(item)) {
+                this.node.debug(`Found prohibited item: ${item}`);
                 this.prune(item);
                 this.prune(`${item}_in_words`);
             }
@@ -581,6 +585,7 @@ class BaseEndpoint {
         return v;
     }
     async syncContext() {
+        this.node.debug("Syncing Context");
         await this.endpoint.construction;
         for (let item in this.mapping) {
             const keys = Object.keys(this.mapping[item]);

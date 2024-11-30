@@ -4,6 +4,12 @@ type: module;
 module.exports = (RED) => {
     function matter2Z2M(config) {
         RED.nodes.createNode(this, config);
+        for (const item in config) {
+            if (!isNaN(+config[item])) {
+                config[item] = +config[item];
+            }
+        }
+        this.debug(`Converter: ${JSON.stringify(config, null, 2)}`);
         let isTruish = (value) => {
             return ["1", 1, true].includes(value);
         };
@@ -16,7 +22,7 @@ module.exports = (RED) => {
             }
         };
         this.on("input", (msg, send, done) => {
-            switch (config.conversionType) {
+            switch (config.direction) {
                 case "toZ2M":
                     if (config.numberOfGangs > 1) {
                         convertToZ2M(msg, send, done, config.gang);
@@ -26,28 +32,27 @@ module.exports = (RED) => {
                     }
                     break;
                 case "fromZ2M":
-                    for (let i = 1; i <= config.numberOfGangs; i++) {
-                        convertFromZ2M(msg, send, done, i);
-                    }
+                    convertFromZ2M(msg, send, done, config.numberOfGangs);
                     break;
             }
         });
         let convertFromZ2M = (msg, send, done, i = 1) => {
+            this.debug(`Z2M->Matter:  Number of gangs: ${i}`);
             if (!Object.hasOwn(msg, "payload")) {
+                this.debug(`Z2M->Matter:  aborting as no payload`);
                 if (done) {
                     done();
                 }
                 return;
             }
-            let updates = {};
             let key;
             let value;
-            let j = 0;
             let Updates = [];
-            this.debug(`Z2M->Matter:  Number of gangs: ${i}`);
-            while (j <= i) {
-                j++;
+            this.debug(`Z2M->Matter:  Starting iteration`);
+            for (let j = 1; j <= i; j++) {
                 let suffix = i == 1 ? "" : `_l${j}`;
+                this.debug(`Z2M->Matter: Suffix is ${suffix}`);
+                let updates = {};
                 for ([key, value] of Object.entries(msg.payload)) {
                     this.debug(`Z2M->Matter: Item: ${key} Value: ${value}`);
                     switch (key) {
@@ -88,11 +93,16 @@ module.exports = (RED) => {
                             break;
                     }
                 }
-                Updates.push(updates);
+                this.debug(`Z2M->Matter Updates for gang ${j}: ${JSON.stringify(updates, null, 2)}`);
+                if (Object.keys(updates).length > 0) {
+                    Updates.push({ payload: updates });
+                }
+                else {
+                    Updates.push(null);
+                }
             }
-            this.debug(`Z2M->Matter ${JSON.stringify(Updates, null, 2)}`);
-            if (Object.keys(Updates).length > 0) {
-                send(...Updates);
+            if (Updates.length > 0) {
+                send(Updates);
                 if (done) {
                     done();
                 }
@@ -145,9 +155,7 @@ module.exports = (RED) => {
                         updates = Object.assign(updates, { ["current_heating_setpoint" + suffix]: refine(value, 2) });
                         break;
                     case "brightness":
-                        value *= 2.55;
-                        value = Math.round(value);
-                        updates = Object.assign(updates, { ["brightness" + suffix]: value });
+                        updates = Object.assign(updates, { ["brightness" + suffix]: refine(value * 2.55, 0) });
                         break;
                     case "colorX":
                     case "colorY":

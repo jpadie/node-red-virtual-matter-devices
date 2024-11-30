@@ -204,6 +204,13 @@ export class thermostat extends BaseEndpoint {
         })
     }
 
+    override matterRefine(item: any, value: any) {
+        if (['systemMode'].includes(item)) {
+            return value;
+        }
+        return super.matterRefine(item, value);
+    }
+
     override preProcessDeviceChanges(value: any, item: any) {
         console.log("matter input");
         console.log("item: " + value);
