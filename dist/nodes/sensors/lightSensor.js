@@ -16,7 +16,11 @@ class lightSensor extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Temperature Sensor";
         this.mapping = {
-            brightness: { illuminanceMeasurement: "measuredValue", multiplier: [this.lx2val.bind(this), this.val2lx.bind(this)], unit: "lx" }
+            brightness: {
+                illuminanceMeasurement: "measuredValue",
+                multiplier: [this.lx2val.bind(this), this.val2lx.bind(this)],
+                unit: "lx"
+            }
         };
         this.attributes.serialNumber = "lxs-" + this.attributes.serialNumber;
     }

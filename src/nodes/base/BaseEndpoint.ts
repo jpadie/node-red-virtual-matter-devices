@@ -12,9 +12,9 @@ export class BaseEndpoint {
     public attributes: Record<string, any> = {};
     public name: string = "";
     public state: Boolean = false;
-    private skip: Boolean = false;
-    private confirmations: any = {}
-    private awaitingConfirmation: any = {};
+    public skip: Boolean = false;
+    public confirmations: any = {}
+    public awaitingConfirmation: any = {};
 
     constructor(node: Node, config: Record<string, never>, name = "") {
         this.node = node;
@@ -298,7 +298,7 @@ export class BaseEndpoint {
                         if ((this.skip)) {
                             this.skip = false;
                         } else {
-                            v = this.matterToContext(v, item);
+                            v = this.matterToContext(item, v);
                             this.context[item] = v;
                             this.node.debug(`setting context item ${item} to ${value}`);
 
@@ -394,6 +394,7 @@ export class BaseEndpoint {
             let v;
             if (this.context[item] != value) {
                 v = this.contextToMatter(item, value);
+
                 const keys = Object.keys(this.mapping[item]);
                 let key = keys[0]; //check first item of the object
                 if (typeof this.mapping[item][key] == "string") {
@@ -424,21 +425,25 @@ export class BaseEndpoint {
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
             }
-            try {
-                await this.endpoint.construction;
-                this.node.debug("requested update");
-                this.node.debug(JSON.stringify(u, null, 2));
-                await this.endpoint.set(u);
-            } catch (e) {
-                this.node.error(e);
-                this.node.error(JSON.stringify(updates, null, 2));
-                console.trace();
+            u = await this.preProcessMatterUpdate(u);
+            if (Object.keys(u).length > 0) {
+                try {
+                    await this.endpoint.construction;
+                    this.node.debug("requested update");
+                    this.node.debug(JSON.stringify(u, null, 2));
+                    await this.endpoint.set(u);
+                } catch (e) {
+                    this.node.error(e);
+                    this.node.error(JSON.stringify(updates, null, 2));
+                    console.trace();
+                }
             }
         }
-        // }
     }
 
-
+    async preProcessMatterUpdate(update) {
+        return update;
+    }
     processIncomingMessages(msg, send, done) {
         if (this.config.passThroughMessage) {
             send(msg);
@@ -503,10 +508,10 @@ export class BaseEndpoint {
         return val.charAt(0).toLowerCase() + val.slice(1);
     }
 
-    matterToContext(value, item) {
+    matterToContext(item, value) {
         this.node.debug(`Converting Matter value ${value} for item ${item} to Context value`);
         let v = value;
-        if (typeof value == "number") {
+        if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
             if (typeof this.mapping[item].multiplier == "object") {
                 v = this.mapping[item].multiplier[1](value);
             } else {
@@ -517,21 +522,23 @@ export class BaseEndpoint {
         return this.contextRefine(item, v)
     }
 
-    contextToMatter(value, item) {
+    contextToMatter(item, value) {
         this.node.debug(`Converting a Context value to a Matter value. Item: ${item} Value: ${value}`)
         let v = value;
-        if (typeof this.mapping[item].multiplier == "object") {
-            v = this.mapping[item].multiplier[0](value);
-        } else {
-            v = this.mapping[item].multiplier * value;
+        if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
+            if (typeof this.mapping[item].multiplier == "object") {
+                v = this.mapping[item].multiplier[0](value);
+            } else {
+                v = this.mapping[item].multiplier * value;
+            }
+            if (Object.hasOwn(this.mapping[item], "min")) {
+                v = Math.max(this.mapping[item].min, value);
+            }
+            if (Object.hasOwn(this.mapping[item], "max")) {
+                v = Math.min(this.mapping[item].max, value);
+            }
+            v = this.matterRefine(item, v);
         }
-        if (Object.hasOwn(this.mapping[item], "min")) {
-            v = Math.max(this.mapping[item].min, value);
-        }
-        if (Object.hasOwn(this.mapping[item], "max")) {
-            v = Math.min(this.mapping[item].max, value);
-        }
-        v = this.matterRefine(item, v);
         return v;
     }
     async syncContext() {
@@ -552,7 +559,7 @@ export class BaseEndpoint {
                 c = this.endpoint.state[key][_key][_value];
                 this.node.debug(`retrieved state of ${key} ${_key} ${_value} (item: ${item}) as ${c}`)
             }
-            this.context[item] = this.matterToContext(c, item);
+            this.context[item] = this.matterToContext(item, c);
         }
         this.saveContext();
         this.setStatus();

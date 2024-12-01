@@ -186,6 +186,12 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             text: text
         });
     }
+    matterRefine(item, value) {
+        if (['systemMode'].includes(item)) {
+            return value;
+        }
+        return super.matterRefine(item, value);
+    }
     preProcessDeviceChanges(value, item) {
         console.log("matter input");
         console.log("item: " + value);

@@ -174,13 +174,16 @@
 
     </style>
     <fieldset class="matter">
-       
-    
         <div class="form-row">
             <label for="node-input-deviceType">Actuator Device</label>
             <select id="node-input-deviceType" >
                 
             </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-supportsEnergyMeasurement">Energy Monitoring</label>
+            <input type="checkbox" value="1" id="node-input-supportsEnergyMeasurement" />
         </div>
     </fieldset>
     
@@ -199,5 +202,5 @@
 
 
 <script type="text/html" data-help-name="matter-actuator">
-
+If your pluggable device has energy monitoring built in then you can enable energy monitoring in this synthetic device.  See the README for details of payloads.
 </script>

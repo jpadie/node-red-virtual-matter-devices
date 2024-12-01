@@ -191,40 +191,33 @@ class BaseEndpoint {
         }
     }
     matterRefine(item, value) {
-        let ret;
         this.node.debug("refining values for matter");
         this.node.debug("item: " + item);
         this.node.debug("value: " + value);
-        if (value == 0) {
-            ret = 0;
-        }
-        else if (item == "systemMode") {
-            ret = value;
-        }
-        else {
+        let ret = value;
+        if (value != 0) {
             if (Object.hasOwn(this.mapping[item], "matter")) {
                 if (Object.hasOwn(this.mapping[item].matter, "valueType")) {
                     switch (this.mapping[item].matter.valueType) {
                         case "int":
-                            ret = this.refine(value, 0);
+                            ret = this.refine(ret, 0);
                             break;
                         case "float":
                             if (Object.hasOwn(this.mapping[item].matter, "valueDecimals")) {
-                                ret = this.refine(value, this.mapping[item].matter.valueDecimals);
+                                ret = this.refine(ret, this.mapping[item].matter.valueDecimals);
                             }
                             else {
-                                ret = this.refine(value, 2);
+                                ret = this.refine(ret, 2);
                             }
                             break;
                         default:
-                            ret = value;
                     }
                 }
             }
         }
         this.node.debug("refined values for matter");
         this.node.debug("item: " + item);
-        this.node.debug("value: " + value);
+        this.node.debug("value: " + ret);
         return ret;
     }
     contextRefine(item, value) {
@@ -267,13 +260,8 @@ class BaseEndpoint {
     async preProcessOutputReport(report) {
         return report;
     }
-    listenForChange() {
-        if (!this.endpoint) {
-            this.node.debug("endpoint is not established.  Waiting 0.5 seconds");
-            this.node.debug(this.endpoint);
-            setTimeout(this.listenForChange, 500);
-            return;
-        }
+    async listenForChange() {
+        await this.endpoint.construction;
         for (const item in this.mapping) {
             let keys = Object.keys(this.mapping[item]);
             let key = keys[0];
@@ -282,25 +270,13 @@ class BaseEndpoint {
                 this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
-                        this.node.debug({ key: key, item: s, value: value });
-                        value = this.preProcessDeviceChanges(value, s);
-                        let v = value;
+                        this.node.debug(`Message received from Matter key: ${key}, item: ${s}, value: ${value}`);
+                        let v = this.preProcessDeviceChanges(value, s);
                         if ((this.skip)) {
                             this.skip = false;
                         }
                         else {
-                            if (typeof value == "number") {
-                                if (typeof this.mapping[item].multiplier == "object") {
-                                    v = this.mapping[item].multiplier[1](value);
-                                }
-                                else {
-                                    v = value / this.mapping[item].multiplier;
-                                    v = this.contextRefine(item, v);
-                                }
-                            }
-                            else {
-                                value = this.contextRefine(item, value);
-                            }
+                            v = this.matterToContext(item, v);
                             this.context[item] = v;
                             this.node.debug(`setting context item ${item} to ${value}`);
                             this.context.lastHeardFrom = this.now();
@@ -311,8 +287,9 @@ class BaseEndpoint {
                                     lastHeardFrom: this.context.lastHeardFrom,
                                     messageSource: "Matter"
                                 };
-                                if (this.mapping[item].unit == "")
+                                if (this.mapping[item].unit == "") {
                                     delete report.unit;
+                                }
                                 report = await this.preProcessOutputReport(report);
                                 this.node.send({ payload: report });
                                 this.listenForChange_postProcess(report);
@@ -391,66 +368,19 @@ class BaseEndpoint {
         this.node.debug(`after pre processing item is now ${item} value is now ${value}`);
         let updates = [];
         if (Object.hasOwn(this.mapping, item)) {
-            const keys = Object.keys(this.mapping[item]);
-            let key = keys[0];
             let v;
             if (this.context[item] != value) {
-                v = value;
+                v = this.contextToMatter(item, value);
+                const keys = Object.keys(this.mapping[item]);
+                let key = keys[0];
                 if (typeof this.mapping[item][key] == "string") {
-                    if (typeof this.mapping[item].multiplier == "object") {
-                        if (this.mapping[item].multiplier[0] != 1) {
-                            v = this.mapping[item].multiplier[0] * value;
-                        }
-                        if (Object.hasOwn(this.mapping[item], "min")) {
-                            v = Math.max(this.mapping[item].min, value);
-                        }
-                        if (Object.hasOwn(this.mapping[item], "max")) {
-                            v = Math.min(this.mapping[item].max, value);
-                        }
-                    }
-                    else {
-                        if (this.mapping[item].multiplier != 1) {
-                            v = this.mapping[item].multiplier * value;
-                        }
-                        if (Object.hasOwn(this.mapping[item], "min")) {
-                            v = Math.max(this.mapping[item].min, value);
-                        }
-                        if (Object.hasOwn(this.mapping[item], "max")) {
-                            v = Math.min(this.mapping[item].max, value);
-                        }
-                    }
-                    v = this.matterRefine(item, v);
                     updates.push({
                         [key]: { [this.mapping[item][key]]: v }
                     });
-                    this.awaitConfirmation(item, v);
                 }
                 else if (typeof this.mapping[item][key] == "object") {
                     const ks = Object.keys(this.mapping[item][key]);
                     let k = ks[0];
-                    if (typeof this.mapping[item].multiplier == "object") {
-                        if (this.mapping[item].multiplier[0] != 1) {
-                            v = this.mapping[item].multiplier[0] * value;
-                        }
-                        if (Object.hasOwn(this.mapping[item], "min")) {
-                            v = Math.max(this.mapping[item].min, value);
-                        }
-                        if (Object.hasOwn(this.mapping[item], "max")) {
-                            v = Math.min(this.mapping[item].max, value);
-                        }
-                    }
-                    else {
-                        if (this.mapping[item].multiplier != 1) {
-                            v = this.mapping[item].multiplier * value;
-                        }
-                        if (Object.hasOwn(this.mapping[item], "min")) {
-                            v = Math.max(this.mapping[item].min, value);
-                        }
-                        if (Object.hasOwn(this.mapping[item], "max")) {
-                            v = Math.min(this.mapping[item].max, value);
-                        }
-                    }
-                    v = this.matterRefine(item, v);
                     updates.push({
                         [key]: {
                             [this.mapping[item][key]]: {
@@ -458,10 +388,9 @@ class BaseEndpoint {
                             }
                         }
                     });
-                    await this.awaitConfirmation(item, v);
                 }
-            }
-            else {
+                this.awaitConfirmation(item, v);
+                await this.awaitConfirmation(item, v);
             }
         }
         if (updates.length > 0) {
@@ -471,19 +400,24 @@ class BaseEndpoint {
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
             }
-            try {
-                if (this.endpoint.lifecycle.isReady) {
+            u = await this.preProcessMatterUpdate(u);
+            if (Object.keys(u).length > 0) {
+                try {
+                    await this.endpoint.construction;
                     this.node.debug("requested update");
                     this.node.debug(JSON.stringify(u, null, 2));
                     await this.endpoint.set(u);
                 }
-            }
-            catch (e) {
-                this.node.error(e);
-                this.node.error(JSON.stringify(updates, null, 2));
-                console.trace();
+                catch (e) {
+                    this.node.error(e);
+                    this.node.error(JSON.stringify(updates, null, 2));
+                    console.trace();
+                }
             }
         }
+    }
+    async preProcessMatterUpdate(update) {
+        return update;
     }
     processIncomingMessages(msg, send, done) {
         if (this.config.passThroughMessage) {
@@ -527,6 +461,9 @@ class BaseEndpoint {
             if (Object.hasOwn(msg, "payload") && typeof msg.payload == "object") {
                 msg.payload = Object.assign(msg.payload, { messageSource: "node-red input" });
             }
+            else {
+                Object.assign(msg, { payload: { messageSource: "node-red input" } });
+            }
             this.processIncomingMessages(msg, send, done);
         });
     }
@@ -543,10 +480,10 @@ class BaseEndpoint {
     lcFirst(val) {
         return val.charAt(0).toLowerCase() + val.slice(1);
     }
-    matterToContext(value, item) {
+    matterToContext(item, value) {
         this.node.debug(`Converting Matter value ${value} for item ${item} to Context value`);
         let v = value;
-        if (typeof value == "number") {
+        if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
             if (typeof this.mapping[item].multiplier == "object") {
                 v = this.mapping[item].multiplier[1](value);
             }
@@ -554,24 +491,17 @@ class BaseEndpoint {
                 v = value / this.mapping[item].multiplier;
             }
         }
-        this.node.debug(`Converted Matter value to Context value. Value: ${value} for item ${item} `);
+        this.node.debug(`Converted Matter value to unrefined context value. Value: ${v} for item ${item} `);
         return this.contextRefine(item, v);
     }
-    contextToMatter(value, item) {
+    contextToMatter(item, value) {
+        this.node.debug(`Converting a Context value to a Matter value. Item: ${item} Value: ${value}`);
         let v = value;
-        if (typeof this.mapping[item].multiplier == "object") {
-            if (this.mapping[item].multiplier[0] != 1) {
-                v = this.mapping[item].multiplier[0] * value;
+        if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
+            if (typeof this.mapping[item].multiplier == "object") {
+                v = this.mapping[item].multiplier[0](value);
             }
-            if (Object.hasOwn(this.mapping[item], "min")) {
-                v = Math.max(this.mapping[item].min, value);
-            }
-            if (Object.hasOwn(this.mapping[item], "max")) {
-                v = Math.min(this.mapping[item].max, value);
-            }
-        }
-        else {
-            if (this.mapping[item].multiplier != 1) {
+            else {
                 v = this.mapping[item].multiplier * value;
             }
             if (Object.hasOwn(this.mapping[item], "min")) {
@@ -580,8 +510,8 @@ class BaseEndpoint {
             if (Object.hasOwn(this.mapping[item], "max")) {
                 v = Math.min(this.mapping[item].max, value);
             }
+            v = this.matterRefine(item, v);
         }
-        v = this.matterRefine(item, v);
         return v;
     }
     async syncContext() {
@@ -603,7 +533,7 @@ class BaseEndpoint {
                 c = this.endpoint.state[key][_key][_value];
                 this.node.debug(`retrieved state of ${key} ${_key} ${_value} (item: ${item}) as ${c}`);
             }
-            this.context[item] = this.matterToContext(c, item);
+            this.context[item] = this.matterToContext(item, c);
         }
         this.saveContext();
         this.setStatus();

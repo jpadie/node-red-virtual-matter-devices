@@ -56,6 +56,7 @@ All appliances in the spec are currently work in progress.
 ## Energy devices
 
 EVSE devices are work in progress. 
+Energy monitoring is an optional add-in to on/off plugs and dimmable plugs.
 
 ## Further devices
 
@@ -176,6 +177,15 @@ The device should show (in its status) an approximate name for the colour you ha
 
 ### Pluggables
 For pluggables (on/off and dimmable) see the Lights examples above
+Energy monitoring can be enabled and if it is enabled the input/outputs will include the following possibilities
+
+    {
+        current: float, //amps
+        voltage: float, //volts
+        power: float, //W
+        frequency: float, //Hz
+        energy: float //Wh
+    }
 
 ### Other actuators
 These are works in progress.
