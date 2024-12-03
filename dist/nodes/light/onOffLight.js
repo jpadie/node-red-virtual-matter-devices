@@ -22,6 +22,9 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
         };
         this.setSerialNumber("light-");
     }
+    getStatusText() {
+        return this.getVerbose("onOff", this.context.onoff);
+    }
     getVerbose(item, value) {
         switch (item) {
             case "onOff":
@@ -35,7 +38,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
         this.node.status({
             fill: "green",
             shape: "dot",
-            text: this.getVerbose("onOff", this.context.onoff)
+            text: this.getStatusText()
         });
     }
     async deploy() {

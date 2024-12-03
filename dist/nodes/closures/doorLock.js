@@ -57,18 +57,6 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
         let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
         return text;
     }
-    setStatus() {
-        try {
-            this.node.status({
-                fill: "green",
-                shape: "dot",
-                text: this.getStatusText()
-            });
-        }
-        catch (e) {
-            this.node.error(e);
-        }
-    }
     async deploy() {
         try {
             this.endpoint = await new main_1.Endpoint(devices_1.DoorLockDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);

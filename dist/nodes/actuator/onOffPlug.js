@@ -22,7 +22,7 @@ class onOffPlug extends onOffLight_1.onOffLight {
             current: { electricalPowerMeasurement: "activeCurrent", multiplier: 1000, unit: "A", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
             voltage: { electricalPowerMeasurement: "voltage", multiplier: 1000, unit: "V", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
             frequency: { electricalPowerMeasurement: "frequency", multiplier: 1000, unit: "Hz", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
-            energy: { ElectricalEnergyMeasurement: "cumulativeEnergyImported", multiplier: 1000, unit: "Wh", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
+            energy: { electricalEnergyMeasurement: { cumulativeEnergyImported: "energy" }, multiplier: 1000, unit: "Wh", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         };
         if (Object.hasOwn(this.config, "supportsEnergyMeasurement") && this.config.supportsEnergyMeasurement) {
             let accuracyData = {
@@ -39,11 +39,11 @@ class onOffPlug extends onOffLight_1.onOffLight {
             };
             this.withs.push(behaviors_2.ElectricalPowerMeasurementServer.with(clusters_1.ElectricalPowerMeasurement.Feature.AlternatingCurrent));
             this.withs.push(behaviors_2.ElectricalEnergyMeasurementServer.with(clusters_1.ElectricalEnergyMeasurement.Feature.ImportedEnergy, clusters_1.ElectricalEnergyMeasurement.Feature.CumulativeEnergy));
-            this.setDefault("activePower", 0);
-            this.setDefault("activeCurrent", 0);
-            this.setDefault("voltage", 0);
-            this.setDefault("frequency", 0);
-            this.setDefault("importedEnergy", 0);
+            this.setDefault("power", 0);
+            this.setDefault("current", 0);
+            this.setDefault("voltage", 230);
+            this.setDefault("frequency", 50);
+            this.setDefault("energy", 0);
             this.attributes = {
                 ...this.attributes,
                 electricalPowerMeasurement: {
@@ -67,11 +67,18 @@ class onOffPlug extends onOffLight_1.onOffLight {
                         },
                     ],
                     numberOfMeasurementTypes: 4,
+                    activeCurrent: 0,
+                    voltage: this.context.voltage,
+                    activePower: 0,
+                    frequency: this.context.frequency,
                 },
                 electricalEnergyMeasurement: {
                     accuracy: {
                         measurementType: types_1.MeasurementType.ElectricalEnergy,
                         ...accuracyData,
+                    },
+                    cumulativeEnergyImported: {
+                        energy: this.context.energy
                     },
                 }
             };
@@ -84,18 +91,27 @@ class onOffPlug extends onOffLight_1.onOffLight {
             this.prune("frequency");
         }
     }
+    getStatusText() {
+        let text = super.getStatusText();
+        if (this.config.supportsEnergyMeasurement) {
+            text += ` ${this.getVerbose("power", this.context.power)} W`;
+        }
+        return text;
+    }
     async preProcessMatterUpdate(update) {
         await this.endpoint.construction;
+        this.node.debug("preprocessing matter update.  received " + JSON.stringify(update, null, 2));
         for (let key in update) {
-            if (key == "energy") {
+            if (key == "electricalEnergyMeasurement") {
+                this.node.debug("Found the energy key which needs special handling");
                 await this.endpoint.act(agent => agent.get(behaviors_2.ElectricalEnergyMeasurementServer).setMeasurement({
                     cumulativeEnergy: {
                         imported: {
-                            energy: update.energy,
+                            energy: update.electricalEnergyMeasurement.cumulativeEnergy.energy,
                         },
                     },
                 }));
-                delete update.energy;
+                delete update.electricalEnergyMeasurement;
             }
         }
         return update;

@@ -178,7 +178,7 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
             this.context.colorName = c;
             this.saveContext();
         }
-        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: ${this.context.colorName}`;
+        return `${super.getStatusText()} Color: ${this.context.colorName}`;
     }
     async setStatus() {
         const text = await this.getStatusText();

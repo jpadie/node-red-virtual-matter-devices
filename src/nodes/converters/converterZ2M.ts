@@ -61,7 +61,6 @@ module.exports = (RED: NodeAPI): void => {
                 this.debug(`Z2M->Matter: Suffix is ${suffix}`);
                 let updates = {};
                 for ([key, value] of Object.entries(msg.payload)) {
-
                     this.debug(`Z2M->Matter: Item: ${key} Value: ${value}`);
                     switch (key) {
                         case "temperature" + suffix:
@@ -99,6 +98,8 @@ module.exports = (RED: NodeAPI): void => {
                         case "state" + suffix:
                             Object.assign(updates, { onoff: value == "ON" ? 1 : 0 });
                             break;
+                        default:
+                            Object.assign(updates, { [key]: value });
                     }
                 }
                 this.debug(`Z2M->Matter Updates for gang ${j}: ${JSON.stringify(updates, null, 2)}`);
@@ -190,6 +191,8 @@ module.exports = (RED: NodeAPI): void => {
                     case "onoff":
                         Object.assign(updates, { ["state" + suffix]: isTruish(value) ? "ON" : "OFF" });
                         break;
+                    default:
+                        Object.assign(updates, { [key]: value })
                 }
             }
             this.debug(`Matter->Z2M: Update: ${JSON.stringify(updates, null, 2)}`);

@@ -100,18 +100,6 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         }
         return text;
     }
-    setStatus() {
-        try {
-            this.node.status({
-                fill: "green",
-                shape: "dot",
-                text: this.getStatusText()
-            });
-        }
-        catch (e) {
-            this.node.error(e);
-        }
-    }
     async deploy() {
         try {
             this.endpoint = await new main_1.Endpoint(devices_1.WindowCoveringDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, behaviors_2.WindowCoveringServer.with(...this.withs)), this.attributes);

@@ -15,6 +15,7 @@
             },
             passThroughMessage: { value: 0 },
             regularUpdates: { value: 0 },
+            supportsEnergyMeasurement: { value: 0 }
         },
         inputs: 1,
         outputs: 1,
@@ -186,7 +187,23 @@
             <input type="checkbox" value="1" id="node-input-supportsEnergyMeasurement" />
         </div>
     </fieldset>
-    
+    <fieldset class="matter">
+        <legend>Telemetry</legend>
+        <div class="form-row">
+            <label for="node-input-regularUpdates">Enable Telemetry</label>
+            <input type="checkbox" id="node-input-regularUpdates" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
+            <div class="fR">
+            <input type="text" id="node-input-telemetryInterval" placeholder="60" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-passThroughMessage">Pass through msg</label>
+            <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+    </fieldset>
     <fieldset class="matter">
         <legend>Name</legend>
         <div class="form-row">

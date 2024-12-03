@@ -29,6 +29,10 @@ export class onOffLight extends BaseEndpoint {
         this.setSerialNumber("light-");
     }
 
+    override getStatusText() {
+        return this.getVerbose("onOff", this.context.onoff)
+    }
+
     override getVerbose(item, value) {
         switch (item) {
             case "onOff":
@@ -43,7 +47,7 @@ export class onOffLight extends BaseEndpoint {
         this.node.status({
             fill: "green",
             shape: "dot",
-            text: this.getVerbose("onOff", this.context.onoff)
+            text: this.getStatusText()
         });
     }
 

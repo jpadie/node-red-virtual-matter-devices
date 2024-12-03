@@ -91,6 +91,8 @@ module.exports = (RED) => {
                         case "state" + suffix:
                             Object.assign(updates, { onoff: value == "ON" ? 1 : 0 });
                             break;
+                        default:
+                            Object.assign(updates, { [key]: value });
                     }
                 }
                 this.debug(`Z2M->Matter Updates for gang ${j}: ${JSON.stringify(updates, null, 2)}`);
@@ -181,6 +183,8 @@ module.exports = (RED) => {
                     case "onoff":
                         Object.assign(updates, { ["state" + suffix]: isTruish(value) ? "ON" : "OFF" });
                         break;
+                    default:
+                        Object.assign(updates, { [key]: value });
                 }
             }
             this.debug(`Matter->Z2M: Update: ${JSON.stringify(updates, null, 2)}`);

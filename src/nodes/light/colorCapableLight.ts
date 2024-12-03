@@ -203,7 +203,7 @@ export class colorLight extends dimmableLight {
         return report;
     }
 
-    async getStatusText() {
+    override async getStatusText() {
         if (Object.hasOwn(this.context, "colorName") && this.context.colorName) {
             //
         } else {
@@ -224,7 +224,7 @@ export class colorLight extends dimmableLight {
             this.context.colorName = c;
             this.saveContext();
         }
-        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: ${this.context.colorName}`;
+        return `${super.getStatusText()} Color: ${this.context.colorName}`;
     }
 
     override async setStatus() {

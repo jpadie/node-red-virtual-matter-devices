@@ -22,7 +22,7 @@ export class onOffPlug extends onOffLight {
             current: { electricalPowerMeasurement: "activeCurrent", multiplier: 1000, unit: "A", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
             voltage: { electricalPowerMeasurement: "voltage", multiplier: 1000, unit: "V", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
             frequency: { electricalPowerMeasurement: "frequency", multiplier: 1000, unit: "Hz", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
-            energy: { ElectricalEnergyMeasurement: "cumulativeEnergyImported", multiplier: 1000, unit: "Wh", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
+            energy: { electricalEnergyMeasurement: { cumulativeEnergyImported: "energy" }, multiplier: 1000, unit: "Wh", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         }
         if (Object.hasOwn(this.config, "supportsEnergyMeasurement") && this.config.supportsEnergyMeasurement) {
             let accuracyData = {
@@ -37,17 +37,19 @@ export class onOffPlug extends onOffLight {
                     },
                 ],
             }
-            this.withs.push(ElectricalPowerMeasurementServer.with(ElectricalPowerMeasurement.Feature.AlternatingCurrent));
+            this.withs.push(ElectricalPowerMeasurementServer.with(
+                ElectricalPowerMeasurement.Feature.AlternatingCurrent)
+            );
             this.withs.push(ElectricalEnergyMeasurementServer.with(
                 ElectricalEnergyMeasurement.Feature.ImportedEnergy,
-                ElectricalEnergyMeasurement.Feature.CumulativeEnergy));
+                ElectricalEnergyMeasurement.Feature.CumulativeEnergy)
+            );
 
-
-            this.setDefault("activePower", 0);
-            this.setDefault("activeCurrent", 0);
-            this.setDefault("voltage", 0);
-            this.setDefault("frequency", 0);
-            this.setDefault("importedEnergy", 0);
+            this.setDefault("power", 0);
+            this.setDefault("current", 0);
+            this.setDefault("voltage", 230);
+            this.setDefault("frequency", 50);
+            this.setDefault("energy", 0);
 
 
             this.attributes = {
@@ -73,11 +75,18 @@ export class onOffPlug extends onOffLight {
                         },
                     ],
                     numberOfMeasurementTypes: 4,
+                    activeCurrent: 0,
+                    voltage: this.context.voltage,
+                    activePower: 0,
+                    frequency: this.context.frequency,
                 },
                 electricalEnergyMeasurement: {
                     accuracy: {
                         measurementType: MeasurementType.ElectricalEnergy, // mWh
                         ...accuracyData,
+                    },
+                    cumulativeEnergyImported: {
+                        energy: this.context.energy
                     },
                 }
             }
@@ -94,20 +103,31 @@ export class onOffPlug extends onOffLight {
     see https://github.com/project-chip/matter.js/blob/main/packages/examples/src/device-measuring-socket/MeasuredSocketDevice.ts
     */
 
+    override getStatusText() {
+        let text = super.getStatusText();
+        if (this.config.supportsEnergyMeasurement) {
+            text += ` ${this.getVerbose("power", this.context.power)} W`
+        }
+        return text;
+    }
+
     override async preProcessMatterUpdate(update: any): Promise<any> {
         await this.endpoint.construction;
+        this.node.debug("preprocessing matter update.  received " + JSON.stringify(update, null, 2));
         for (let key in update) {
-            if (key == "energy") {
+            if (key == "electricalEnergyMeasurement") {
+                this.node.debug("Found the energy key which needs special handling");
                 await this.endpoint.act(agent =>
                     agent.get(ElectricalEnergyMeasurementServer).setMeasurement({
                         cumulativeEnergy: {
                             imported: {
-                                energy: update.energy,
+                                energy: update.electricalEnergyMeasurement.cumulativeEnergy.energy,
                             },
                         },
+
                     }),
                 );
-                delete update.energy;
+                delete update.electricalEnergyMeasurement;
             }
         }
         return update;
@@ -123,5 +143,4 @@ export class onOffPlug extends onOffLight {
             this.node.error(e);
         }
     }
-
 }

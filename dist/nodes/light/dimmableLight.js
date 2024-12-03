@@ -35,11 +35,17 @@ class dimmableLight extends onOffLight_1.onOffLight {
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
     }
-    setStatus() {
+    async getStatusText() {
+        let text = super.getStatusText();
+        this.getVerbose("onOff", this.context.onoff);
+        text += ` ${this.getVerbose("brightness", this.context.brightness)}%`;
+        return text;
+    }
+    async setStatus() {
         this.node.status({
             fill: "green",
             shape: "dot",
-            text: `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("brightness", this.context.brightness)}%`
+            text: await this.getStatusText()
         });
     }
     async deploy() {

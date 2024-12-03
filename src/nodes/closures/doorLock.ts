@@ -61,22 +61,11 @@ export class doorLock extends BaseEndpoint {
                 return value;
         }
     }
-    getStatusText() {
+    override getStatusText() {
         let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
         return text;
     }
-    override setStatus() {
 
-        try {
-            this.node.status({
-                fill: "green",
-                shape: "dot",
-                text: this.getStatusText()
-            });
-        } catch (e) {
-            this.node.error(e);
-        }
-    }
     override async deploy() {
         try {
             this.endpoint = await new Endpoint(DoorLockDevice.with(

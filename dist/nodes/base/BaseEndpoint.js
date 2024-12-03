@@ -163,12 +163,15 @@ class BaseEndpoint {
     saveContext() {
         this.Context.set('attributes', this.context);
     }
-    setStatus() {
+    getStatusText() {
         let keys = Object.keys(this.context);
+        return this.context[keys[0]] + (this.context.unit || "");
+    }
+    setStatus() {
         this.node.status({
             fill: "green",
             shape: "dot",
-            text: this.context[keys[0]] + (this.context.unit || "")
+            text: this.getStatusText()
         });
     }
     setDefault(item, value) {
@@ -177,6 +180,9 @@ class BaseEndpoint {
         }
     }
     refine(value, decimals = 0) {
+        if (Object.is(value, undefined) || Object.is(value, null)) {
+            value = 0;
+        }
         if (Number.isNaN(value)) {
             return value;
         }
@@ -223,7 +229,7 @@ class BaseEndpoint {
     contextRefine(item, value) {
         let ret = value;
         this.node.debug(`Refining value for context: item ${item} and value ${value}`);
-        if (Object.hasOwn(this.mapping, "item")) {
+        if (Object.hasOwn(this.mapping, item)) {
             if (Object.hasOwn(this.mapping[item], "context")) {
                 if (Object.hasOwn(this.mapping[item].context, "valueType")) {
                     switch (this.mapping[item].context.valueType) {
@@ -517,21 +523,45 @@ class BaseEndpoint {
     async syncContext() {
         this.node.debug("Syncing Context");
         await this.endpoint.construction;
+        let state;
+        try {
+            state = this.endpoint.state;
+        }
+        catch (e) {
+            this.node.error(`Problem retrieving endpoint state`);
+            this.node.error(e);
+            console.trace();
+            return;
+        }
+        this.node.debug(`Endpoint state: ${JSON.stringify(state, null, 2)}`);
         for (let item in this.mapping) {
             const keys = Object.keys(this.mapping[item]);
             const key = keys[0];
             const subkey = this.mapping[item][key];
             let c;
             if (typeof subkey != "object") {
-                c = this.endpoint.state[key][subkey];
-                this.node.debug(`retrieved state of ${key} ${subkey} (item: ${item}) as ${c}`);
+                if (Object.hasOwn(state, key)) {
+                    if (Object.hasOwn(state[key], subkey)) {
+                        c = state[key][subkey];
+                        this.node.debug(`retrieved state of ${key} ${subkey} (item: ${item}) as ${c}`);
+                    }
+                }
             }
             else {
                 const _keys = Object.keys(subkey);
                 const _key = _keys[0];
                 const _value = subkey[_key];
-                c = this.endpoint.state[key][_key][_value];
-                this.node.debug(`retrieved state of ${key} ${_key} ${_value} (item: ${item}) as ${c}`);
+                if (Object.hasOwn(state, key)) {
+                    if (Object.hasOwn(state[key], _key)) {
+                        if (Object.hasOwn(state[key][_key], _value)) {
+                            c = state[key][_key][_value];
+                            this.node.debug(`retrieved state of ${key} ${_key} ${_value} (item: ${item}) as ${c}`);
+                        }
+                    }
+                }
+            }
+            if (c == undefined) {
+                c = 0;
             }
             this.context[item] = this.matterToContext(item, c);
         }

@@ -111,7 +111,7 @@ export class windowCovering extends BaseEndpoint {
         }
         return value;
     }
-    getStatusText() {
+    override getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {
             text += `Lift: ${this.context.lift} `;
@@ -121,17 +121,7 @@ export class windowCovering extends BaseEndpoint {
         }
         return text;
     }
-    override setStatus() {
-        try {
-            this.node.status({
-                fill: "green",
-                shape: "dot",
-                text: this.getStatusText()
-            });
-        } catch (e) {
-            this.node.error(e);
-        }
-    }
+    
     override async deploy() {
         try {
             this.endpoint = await new Endpoint(WindowCoveringDevice.with(
