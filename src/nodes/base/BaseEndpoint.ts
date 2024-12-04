@@ -250,6 +250,12 @@ export class BaseEndpoint {
             }
 
         }
+        if (Object.hasOwn(this.mapping[item], "permittedValues")) {
+            if (!this.mapping[item].permittedValues.includes(ret)) {
+                this.node.debug(`Dropping update as value ${ret} is not a permitted value`)
+                return null;
+            }
+        }
         this.node.debug("refined values for matter");
         this.node.debug("item: " + item);
         this.node.debug("value: " + ret);
@@ -276,6 +282,12 @@ export class BaseEndpoint {
                             ret = value;
                     }
                 }
+            }
+        }
+        if (Object.hasOwn(this.mapping[item], "permittedValues")) {
+            if (!this.mapping[item].permittedValues.includes(ret)) {
+                this.node.debug(`Dropping update as value ${ret} is not a permitted value`)
+                return null;
             }
         }
         this.node.debug(`Refined value for context: item ${item} and value ${ret}`)
@@ -325,6 +337,10 @@ export class BaseEndpoint {
                             this.skip = false;
                         } else {
                             v = this.matterToContext(item, v);
+                            if (v === null) {
+                                this.node.debug(`skipping as not a permitted value or otherwise NULL`);
+                                return;
+                            }
                             this.context[item] = v;
                             this.node.debug(`setting context item ${item} to ${value}`);
 
@@ -420,6 +436,7 @@ export class BaseEndpoint {
             let v;
             if (this.context[item] != value) {
                 v = this.contextToMatter(item, value);
+                if (v == null) return;
                 const keys = Object.keys(this.mapping[item]);
                 let key = keys[0]; //check first item of the object
                 if (typeof this.mapping[item][key] == "string") {
@@ -607,7 +624,13 @@ export class BaseEndpoint {
             if (c == undefined) {
                 c = 0;
             }
-            this.context[item] = this.matterToContext(item, c);
+            let v = this.matterToContext(item, c);
+            if (v === null) {
+                this.node.debug(`not setting context for ${item} as value reported as null or not permitted (which should not happen...)`);
+                continue;
+            } else {
+                this.context[item] = v;
+            }
         }
         this.saveContext();
         this.setStatus();
