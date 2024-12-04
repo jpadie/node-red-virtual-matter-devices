@@ -2,8 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.waterFreezeDetectorDevice = void 0;
 require("@matter/node");
-const main_1 = require("@matter/main");
-const behaviors_1 = require("@matter/main/behaviors");
 const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class waterFreezeDetectorDevice extends BaseEndpoint_1.BaseEndpoint {
@@ -11,34 +9,25 @@ class waterFreezeDetectorDevice extends BaseEndpoint_1.BaseEndpoint {
         super(node, config);
         this.name = this.config.name || "Water Freeze Sensor";
         this.mapping = {
-            frozen: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
+            frozen: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "boolean" }, context: { valueType: "int" } }
         };
-        this.attributes.serialNumber = "wfd-" + this.attributes.serialNumber;
-    }
-    setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: `${this.context.frozen ? "Frozen" : "Liquid"}`
-        });
-    }
-    async deploy() {
-        this.context = Object.assign({
-            frozen: false,
-            lastHeardFrom: ""
-        }, this.context);
-        this.saveContext();
-        this.attributes.booleanState = {
-            stateValue: this.context.frozen ? true : false
+        this.setSerialNumber("wfd-");
+        this.setDefault("frozen", 0);
+        this.attributes = {
+            ...this.attributes,
+            booleanState: {
+                stateValue: this.contextToMatter("froze", this.context.frozen)
+            }
         };
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.WaterFreezeDetectorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-        }
-        catch (e) {
-            this.node.error(e);
+        this.device = devices_1.WaterFreezeDetectorDevice;
+    }
+    getVerbose(item, value) {
+        switch (item) {
+            case "frozen":
+                return value ? "Frozen" : "Liquid";
+                break;
+            default:
+                return super.getVerbose(item, value);
         }
     }
 }

@@ -2,15 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.airQualitySensor = void 0;
 const devices_1 = require("@matter/main/devices");
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 const devices_2 = require("@matter/main/devices");
 const clusters_1 = require("@matter/main/clusters");
 class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
-    constructor(node, config) {
-        super(node, config);
-        this.name = this.config.name || "Air Quality Sensor";
+    constructor(node, config, _name = "") {
+        let name = _name || "Air Quality Sensor";
+        super(node, config, name);
         this.mapping = {
             airQuality: { airQuality: "airQuality", multiplier: 1, unit: "" },
             temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
@@ -26,56 +24,35 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
             PM10Level: { pm10ConcentrationMeasurement: "measuredValue", multiplier: 1, unit: "μg/m3" },
             radonLevel: { radonConcentrationMeasurement: "measuredValue", multiplier: 1, unit: "Bq/m3" }
         };
-        this.attributes.serialNumber = "aqs-" + this.attributes.serialNumber;
-    }
-    getVerbose(item, value) {
-        if (Object.hasOwn(this.context, item) && this.context[item]) {
-            return Object.keys(clusters_1.AirQuality.AirQualityEnum).find(item => clusters_1.AirQuality.AirQualityEnum[item] === value);
-        }
-    }
-    regularUpdate() {
-        if (this.config.regularUpdates) {
-            setInterval(() => {
-                let c = { ...this.context };
-                if (this.config.reportInWords) {
-                    c.airQuality = this.getVerbose("airQuality", c.airQuality);
+        for (let item in this.mapping) {
+            if (["airQuality", "humidity"].includes(item))
+                continue;
+            this.mapping[item] = Object.assign(this.mapping[item], {
+                matter: {
+                    valueType: "float",
+                    valueDecimals: 4
+                },
+                context: {
+                    valueType: "float",
+                    valueDecimals: 4
                 }
-                this.node.send({
-                    payload: {
-                        ...c
-                    }
-                });
-            }, (this.config.telemetryInterval ?? 0) * 1000);
+            });
         }
-    }
-    setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: `AQI: ${this.getVerbose("airQuality", this.context.airQuality)}`
-        });
-    }
-    async deploy() {
-        this.context = Object.assign({
-            airQuality: clusters_1.AirQuality.AirQualityEnum.Fair,
-            lastHeardFrom: ""
-        }, this.context);
+        this.setSerialNumber("aqs-");
+        this.setDefault("airQuality", clusters_1.AirQuality.AirQualityEnum.Fair);
         let attributes = {
             airQuality: {
                 airQuality: this.context.airQuality
             }
         };
         let withs = [
-            behaviors_1.BridgedDeviceBasicInformationServer,
             devices_2.AirQualitySensorRequirements.AirQualityServer.with("ExtremelyPoor", "Fair", "Moderate", "VeryPoor")
         ];
         if (this.config.supportsTemperature) {
             withs.push(devices_2.AirQualitySensorRequirements.TemperatureMeasurementServer);
-            if (!Object.hasOwn(this.context, "temperature")) {
-                this.context.temperature = 20.0;
-            }
+            this.setDefault("temperature", 20);
             attributes.temperatureMeasurement = {
-                measuredValue: this.context.temperature * 100
+                measuredValue: this.contextToMatter("temperature", this.context.temperature)
             };
         }
         else {
@@ -83,11 +60,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsHumidity) {
             withs.push(devices_2.AirQualitySensorRequirements.RelativeHumidityMeasurementServer);
-            if (!Object.hasOwn(this.context, "humidity")) {
-                this.context.humidity = 50.0;
-            }
+            this.setDefault("humidity", 50.0);
             attributes.relativeHumidityMeasurement = {
-                measuredValue: this.context.humidity * 100
+                measuredValue: this.contextToMatter("humidity", this.context.humidity)
             };
         }
         else {
@@ -95,11 +70,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsCO) {
             withs.push(devices_2.AirQualitySensorRequirements.CarbonMonoxideConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "COLevel")) {
-                this.context.COLevel = 0.5;
-            }
+            this.setDefault("COLevel", 0.5);
             attributes.carbonMonoxideConcentrationMeasurement = {
-                measuredValue: this.context.COLevel,
+                measuredValue: this.contextToMatter("COLevel", this.context.COLevel),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ppm,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -109,11 +82,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsCO2) {
             withs.push(devices_2.AirQualitySensorRequirements.CarbonDioxideConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "CO2Level")) {
-                this.context.CO2Level = 500;
-            }
+            this.setDefault("CO2Level", 500);
             attributes.carbonDioxideConcentrationMeasurement = {
-                measuredValue: this.context.CO2Level,
+                measuredValue: this.contextToMatter("CO2Level", this.context.CO2Level),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ppm,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -123,11 +94,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsNO2) {
             withs.push(devices_2.AirQualitySensorRequirements.NitrogenDioxideConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "NO2Level")) {
-                this.context.NO2Level = 0.8;
-            }
+            this.setDefault("NO2Level", 0.8);
             attributes.nitrogenDioxideConcentrationMeasurement = {
-                measuredValue: this.context.NO2Level,
+                measuredValue: this.contextToMatter("NO2Level", this.context.NO2Level),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ppm,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -137,11 +106,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsOzone) {
             withs.push(devices_2.AirQualitySensorRequirements.OzoneConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "ozoneLevel")) {
-                this.context.ozoneLevel = 0.003;
-            }
+            this.setDefault("ozoneLevel", 0.003);
             attributes.ozoneConcentrationMeasurement = {
-                measuredValue: this.context.ozoneLevel,
+                measuredValue: this.contextToMatter("ozoneLevel", this.context.ozoneLevel),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ppm,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -151,11 +118,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsTVOC) {
             withs.push(devices_2.AirQualitySensorRequirements.TotalVolatileOrganicCompoundsConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "TVOCLevel")) {
-                this.context.TVOCLevel = 0.25;
-            }
+            this.setDefault("TVOCLevel", 0.25);
             attributes.totalVolatileOrganicCompoundsConcentrationMeasurement = {
-                measuredValue: this.context.TVOCLevel,
+                measuredValue: this.contextToMatter("TVOCLevel", this.context.TVOCLevel),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ppm,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -165,11 +130,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsPM1) {
             withs.push(devices_2.AirQualitySensorRequirements.Pm1ConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "PM1Level")) {
-                this.context.PM1Level = 0.9;
-            }
+            this.setDefault("PM1Level", 0.9);
             attributes.pm1ConcentrationMeasurement = {
-                measuredValue: this.context.PM1Level,
+                measuredValue: this.contextToMatter("PM1Level", this.context.PM1Level),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ugm3,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -179,11 +142,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsPM25) {
             withs.push(devices_2.AirQualitySensorRequirements.Pm25ConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "PM25Level")) {
-                this.context.PM25Level = 2.0;
-            }
+            this.setDefault("PM25Level", 2.0);
             attributes.pm25ConcentrationMeasurement = {
-                measuredValue: this.context.PM25Level,
+                measuredValue: this.contextToMatter("PM25Level", this.context.PM25Level),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ugm3,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -193,11 +154,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsPM10) {
             withs.push(devices_2.AirQualitySensorRequirements.Pm10ConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "PM10Level")) {
-                this.context.PM10Level = 10.0;
-            }
+            this.setDefault("PM10Level", 10.0);
             attributes.pm10ConcentrationMeasurement = {
-                measuredValue: this.context.PM10Level,
+                measuredValue: this.contextToMatter("PM10Level", this.context.PM10Level),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ugm3,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -207,11 +166,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsFormaldehyde) {
             withs.push(devices_2.AirQualitySensorRequirements.FormaldehydeConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "formaldehydeLevel")) {
-                this.context.formaldehydeLevel = 42.0;
-            }
+            this.setDefault("formadehydeLevel", 42.0);
             attributes.formaldehydeConcentrationMeasurement = {
-                measuredValue: this.context.formaldehydeLevel,
+                measuredValue: this.contextToMatter("formaldehydeLevel", this.context.formaldehydeLevel),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Ugm3,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -221,11 +178,9 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsRadon) {
             withs.push(devices_2.AirQualitySensorRequirements.RadonConcentrationMeasurementServer.with("NumericMeasurement"));
-            if (!Object.hasOwn(this.context, "radonLevel")) {
-                this.context.radonLevel = 100.0;
-            }
+            this.setDefault("radonLevel", 100);
             attributes.radonConcentrationMeasurement = {
-                measuredValue: this.context.radonLevel,
+                measuredValue: this.contextToMatter("radonLevel", this.context.radonLevel),
                 measurementUnit: clusters_1.ConcentrationMeasurement.MeasurementUnit.Bqm3,
                 measurementMedium: clusters_1.ConcentrationMeasurement.MeasurementMedium.Air
             };
@@ -233,20 +188,21 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
         else {
             this.prune("radonLevel");
         }
-        this.attributes = {
-            ...this.attributes,
-            ...attributes
-        };
-        this.saveContext();
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.AirQualitySensorDevice.with(...withs), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
+        this.attributes = Object.assign(this.attributes, attributes);
+        this.withs.push(...withs);
+        this.device = devices_1.AirQualitySensorDevice;
+    }
+    getVerbose(item, value) {
+        switch (item) {
+            case "airQuality":
+                return this.getEnumKeyByEnumValue(clusters_1.AirQuality.AirQualityEnum, value);
+                break;
+            default:
+                return super.getVerbose(item, value);
         }
-        catch (e) {
-            this.node.error(e);
-        }
+    }
+    getStatusText() {
+        return `AQI: ${this.getVerbose("airQuality", this.context.airQuality)}`;
     }
 }
 exports.airQualitySensor = airQualitySensor;

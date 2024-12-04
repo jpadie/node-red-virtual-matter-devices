@@ -1,11 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.colorLight = void 0;
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const dimmableLight_js_1 = require("./dimmableLight.js");
-const devices_1 = require("@matter/main/devices");
-const behaviors_2 = require("@matter/main/behaviors");
+const behaviors_1 = require("@matter/main/behaviors");
 const colourList_js_1 = require("./colourList.js");
 class colorLight extends dimmableLight_js_1.dimmableLight {
     constructor(node, config, _name = '') {
@@ -40,12 +37,7 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         this.setDefault("colorX", 0);
         this.setDefault("colorY", 0);
         this.setDefault("colorSpace", "xyY");
-    }
-    getVerbose(item, value) {
-        switch (item) {
-            default:
-                return super.getVerbose(item, value);
-        }
+        this.withs.push(behaviors_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation"));
     }
     convertHSVtoXY(hue, saturation, brightness) {
         let { r, g, b } = this.convertHSVtoRGB(hue, saturation, brightness);
@@ -209,15 +201,6 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
             }
         }
         return { a: a, b: b };
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.DimmableLightDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, behaviors_2.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
-        }
-        catch (e) {
-            this.node.error(e);
-            console.trace();
-        }
     }
 }
 exports.colorLight = colorLight;

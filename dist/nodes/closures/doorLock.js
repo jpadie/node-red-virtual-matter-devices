@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doorLock = void 0;
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 const devices_1 = require("@matter/main/devices");
 const clusters_1 = require("@matter/main/clusters");
@@ -17,19 +15,23 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
         this.setDefault("lock", clusters_1.DoorLock.LockState.Unlocked);
         this.setDefault("mode", clusters_1.DoorLock.OperatingMode.Normal);
         this.setSerialNumber("dlk-");
-        this.attributes.doorLock = {
-            supportedOperatingModes: {
-                normal: true,
-                vacation: true,
-                noRemoteLockUnlock: true,
-                passage: true,
-                privacy: true
-            },
-            operatingMode: this.context.mode,
-            lockType: parseInt(this.config.doorLockType),
-            lockState: this.context.lock,
-            actuatorEnabled: true,
+        this.attributes = {
+            ...this.attributes,
+            doorLock: {
+                supportedOperatingModes: {
+                    normal: true,
+                    vacation: true,
+                    noRemoteLockUnlock: true,
+                    passage: true,
+                    privacy: true
+                },
+                operatingMode: this.context.mode,
+                lockType: parseInt(this.config.doorLockType),
+                lockState: this.context.lock,
+                actuatorEnabled: true,
+            }
         };
+        this.device = devices_1.DoorLockDevice;
     }
     getVerbose(item, value) {
         switch (item) {
@@ -56,14 +58,6 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
     getStatusText() {
         let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
         return text;
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.DoorLockDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
-        }
-        catch (e) {
-            this.node.error("Error creating endpoint: " + e);
-        }
     }
 }
 exports.doorLock = doorLock;

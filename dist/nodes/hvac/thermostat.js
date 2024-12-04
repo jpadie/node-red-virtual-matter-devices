@@ -2,16 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.thermostat = void 0;
 type: module;
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const devices_1 = require("@matter/main/devices");
-const behaviors_2 = require("@matter/main/behaviors");
+const behaviors_1 = require("@matter/main/behaviors");
 const clusters_1 = require("@matter/main/clusters");
-const behaviors_3 = require("@matter/main/behaviors");
+const behaviors_2 = require("@matter/main/behaviors");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class thermostat extends BaseEndpoint_1.BaseEndpoint {
     heating_coolingState = 1;
-    withs = [];
     constructor(node, config, _name = "") {
         let name = _name || config.name || "Thermostat";
         super(node, config, name);
@@ -163,11 +160,11 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             features.push(clusters_1.Thermostat.Feature.Heating);
         if (this.config.supportsOccupancy)
             features.push(clusters_1.Thermostat.Feature.Occupancy);
-        withs.push(behaviors_2.ThermostatServer.with(...features));
+        withs.push(behaviors_1.ThermostatServer.with(...features));
         if (this.config.supportsHumidity)
-            withs.push(behaviors_3.RelativeHumidityMeasurementServer);
-        withs.push(behaviors_1.BridgedDeviceBasicInformationServer);
-        this.withs = withs;
+            withs.push(behaviors_2.RelativeHumidityMeasurementServer);
+        this.withs.push(...withs);
+        this.device = devices_1.ThermostatDevice;
     }
     getVerbose(item, value) {
         switch (item) {
@@ -178,13 +175,8 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                 return value;
         }
     }
-    setStatus() {
-        let text = (this.deriveOnOff() ? (this.context.systemMode == clusters_1.Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        });
+    getStatusText() {
+        return (this.deriveOnOff() ? (this.context.systemMode == clusters_1.Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
     }
     matterRefine(item, value) {
         if (['systemMode'].includes(item)) {
@@ -319,17 +311,6 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         this.context.heating_coolingState = this.heating_coolingState;
         this.saveContext();
         return ret;
-    }
-    async deploy() {
-        this.endpoint = new main_1.Endpoint(devices_1.ThermostatDevice.with(...this.withs), this.attributes);
-        console.log("context");
-        console.log(this.context);
-        console.log("attributes");
-        console.log(this.attributes);
-        console.log("mapping");
-        console.log(this.mapping);
-        console.log("config");
-        console.log(this.config);
     }
 }
 exports.thermostat = thermostat;

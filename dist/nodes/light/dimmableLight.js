@@ -2,8 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dimmableLight = void 0;
 const devices_1 = require("@matter/main/devices");
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const onOffLight_1 = require("./onOffLight");
 class dimmableLight extends onOffLight_1.onOffLight {
     constructor(node, config, _name = '') {
@@ -34,27 +32,13 @@ class dimmableLight extends onOffLight_1.onOffLight {
             }
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
+        this.device = devices_1.DimmableLightDevice;
     }
     async getStatusText() {
         let text = super.getStatusText();
         this.getVerbose("onOff", this.context.onoff);
         text += ` ${this.getVerbose("brightness", this.context.brightness)}%`;
         return text;
-    }
-    async setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: await this.getStatusText()
-        });
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.DimmableLightDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
-        }
-        catch (e) {
-            this.node.error(e);
-        }
     }
 }
 exports.dimmableLight = dimmableLight;

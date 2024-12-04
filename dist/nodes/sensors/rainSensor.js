@@ -2,42 +2,31 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.rainSensor = void 0;
 const devices_1 = require("@matter/main/devices");
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class rainSensor extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
         this.name = this.config.name || "Water Leak Detector";
         this.mapping = {
-            rain: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
+            rain: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "boolean" }, context: { valueType: "int" } }
         };
-        this.attributes.serialNumber = "rd-" + this.attributes.serialNumber;
+        this.setDefault("rain", 0);
+        this.setSerialNumber("rd-");
+        this.attributes = {
+            ...this.attributes,
+            booleanState: {
+                stateValue: this.contextToMatter("rain", this.context.rain)
+            }
+        };
+        this.device = devices_1.RainSensorDevice;
     }
-    setStatus = () => {
-        this.node.status({
-            fill: `${this.context.rain ? "blue" : "yellow"}`,
-            shape: "dot",
-            text: `${this.context.rain ? "Raining" : "Dry"}`
-        });
-    };
-    async deploy() {
-        this.context = Object.assign({
-            rain: false,
-            lastHeardFrom: ""
-        }, this.Context);
-        this.saveContext();
-        this.attributes.booleanState = {
-            stateValue: this.context.rain ? true : false
-        };
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.RainSensorDevice.with(behaviors_1.BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-        }
-        catch (e) {
-            this.node.error(e);
+    getVerbose(item, value) {
+        switch (item) {
+            case "rain":
+                return value ? "Raining" : "Dry";
+                break;
+            default:
+                return super.getVerbose(item, value);
         }
     }
 }

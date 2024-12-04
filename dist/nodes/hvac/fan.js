@@ -2,8 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fan = void 0;
 type: module;
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 const devices_1 = require("@matter/main/devices");
 const devices_2 = require("@matter/main/devices");
@@ -150,17 +148,8 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
         this.setDefault("percentCurrent", 0);
         this.setDefault("percentSetting", 0);
         this.attributes.fanControl.percentCurrent = this.context.percentCurrent;
-    }
-    regularUpdate() {
-        if (this.config.regularUpdates) {
-            setInterval(() => {
-                let m = {};
-                for (const item in this.context) {
-                    m[item] = this.getVerbose(item, this.context[item]);
-                }
-                this.node.send({ payload: m });
-            }, this.config.telemetryInterval * 1000);
-        }
+        this.device = devices_1.FanDevice;
+        this.withs.push(devices_2.FanRequirements.FanControlServer.with(...this.features));
     }
     getVerbose(item, value) {
         switch (item) {
@@ -179,25 +168,6 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
                 break;
             default:
                 return value;
-        }
-    }
-    setStatus() {
-        let fanSpeed = this.getVerbose("fanMode", this.context.fanMode);
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: fanSpeed
-        });
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.FanDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, devices_2.FanRequirements.FanControlServer.with(...this.features)), this.attributes);
-            this.endpoint.set({
-                fanControl: {}
-            });
-        }
-        catch (e) {
-            this.node.error(e);
         }
     }
 }

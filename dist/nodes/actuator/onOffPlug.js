@@ -3,19 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.onOffPlug = void 0;
 require("@matter/main");
 const devices_1 = require("@matter/main/devices");
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const onOffLight_1 = require("../light/onOffLight");
-const behaviors_2 = require("@matter/main/behaviors");
+const behaviors_1 = require("@matter/main/behaviors");
 const clusters_1 = require("@matter/main/clusters");
 const types_1 = require("@matter/main/types");
 class onOffPlug extends onOffLight_1.onOffLight {
-    withs = [];
     constructor(node, config, _name = '') {
         let name = config.name || _name || "On/Off Plug";
         super(node, config, name);
         this.setSerialNumber("plug-");
-        this.withs.push(behaviors_1.BridgedDeviceBasicInformationServer);
         this.mapping = {
             ...this.mapping,
             power: { electricalPowerMeasurement: "activePower", multiplier: 1000, unit: "W", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
@@ -37,8 +33,8 @@ class onOffPlug extends onOffLight_1.onOffLight {
                     },
                 ],
             };
-            this.withs.push(behaviors_2.ElectricalPowerMeasurementServer.with(clusters_1.ElectricalPowerMeasurement.Feature.AlternatingCurrent));
-            this.withs.push(behaviors_2.ElectricalEnergyMeasurementServer.with(clusters_1.ElectricalEnergyMeasurement.Feature.ImportedEnergy, clusters_1.ElectricalEnergyMeasurement.Feature.CumulativeEnergy));
+            this.withs.push(behaviors_1.ElectricalPowerMeasurementServer.with(clusters_1.ElectricalPowerMeasurement.Feature.AlternatingCurrent));
+            this.withs.push(behaviors_1.ElectricalEnergyMeasurementServer.with(clusters_1.ElectricalEnergyMeasurement.Feature.ImportedEnergy, clusters_1.ElectricalEnergyMeasurement.Feature.CumulativeEnergy));
             this.setDefault("power", 0);
             this.setDefault("current", 0);
             this.setDefault("voltage", 230);
@@ -90,6 +86,7 @@ class onOffPlug extends onOffLight_1.onOffLight {
             this.prune("power");
             this.prune("frequency");
         }
+        this.device = devices_1.OnOffPlugInUnitDevice;
     }
     getStatusText() {
         let text = super.getStatusText();
@@ -104,7 +101,7 @@ class onOffPlug extends onOffLight_1.onOffLight {
         for (let key in update) {
             if (key == "electricalEnergyMeasurement") {
                 this.node.debug("Found the energy key which needs special handling");
-                await this.endpoint.act(agent => agent.get(behaviors_2.ElectricalEnergyMeasurementServer).setMeasurement({
+                await this.endpoint.act(agent => agent.get(behaviors_1.ElectricalEnergyMeasurementServer).setMeasurement({
                     cumulativeEnergy: {
                         imported: {
                             energy: update.electricalEnergyMeasurement.cumulativeEnergy.energy,
@@ -115,14 +112,6 @@ class onOffPlug extends onOffLight_1.onOffLight {
             }
         }
         return update;
-    }
-    async deploy() {
-        try {
-            this.endpoint = new main_1.Endpoint(devices_1.OnOffPlugInUnitDevice.with(...this.withs), this.attributes);
-        }
-        catch (e) {
-            this.node.error(e);
-        }
     }
 }
 exports.onOffPlug = onOffPlug;

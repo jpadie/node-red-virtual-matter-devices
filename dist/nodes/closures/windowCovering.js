@@ -1,14 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.windowCovering = void 0;
-const behaviors_1 = require("@matter/main/behaviors");
-const main_1 = require("@matter/main");
 const devices_1 = require("@matter/main/devices");
-const behaviors_2 = require("@matter/main/behaviors");
+const behaviors_1 = require("@matter/main/behaviors");
 const clusters_1 = require("@matter/main/clusters");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class windowCovering extends BaseEndpoint_1.BaseEndpoint {
-    withs = [];
     constructor(node, config, name = "") {
         name = config.name || "Window Covering";
         super(node, config, name);
@@ -71,8 +68,12 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
                 break;
         }
         this.setSerialNumber("wcv-");
-        this.withs = withs;
-        this.attributes.windowCovering = windowCovering;
+        this.withs.push(behaviors_1.WindowCoveringServer.with(...withs));
+        this.attributes = {
+            ...this.attributes,
+            windowCovering: windowCovering
+        };
+        this.device = devices_1.WindowCoveringDevice;
     }
     getVerbose(item, value) {
         if (Number.isNaN(value)) {
@@ -99,14 +100,6 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
             text += `Tilt: ${this.context.tilt} `;
         }
         return text;
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new main_1.Endpoint(devices_1.WindowCoveringDevice.with(behaviors_1.BridgedDeviceBasicInformationServer, behaviors_2.WindowCoveringServer.with(...this.withs)), this.attributes);
-        }
-        catch (e) {
-            this.node.error("Error creating endpoint: " + e);
-        }
     }
 }
 exports.windowCovering = windowCovering;

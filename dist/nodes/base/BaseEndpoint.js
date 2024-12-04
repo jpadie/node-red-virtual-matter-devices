@@ -3,7 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseEndpoint = void 0;
 require("@matter/main");
 const server_1 = require("../server/server");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 class BaseEndpoint {
+    withs = [];
     mapping = {};
     config = {};
     node;
@@ -16,6 +19,7 @@ class BaseEndpoint {
     skip = false;
     confirmations = {};
     awaitingConfirmation = {};
+    device = null;
     constructor(node, config, name = "") {
         this.node = node;
         this.config = config;
@@ -29,7 +33,7 @@ class BaseEndpoint {
         }
         this.Context = node.context();
         this.context = this.Context.get("attributes") || {};
-        this.name = name;
+        this.name = this.config.name || name;
         this.attributes = {
             id: this.node.id,
             bridgedDeviceBasicInformation: {
@@ -48,13 +52,20 @@ class BaseEndpoint {
             shape: "dot",
             text: "offline"
         });
+        this.withs.push(behaviors_1.BridgedDeviceBasicInformationServer);
     }
     getEnumKeyByEnumValue(myEnum, enumValue) {
         let keys = Object.keys(myEnum).filter(x => myEnum[x] == enumValue);
         return keys.length > 0 ? keys[0] : null;
     }
     setSerialNumber(value) {
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+        if (this.attributes.bridgedDeviceBasicInformation.serialNumber.includes("-")) {
+            let dash = this.attributes.bridgedDeviceBasicInformation.serialNumber.indexOf("-");
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = value + this.attributes.bridgedDeviceBasicInformation.serialNumber.slice(dash + 1);
+        }
+        else {
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+        }
     }
     prune(item) {
         if (Object.hasOwn(this.mapping, item)) {
@@ -87,7 +98,15 @@ class BaseEndpoint {
         return false;
     }
     async deploy() {
-        return;
+        if (this.device) {
+            try {
+                this.endpoint = new main_1.Endpoint(this.device.with(...this.withs, this.attributes));
+            }
+            catch (e) {
+                this.node.error(e);
+                console.trace(e);
+            }
+        }
     }
     cleanUp() {
         this.node.debug("cleaning up old context entries");
@@ -165,7 +184,7 @@ class BaseEndpoint {
     }
     getStatusText() {
         let keys = Object.keys(this.context);
-        return this.context[keys[0]] + (this.context.unit || "");
+        return this.getVerbose(keys[0], this.context[keys[0]]) + (this.context.unit || "");
     }
     setStatus() {
         this.node.status({
@@ -216,9 +235,18 @@ class BaseEndpoint {
                                 ret = this.refine(ret, 2);
                             }
                             break;
+                        case "boolean":
+                            ret = value ? true : false;
+                            break;
                         default:
                     }
                 }
+            }
+        }
+        if (Object.hasOwn(this.mapping[item], "permittedValues")) {
+            if (!this.mapping[item].permittedValues.includes(ret)) {
+                this.node.debug(`Dropping update as value ${ret} is not a permitted value`);
+                return null;
             }
         }
         this.node.debug("refined values for matter");
@@ -248,6 +276,12 @@ class BaseEndpoint {
                             ret = value;
                     }
                 }
+            }
+        }
+        if (Object.hasOwn(this.mapping[item], "permittedValues")) {
+            if (!this.mapping[item].permittedValues.includes(ret)) {
+                this.node.debug(`Dropping update as value ${ret} is not a permitted value`);
+                return null;
             }
         }
         this.node.debug(`Refined value for context: item ${item} and value ${ret}`);
@@ -283,6 +317,10 @@ class BaseEndpoint {
                         }
                         else {
                             v = this.matterToContext(item, v);
+                            if (v === null) {
+                                this.node.debug(`skipping as not a permitted value or otherwise NULL`);
+                                return;
+                            }
                             this.context[item] = v;
                             this.node.debug(`setting context item ${item} to ${value}`);
                             this.context.lastHeardFrom = this.now();
@@ -377,6 +415,8 @@ class BaseEndpoint {
             let v;
             if (this.context[item] != value) {
                 v = this.contextToMatter(item, value);
+                if (v == null)
+                    return;
                 const keys = Object.keys(this.mapping[item]);
                 let key = keys[0];
                 if (typeof this.mapping[item][key] == "string") {
@@ -563,7 +603,14 @@ class BaseEndpoint {
             if (c == undefined) {
                 c = 0;
             }
-            this.context[item] = this.matterToContext(item, c);
+            let v = this.matterToContext(item, c);
+            if (v === null) {
+                this.node.debug(`not setting context for ${item} as value reported as null or not permitted (which should not happen...)`);
+                continue;
+            }
+            else {
+                this.context[item] = v;
+            }
         }
         this.saveContext();
         this.setStatus();
