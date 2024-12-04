@@ -1,6 +1,4 @@
 require("@matter/node");
-import { Endpoint } from "@matter/main"
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
 import { WaterFreezeDetectorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
@@ -14,39 +12,27 @@ export class waterFreezeDetectorDevice extends BaseEndpoint {
         this.name = this.config.name || "Water Freeze Sensor"
 
         this.mapping = {   //must be a 1 : 1 mapping
-            frozen: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "int" }, context: { valueType: "int" } }
+            frozen: { booleanState: "stateValue", multiplier: 1, unit: "", matter: { valueType: "boolean" }, context: { valueType: "int" } }
         }
 
-        this.attributes.serialNumber = "wfd-" + this.attributes.serialNumber;
-
-    }
-
-
-    override setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: `${this.context.frozen ? "Frozen" : "Liquid"}`
-        });
-    }
-
-    override async deploy() {
-        this.context = Object.assign({
-            frozen: false,
-            lastHeardFrom: ""
-        }, this.context);
-        this.saveContext();
-        this.attributes.booleanState = {
-            stateValue: this.context.frozen ? true : false
+        this.setSerialNumber("wfd-");
+        this.setDefault("frozen", 0);
+        this.attributes = {
+            ...this.attributes,
+            booleanState: {
+                stateValue: this.contextToMatter("froze", this.context.frozen)
+            }
         }
+        this.device = WaterFreezeDetectorDevice;
+    }
 
-        try {
-            this.endpoint = await new Endpoint(WaterFreezeDetectorDevice.with(BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-        } catch (e) {
-            this.node.error(e);
+    override getVerbose(item: any, value: any) {
+        switch (item) {
+            case "frozen":
+                return value ? "Frozen" : "Liquid";
+                break;
+            default:
+                return super.getVerbose(item, value);
         }
     }
 }

@@ -50,10 +50,6 @@ module.exports = (RED: NodeAPI): void => {
         device = new module(this, config);
 
         device.getEndpoint();
-        /*.then((endpoint) => {
-            matterServer.addDevice(endpoint);
-        });
-        */
     };
 
     RED.nodes.registerType('matter-sensors', MatterSensors);

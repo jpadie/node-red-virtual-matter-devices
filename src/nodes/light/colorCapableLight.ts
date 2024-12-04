@@ -1,8 +1,5 @@
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight.js";
-import { DimmableLightDevice } from "@matter/main/devices";
 import { ColorControlServer } from "@matter/main/behaviors";
 import { colourList } from "./colourList.js";
 
@@ -51,15 +48,11 @@ export class colorLight extends dimmableLight {
         this.setDefault("colorX", 0);
         this.setDefault("colorY", 0);
         this.setDefault("colorSpace", "xyY");
+
+        this.withs.push(ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation"));
+        //no need to set this.device as done by dimmable light;
     }
 
-    override getVerbose(item, value) {
-        switch (item) {
-
-            default:
-                return super.getVerbose(item, value);
-        }
-    }
 
     convertHSVtoXY(hue, saturation, brightness) {
         let { r, g, b } = this.convertHSVtoRGB(hue, saturation, brightness);
@@ -228,6 +221,7 @@ export class colorLight extends dimmableLight {
     }
 
     override async setStatus() {
+        //need to override to make this async
         const text = await this.getStatusText()
 
         this.node.status({
@@ -279,19 +273,4 @@ export class colorLight extends dimmableLight {
         return { a: a, b: b };
     }
 
-    override async deploy() {
-        try {
-
-            this.endpoint = await new Endpoint(
-                DimmableLightDevice.with(
-                    BridgedDeviceBasicInformationServer,
-                    ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")
-                ),
-                this.attributes);
-
-        } catch (e) {
-            this.node.error(e);
-            console.trace();
-        }
-    }
 }

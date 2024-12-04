@@ -1,12 +1,7 @@
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
 import { DoorLockDevice } from "@matter/main/devices"
-    ;
 import { DoorLock } from "@matter/main/clusters";
-
-
 export class doorLock extends BaseEndpoint {
 
     constructor(node: Node, config: any, _name: any = "") {
@@ -23,19 +18,23 @@ export class doorLock extends BaseEndpoint {
 
         this.setSerialNumber("dlk-");
 
-        this.attributes.doorLock = {
-            supportedOperatingModes: {
-                normal: true,
-                vacation: true,
-                noRemoteLockUnlock: true,
-                passage: true,
-                privacy: true
-            },
-            operatingMode: this.context.mode,
-            lockType: parseInt(this.config.doorLockType),
-            lockState: this.context.lock,
-            actuatorEnabled: true,
+        this.attributes = {
+            ...this.attributes,
+            doorLock: {
+                supportedOperatingModes: {
+                    normal: true,
+                    vacation: true,
+                    noRemoteLockUnlock: true,
+                    passage: true,
+                    privacy: true
+                },
+                operatingMode: this.context.mode,
+                lockType: parseInt(this.config.doorLockType),
+                lockState: this.context.lock,
+                actuatorEnabled: true,
+            }
         }
+        this.device = DoorLockDevice;
 
     }
 
@@ -64,18 +63,5 @@ export class doorLock extends BaseEndpoint {
     override getStatusText() {
         let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
         return text;
-    }
-
-    override async deploy() {
-        try {
-            this.endpoint = await new Endpoint(DoorLockDevice.with(
-                BridgedDeviceBasicInformationServer
-            ),
-                this.attributes
-            );
-
-        } catch (e) {
-            this.node.error("Error creating endpoint: " + e);
-        }
     }
 }

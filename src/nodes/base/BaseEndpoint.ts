@@ -1,8 +1,11 @@
 import "@matter/main";
 import { type Node, type NodeContext } from 'node-red';
 import { matterHub } from "../server/server";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors";
+import { Endpoint } from "@matter/main";
 
 export class BaseEndpoint {
+    public withs: any[] = [];
     public mapping: Record<string, any> = {};
     public config: Record<string, any> = {};
     public node: Node;
@@ -15,6 +18,7 @@ export class BaseEndpoint {
     public skip: Boolean = false;
     public confirmations: any = {}
     public awaitingConfirmation: any = {};
+    public device: any = null;
 
     constructor(node: Node, config: Record<string, never>, name = "") {
         this.node = node;
@@ -29,7 +33,7 @@ export class BaseEndpoint {
         }
         this.Context = node.context();
         this.context = this.Context.get("attributes") || {};
-        this.name = name;
+        this.name = this.config.name || name;
         this.attributes = {
             id: this.node.id,
             bridgedDeviceBasicInformation: {
@@ -48,7 +52,7 @@ export class BaseEndpoint {
             shape: "dot",
             text: "offline"
         });
-
+        this.withs.push(BridgedDeviceBasicInformationServer);
     }
 
     getEnumKeyByEnumValue(myEnum, enumValue) {
@@ -57,7 +61,12 @@ export class BaseEndpoint {
     }
 
     setSerialNumber(value: string) {
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+        if (this.attributes.bridgedDeviceBasicInformation.serialNumber.includes("-")) {
+            let dash = this.attributes.bridgedDeviceBasicInformation.serialNumber.indexOf("-");
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = value + this.attributes.bridgedDeviceBasicInformation.serialNumber.slice(dash + 1);
+        } else {
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+        }
     }
 
     prune(item) {
@@ -93,7 +102,14 @@ export class BaseEndpoint {
         return false;
     }
     async deploy() {
-        return;
+        if (this.device) {
+            try {
+                this.endpoint = new Endpoint(this.device.with(...this.withs, this.attributes));
+            } catch (e) {
+                this.node.error(e);
+                console.trace(e);
+            }
+        }
     }
     cleanUp() {
         this.node.debug("cleaning up old context entries")
@@ -176,8 +192,9 @@ export class BaseEndpoint {
 
     getStatusText() {
         let keys = Object.keys(this.context);
-        return this.context[keys[0]] + (this.context.unit || "")
+        return this.getVerbose(keys[0], this.context[keys[0]]) + (this.context.unit || "")
     }
+
     setStatus() {
         this.node.status({
             fill: "green",
@@ -223,6 +240,9 @@ export class BaseEndpoint {
                             } else {
                                 ret = this.refine(ret, 2);
                             }
+                            break;
+                        case "boolean":
+                            ret = value ? true : false;
                             break;
                         default:
                     }

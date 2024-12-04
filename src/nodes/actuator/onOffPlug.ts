@@ -1,7 +1,5 @@
 import "@matter/main";
 import { OnOffPlugInUnitDevice } from "@matter/main/devices";
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { onOffLight } from "../light/onOffLight";
 import { ElectricalEnergyMeasurementServer, ElectricalPowerMeasurementServer } from "@matter/main/behaviors";
@@ -9,13 +7,11 @@ import { ElectricalEnergyMeasurement, ElectricalPowerMeasurement } from "@matter
 import { MeasurementType } from "@matter/main/types";
 
 export class onOffPlug extends onOffLight {
-    private withs: any[] = [];
 
     constructor(node: Node, config: any, _name: any = '') {
         let name = config.name || _name || "On/Off Plug";
         super(node, config, name);
         this.setSerialNumber("plug-");
-        this.withs.push(BridgedDeviceBasicInformationServer);
         this.mapping = {
             ...this.mapping,
             power: { electricalPowerMeasurement: "activePower", multiplier: 1000, unit: "W", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } },
@@ -97,6 +93,8 @@ export class onOffPlug extends onOffLight {
             this.prune("power");
             this.prune("frequency");
         }
+
+        this.device = OnOffPlugInUnitDevice;
     }
     /*  
     energy updates need to be handled differently to trigger periodic measurements 
@@ -133,14 +131,5 @@ export class onOffPlug extends onOffLight {
         return update;
     }
 
-    override async deploy() {
-        try {
-            this.endpoint = new Endpoint(
-                OnOffPlugInUnitDevice.with(...this.withs),
-                this.attributes
-            );
-        } catch (e) {
-            this.node.error(e);
-        }
-    }
+
 }

@@ -1,14 +1,12 @@
 import { OccupancySensorDevice } from "@matter/main/devices"
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint"
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main"
 
 export class occupancySensor extends BaseEndpoint {
 
-    constructor(node: Node, config: any) {
-        super(node, config);
-        this.name = this.config.name || "Contact Sensor"
+    constructor(node: Node, config: any, _name: string = "") {
+        let name = _name || "Contact Sensor"
+        super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
             occupied: {
@@ -17,20 +15,45 @@ export class occupancySensor extends BaseEndpoint {
                 },
                 multiplier: 1,
                 unit: "",
-                matter: { valueType: "int" },
+                matter: { valueType: "boolean" },
                 context: { valueType: "int" }
             }
         }
-        this.attributes.serialNumber = "occ-" + this.attributes.serialNumber;
+        this.setSerialNumber("occ-");
+        this.setDefault("occupied", 0);
+        this.attributes = {
+            ...this.attributes,
+            occupancySensing: {
+                occupancy: {
+                    occupied: this.contextToMatter("occupied", this.context.occupied)
+                },
+                occupancySensorTypeBitmap: {
+                    pir: true,
+                    ultrasonic: true,
+                    physicalContact: false
+                },
+                occupancySensorType: 2
+            }
+        }
+        this.device = OccupancySensorDevice;
     }
 
-    override setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: `${this.context.occupied ? "Occupied" : "Empty"}`
-        });
+    override getVerbose(item: any, value: any = "") {
+        if (value = "") {
+            if (Object.hasOwn(this.context, item)) {
+                value = this.context[item]
+            }
+        }
+        switch (item) {
+            case "occupied":
+                return value ? "Occupied" : "Empty"
+                break;
+            default:
+                return super.getVerbose(item, value);
+        }
     }
+    /*
+
     override preProcessDeviceChanges(value: any, item) {
         if (item == "occupancy$Changed") {
             return value.occupied;
@@ -62,35 +85,6 @@ export class occupancySensor extends BaseEndpoint {
             }
         });
     }
+*/
 
-    override async deploy() {
-        this.context = Object.assign({
-            occupied: false,
-            lastHeardFrom: ""
-        }, this.context);
-        this.attributes = {
-            ...this.attributes,
-            occupancySensing: {
-                occupancy: {
-                    occupied: this.context.occupied ? true : false
-                },
-                occupancySensorTypeBitmap: {
-                    pir: true,
-                    ultrasonic: true,
-                    physicalContact: false
-                },
-                occupancySensorType: 2
-            }
-        }
-        this.saveContext();
-        try {
-            this.endpoint = new Endpoint(OccupancySensorDevice.with(BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-
-        } catch (e) {
-            this.node.error(e);
-        }
-    }
 }

@@ -1,6 +1,4 @@
 type: module
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
 import { FanDevice } from "@matter/main/devices";
@@ -166,24 +164,12 @@ export class fan extends BaseEndpoint {
         this.setDefault("percentSetting", 0);
 
         this.attributes.fanControl.percentCurrent = this.context.percentCurrent;
-    }
-    /*
-        override preProcessDeviceChanges(value: any, item: any) {
-    
-        }
-    */
-    override regularUpdate() {
-        if (this.config.regularUpdates) {
-            setInterval(() => {
-                let m = {};
 
-                for (const item in this.context) {
-                    m[item] = this.getVerbose(item, this.context[item]);
-                }
-                this.node.send({ payload: m });
-            }, this.config.telemetryInterval * 1000);
-        }
+        this.device = FanDevice;
+        this.withs.push(FanRequirements.FanControlServer.with(...this.features));
+
     }
+
     override getVerbose(item, value) {
         switch (item) {
             case "fanMode":
@@ -201,38 +187,6 @@ export class fan extends BaseEndpoint {
                 break;
             default:
                 return value;
-        }
-    }
-
-    override setStatus() {
-        let fanSpeed = this.getVerbose("fanMode", this.context.fanMode);
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: fanSpeed
-        })
-    }
-
-    override async deploy() {
-
-        //console.log(this.attributes);
-        try {
-            this.endpoint = await new Endpoint(
-                FanDevice.with(
-                    BridgedDeviceBasicInformationServer,
-                    FanRequirements.FanControlServer.with(...this.features)
-                ),
-                this.attributes);
-
-            this.endpoint.set(
-                {
-                    fanControl: {
-
-                    }
-                });
-
-        } catch (e) {
-            this.node.error(e);
         }
     }
 }

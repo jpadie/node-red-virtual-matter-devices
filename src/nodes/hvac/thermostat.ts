@@ -1,6 +1,4 @@
 type: module
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { ThermostatDevice } from "@matter/main/devices"
 import { ThermostatServer } from "@matter/main/behaviors"
@@ -11,7 +9,6 @@ import { BaseEndpoint } from "../base/BaseEndpoint";
 
 export class thermostat extends BaseEndpoint {
     private heating_coolingState: Number = 1;
-    private withs: any = [];
 
     constructor(node: Node, config: any, _name: any = "") {
         let name = _name || config.name || "Thermostat"
@@ -173,9 +170,8 @@ export class thermostat extends BaseEndpoint {
 
         withs.push(ThermostatServer.with(...features));
         if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
-        withs.push(BridgedDeviceBasicInformationServer);
         //withs.push(OnOffBehavior);
-        this.withs = withs;
+        this.withs.push(...withs);
         /*
         console.log("thermostat config");
         console.log(this.config);
@@ -184,6 +180,7 @@ export class thermostat extends BaseEndpoint {
         console.log("thermostat attributes");
         console.log(this.attributes);
         */
+        this.device = ThermostatDevice;
     }
 
     override getVerbose(item: any, value: any) {
@@ -195,13 +192,8 @@ export class thermostat extends BaseEndpoint {
                 return value;
         }
     }
-    override setStatus() {
-        let text = (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        })
+    override getStatusText() {
+        return (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
     }
 
     override matterRefine(item: any, value: any) {
@@ -333,16 +325,5 @@ export class thermostat extends BaseEndpoint {
         this.context.heating_coolingState = this.heating_coolingState;
         this.saveContext();
         return ret;
-    }
-    override async deploy() {
-        this.endpoint = new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
-        console.log("context");
-        console.log(this.context);
-        console.log("attributes");
-        console.log(this.attributes);
-        console.log("mapping");
-        console.log(this.mapping);
-        console.log("config");
-        console.log(this.config);
     }
 }

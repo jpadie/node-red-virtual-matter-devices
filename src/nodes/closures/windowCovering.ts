@@ -1,28 +1,21 @@
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
+
 import type { Node } from 'node-red';
 import { WindowCoveringDevice } from "@matter/main/devices"
-    ;
 import { WindowCoveringServer } from "@matter/main/behaviors"
-    ;
 import { WindowCovering } from "@matter/main/clusters";
-
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 export class windowCovering extends BaseEndpoint {
-    private withs: WindowCovering.Feature[] = [];
     constructor(node: Node, config: any, name: any = "") {
         name = config.name || "Window Covering"
         super(node, config, name);
-        //console.log(config);
-
 
         this.mapping = {   //must be a 1 : 1 mapping
             lift: { windowCovering: "currentPositionLiftPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } },
             tilt: { windowCovering: "currentPositionTiltPercentage", multiplier: 1, unit: "%", matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
-        let withs: WindowCovering.Feature[] = [];
+        let withs: any[] = [];
         let windowCovering: {
             currentPositionTiltPercentage?: number;
             currentPositionLiftPercentage?: number;
@@ -91,10 +84,12 @@ export class windowCovering extends BaseEndpoint {
         }
 
         this.setSerialNumber("wcv-");
-        this.withs = withs;
-        this.attributes.windowCovering = windowCovering;
-        //   console.log(this.attributes);
-        //   console.log(this.config);
+        this.withs.push(WindowCoveringServer.with(...withs));
+        this.attributes = {
+            ...this.attributes,
+            windowCovering: windowCovering
+        }
+        this.device = WindowCoveringDevice;
     }
 
     override getVerbose(item: any, value: any) {
@@ -120,16 +115,5 @@ export class windowCovering extends BaseEndpoint {
             text += `Tilt: ${this.context.tilt} `;
         }
         return text;
-    }
-    
-    override async deploy() {
-        try {
-            this.endpoint = await new Endpoint(WindowCoveringDevice.with(
-                BridgedDeviceBasicInformationServer,
-                WindowCoveringServer.with(...this.withs)
-            ), this.attributes);
-        } catch (e) {
-            this.node.error("Error creating endpoint: " + e);
-        }
     }
 }

@@ -1,6 +1,4 @@
 import { OnOffLightDevice } from "@matter/main/devices";
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
 import { OnOff } from "@matter/main/clusters";
@@ -13,24 +11,21 @@ export class onOffLight extends BaseEndpoint {
         let name = config.name || _name || "On/Off Light";
         super(node, config, name);
 
-        this.setDefault("onoff", 0);
-        this.attributes = {
-            ...this.attributes,
-            onOff: {
-                startUpOnOff: this.context.onoff ? OnOff.StartUpOnOff.On : OnOff.StartUpOnOff.Off,
-
-            },
-        };
+        this.setDefault("onoff", 0)
 
         this.mapping = {
             onoff: { onOff: "onOff", multiplier: 1, unit: "", min: 0, max: 1, matter: { valueType: "int" }, context: { valueType: "int" } }
         }
 
-        this.setSerialNumber("light-");
-    }
+        this.attributes = {
+            ...this.attributes,
+            onOff: {
+                startUpOnOff: this.context.onoff ? OnOff.StartUpOnOff.On : OnOff.StartUpOnOff.Off,
+            },
+        };
 
-    override getStatusText() {
-        return this.getVerbose("onOff", this.context.onoff)
+        this.setSerialNumber("light-");
+        this.device = OnOffLightDevice;
     }
 
     override getVerbose(item, value) {
@@ -40,22 +35,6 @@ export class onOffLight extends BaseEndpoint {
                 break;
             default:
                 return super.getVerbose(item, value);
-        }
-    }
-
-    override setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: this.getStatusText()
-        });
-    }
-
-    override async deploy() {
-        try {
-            this.endpoint = await new Endpoint(OnOffLightDevice.with(BridgedDeviceBasicInformationServer), this.attributes);
-        } catch (e) {
-            this.node.error(e);
         }
     }
 

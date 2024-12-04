@@ -3,6 +3,7 @@ import "@matter/main";
 import type { Node, NodeAPI } from 'node-red';
 import { onOffPlug } from "./onOffPlug";
 import { dimmablePlug } from "./dimmablePlug";
+import { waterValve } from "./waterValve";
 
 /* tslint:disable */
 
@@ -20,9 +21,10 @@ module.exports = (RED: NodeAPI): void => {
             case "onOffPlug": module = onOffPlug; break;
 
             case "dimmablePlug": module = dimmablePlug; break;
+
+            case "waterValve": module = waterValve; break;
+
             /*
-                        case "waterValve": module = waterValve; break;
-            
                         case "pump": module = pump; break;
             */
 

@@ -1,6 +1,4 @@
 import { DimmableLightDevice } from "@matter/main/devices";
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { onOffLight } from "./onOffLight";
 
@@ -39,6 +37,7 @@ export class dimmableLight extends onOffLight {
         }
 
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
+        this.device = DimmableLightDevice
     }
 
     override async getStatusText() {
@@ -46,22 +45,6 @@ export class dimmableLight extends onOffLight {
         this.getVerbose("onOff", this.context.onoff);
         text += ` ${this.getVerbose("brightness", this.context.brightness)}%`
         return text;
-    }
-
-    override async setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: await this.getStatusText()
-        });
-    }
-
-    override async deploy() {
-        try {
-            this.endpoint = await new Endpoint(DimmableLightDevice.with(BridgedDeviceBasicInformationServer), this.attributes);
-        } catch (e) {
-            this.node.error(e);
-        }
     }
 
 }
