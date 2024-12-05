@@ -106,7 +106,7 @@ export class windowCovering extends BaseEndpoint {
         }
         return value;
     }
-    override getStatusText() {
+    override async getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {
             text += `Lift: ${this.context.lift} `;

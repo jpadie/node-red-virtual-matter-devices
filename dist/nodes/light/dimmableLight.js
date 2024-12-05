@@ -35,7 +35,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
         this.device = devices_1.DimmableLightDevice;
     }
     async getStatusText() {
-        let text = super.getStatusText();
+        let text = await super.getStatusText();
         this.getVerbose("onOff", this.context.onoff);
         text += ` ${this.getVerbose("brightness", this.context.brightness)}%`;
         return text;

@@ -41,7 +41,7 @@ export class dimmableLight extends onOffLight {
     }
 
     override async getStatusText() {
-        let text = super.getStatusText();
+        let text = await super.getStatusText();
         this.getVerbose("onOff", this.context.onoff);
         text += ` ${this.getVerbose("brightness", this.context.brightness)}%`
         return text;

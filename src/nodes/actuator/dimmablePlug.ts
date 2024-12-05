@@ -1,6 +1,5 @@
 import "@matter/main";
 import { DimmablePlugInUnitDevice } from "@matter/main/devices";
-
 import type { Node } from 'node-red';
 import { dimmableLight } from "../light/dimmableLight"
 

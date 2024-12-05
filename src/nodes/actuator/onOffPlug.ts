@@ -101,8 +101,8 @@ export class onOffPlug extends onOffLight {
     see https://github.com/project-chip/matter.js/blob/main/packages/examples/src/device-measuring-socket/MeasuredSocketDevice.ts
     */
 
-    override getStatusText() {
-        let text = super.getStatusText();
+    override async getStatusText() {
+        let text = await super.getStatusText();
         if (this.config.supportsEnergyMeasurement) {
             text += ` ${this.getVerbose("power", this.context.power)} W`
         }

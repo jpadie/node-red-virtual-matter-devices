@@ -60,7 +60,7 @@ export class doorLock extends BaseEndpoint {
                 return value;
         }
     }
-    override getStatusText() {
+    override async getStatusText() {
         let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
         return text;
     }

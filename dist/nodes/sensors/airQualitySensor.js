@@ -201,7 +201,7 @@ class airQualitySensor extends BaseEndpoint_1.BaseEndpoint {
                 return super.getVerbose(item, value);
         }
     }
-    getStatusText() {
+    async getStatusText() {
         return `AQI: ${this.getVerbose("airQuality", this.context.airQuality)}`;
     }
 }

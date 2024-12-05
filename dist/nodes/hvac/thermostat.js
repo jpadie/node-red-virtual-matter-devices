@@ -175,7 +175,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                 return value;
         }
     }
-    getStatusText() {
+    async getStatusText() {
         return (this.deriveOnOff() ? (this.context.systemMode == clusters_1.Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
     }
     matterRefine(item, value) {

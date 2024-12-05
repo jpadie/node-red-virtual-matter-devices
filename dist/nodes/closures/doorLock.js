@@ -55,7 +55,7 @@ class doorLock extends BaseEndpoint_1.BaseEndpoint {
                 return value;
         }
     }
-    getStatusText() {
+    async getStatusText() {
         let text = `State: ${this.getVerbose("lock", this.context.lock)} (${this.getVerbose("mode", this.context.mode)} Mode)`;
         return text;
     }

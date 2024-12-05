@@ -92,8 +92,8 @@ export class waterValve extends BaseEndpoint {
         this.device = WaterValveDevice;
     }
 
-    override getStatusText(): string {
-        let stateVerbose = this.getVerbose(ValveConfigurationAndControl.ValveState, this.context.curretnState);
+    override async getStatusText() {
+        let stateVerbose = this.getEnumKeyByEnumValue(ValveConfigurationAndControl.ValveState, this.context.curretnState);
         let text = `State: ${stateVerbose}`;
         return text;
     }

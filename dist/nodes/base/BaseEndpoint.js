@@ -100,11 +100,14 @@ class BaseEndpoint {
     async deploy() {
         if (this.device) {
             try {
-                this.endpoint = new main_1.Endpoint(this.device.with(...this.withs, this.attributes));
+                this.endpoint = await new main_1.Endpoint(this.device.with(...this.withs), this.attributes);
             }
             catch (e) {
                 this.node.error(e);
                 console.trace(e);
+                this.node.error(`device is : ${JSON.stringify(this.device, null, 2)}`);
+                this.node.error(`withs are : ${JSON.stringify(this.withs, null, 2)}`);
+                this.node.error(`attributes are: ${JSON.stringify(this.attributes, null, 2)}`);
             }
         }
     }
@@ -131,12 +134,13 @@ class BaseEndpoint {
             try {
                 this.cleanUp();
                 await this.deploy();
+                server_1.matterHub.addDevice(this.endpoint);
+                await this.endpoint.construction;
                 this.regularUpdate();
                 this.listen();
                 this.setStatus();
                 this.setDefault("lastHeardFrom", "");
                 this.saveContext();
-                server_1.matterHub.addDevice(this.endpoint);
                 setTimeout(async () => {
                     await this.syncContext();
                 }, 2000);
@@ -158,7 +162,7 @@ class BaseEndpoint {
             });
         }
     }
-    clearConfirmation(item) {
+    async clearConfirmation(item) {
         if (Object.hasOwn(this.awaitingConfirmation, item)) {
             delete this.awaitingConfirmation[item];
             clearTimeout(this.confirmations[item]);
@@ -182,15 +186,15 @@ class BaseEndpoint {
     saveContext() {
         this.Context.set('attributes', this.context);
     }
-    getStatusText() {
+    async getStatusText() {
         let keys = Object.keys(this.context);
         return this.getVerbose(keys[0], this.context[keys[0]]) + (this.context.unit || "");
     }
-    setStatus() {
+    async setStatus() {
         this.node.status({
             fill: "green",
             shape: "dot",
-            text: this.getStatusText()
+            text: await this.getStatusText()
         });
     }
     setDefault(item, value) {
@@ -356,7 +360,7 @@ class BaseEndpoint {
                 this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
-                        if (this.clearConfirmation(item))
+                        if (await this.clearConfirmation(item) === true)
                             return;
                         value = this.preProcessDeviceChanges(value, s);
                         if (this.skip) {

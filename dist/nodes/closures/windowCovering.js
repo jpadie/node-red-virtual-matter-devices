@@ -91,7 +91,7 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         }
         return value;
     }
-    getStatusText() {
+    async getStatusText() {
         let text = "";
         if (Object.hasOwn(this.context, "lift")) {
             text += `Lift: ${this.context.lift} `;

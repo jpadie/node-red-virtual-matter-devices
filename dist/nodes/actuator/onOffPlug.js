@@ -88,8 +88,8 @@ class onOffPlug extends onOffLight_1.onOffLight {
         }
         this.device = devices_1.OnOffPlugInUnitDevice;
     }
-    getStatusText() {
-        let text = super.getStatusText();
+    async getStatusText() {
+        let text = await super.getStatusText();
         if (this.config.supportsEnergyMeasurement) {
             text += ` ${this.getVerbose("power", this.context.power)} W`;
         }

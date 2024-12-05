@@ -192,7 +192,7 @@ export class thermostat extends BaseEndpoint {
                 return value;
         }
     }
-    override getStatusText() {
+    override async getStatusText() {
         return (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
     }
 
