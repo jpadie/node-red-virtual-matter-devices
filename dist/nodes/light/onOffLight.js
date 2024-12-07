@@ -15,7 +15,8 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
         this.attributes = {
             ...this.attributes,
             onOff: {
-                startUpOnOff: this.context.onoff ? clusters_1.OnOff.StartUpOnOff.On : clusters_1.OnOff.StartUpOnOff.Off,
+                startUpOnOff: clusters_1.OnOff.StartUpOnOff.Off,
+                onOff: this.contextToMatter("onoff", this.context.onoff)
             },
         };
         this.setSerialNumber("light-");
@@ -23,7 +24,7 @@ class onOffLight extends BaseEndpoint_1.BaseEndpoint {
     }
     getVerbose(item, value) {
         switch (item) {
-            case "onOff":
+            case "onoff":
                 return value ? "ON" : "OFF";
                 break;
             default:

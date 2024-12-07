@@ -1,12 +1,9 @@
-/*
-import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
-import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors";
 import { PumpDevice, PumpRequirements } from "@matter/main/devices";
-import { onOffLight } from "../light/onOffLight";
+import { dimmableLight } from "../light/dimmableLight";
+import { PumpConfigurationAndControl, OnOff } from "@matter/main/clusters";
 
-
-export class pump extends onOffLight {
+export class pump extends dimmableLight {
 
     constructor(node: Node, config: any, _name: any = "") {
 
@@ -14,53 +11,48 @@ export class pump extends onOffLight {
         super(node, config, name);
         this.mapping = {   //must be a 1 : 1 mapping
             ...this.mapping,
-
+            speed: {
+                pumpConfigurationAndControl: "speed",
+                min: 0,
+                max: 100,
+                multiplier: 1,
+                unit: "%",
+                context: { valueType: "int" },
+                matter: { valueType: "int" }
+            }
         }
-        this.attributes.serialNumber = "pump-" + this.attributes.serialNumber;
+        delete this.mapping.brightness
+        this.setSerialNumber("pump-");
+        this.setDefault("speed", 0);
 
         this.attributes = {
             ...this.attributes,
-            pumpConfigutationAndControl: {
+            pumpConfigurationAndControl: {
                 maxSpeed: 65534,
                 maxPressure: 3276,
                 maxFlow: 6553.4,
-                effectiveControlMode: 0,
-                effectiveOperationMode: 0,
-                capacity: 0
-            }
-        }
-
-        this.context = Object.assign({
-            occupied: false,
-            lastHeardFrom: ""
-        }, this.context);
-
-        this.attributes = {
-            ...this.attributes,
+                effectiveOperationMode: PumpConfigurationAndControl.OperationMode.Normal,
+                capacity: 0,
+                speed: this.contextToMatter("speed", this.context.speed),
+                operationMode: PumpConfigurationAndControl.OperationMode.Normal,
+            },
 
         }
-    }
-
-    override setStatus() {
-        let text = '';
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        });
-    }
-
-    override async deploy() {
-        try {
-            this.endpoint = await new Endpoint(
-                PumpDevice.with(
-                    BridgedDeviceBasicInformationServer,
-                    PumpRequirements.OnOffServer,
-                    PumpRequirements.PumpConfigurationAndControlServer.with("Automatic", "CompensatedPressure", "ConstantFlow", "ConstantPressure", "ConstantSpeed", "ConstantTemperature", "LocalOperation"),
-                ), this.attributes);
-        } catch (e) {
-            this.node.error(e);
+        if (this.config.supportsVariableSpeed) {
+            // need to override the currentLevel label
+            this.attributes.levelControl.currentLevel = this.contextToMatter("speed", this.context.speed);
+            this.withs.push(PumpRequirements.LevelControlServer)
+        } else {
+            delete this.attributes.levelControl;
         }
+
+
+
+        this.withs.push(
+            PumpRequirements.PumpConfigurationAndControlServer,
+            PumpRequirements.OnOffServer
+        );
+        /* override this.device */
+        this.device = PumpDevice;
     }
 }
-    */

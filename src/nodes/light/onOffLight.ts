@@ -20,7 +20,8 @@ export class onOffLight extends BaseEndpoint {
         this.attributes = {
             ...this.attributes,
             onOff: {
-                startUpOnOff: this.context.onoff ? OnOff.StartUpOnOff.On : OnOff.StartUpOnOff.Off,
+                startUpOnOff: OnOff.StartUpOnOff.Off,
+                onOff: this.contextToMatter("onoff", this.context.onoff)
             },
         };
 
@@ -30,7 +31,7 @@ export class onOffLight extends BaseEndpoint {
 
     override getVerbose(item, value) {
         switch (item) {
-            case "onOff":
+            case "onoff":
                 return value ? "ON" : "OFF";
                 break;
             default:

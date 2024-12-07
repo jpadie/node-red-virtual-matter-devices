@@ -150,7 +150,7 @@ export class BaseEndpoint {
                     await this.syncContext()
                 }, 2000);
                 for (const item of ["config", "attributes", "context"]) {
-                    this.node.debug("item");
+                    this.node.debug(`${item} for ${this.name}`);
                     this.node.debug(JSON.stringify(this[item], null, 2));
                 }
             } catch (e) {

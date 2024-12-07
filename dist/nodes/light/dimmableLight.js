@@ -17,6 +17,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
                 },
                 onLevel: null,
                 onOffTransitionTime: 150,
+                currentLevel: this.contextToMatter("brightness", this.context.brightness)
             },
         };
         this.mapping = {
@@ -31,7 +32,7 @@ class dimmableLight extends onOffLight_1.onOffLight {
                 context: { valueType: "int" }
             }
         };
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
+        this.setSerialNumber(`dLt-`);
         this.device = devices_1.DimmableLightDevice;
     }
     async getStatusText() {

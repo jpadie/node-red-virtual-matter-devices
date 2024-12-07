@@ -104,7 +104,7 @@ class onOffPlug extends onOffLight_1.onOffLight {
                 await this.endpoint.act(agent => agent.get(behaviors_1.ElectricalEnergyMeasurementServer).setMeasurement({
                     cumulativeEnergy: {
                         imported: {
-                            energy: update.electricalEnergyMeasurement.cumulativeEnergy.energy,
+                            energy: update.electricalEnergyMeasurement.cumulativeEnergyImported.energy,
                         },
                     },
                 }));

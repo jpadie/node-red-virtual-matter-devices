@@ -119,7 +119,7 @@ export class onOffPlug extends onOffLight {
                     agent.get(ElectricalEnergyMeasurementServer).setMeasurement({
                         cumulativeEnergy: {
                             imported: {
-                                energy: update.electricalEnergyMeasurement.cumulativeEnergy.energy,
+                                energy: update.electricalEnergyMeasurement.cumulativeEnergyImported.energy,
                             },
                         },
 

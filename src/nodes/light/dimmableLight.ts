@@ -20,6 +20,7 @@ export class dimmableLight extends onOffLight {
                 },
                 onLevel: null,
                 onOffTransitionTime: 150,
+                currentLevel: this.contextToMatter("brightness", this.context.brightness)
             },
         };
 
@@ -36,7 +37,7 @@ export class dimmableLight extends onOffLight {
             }
         }
 
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = `dLt-${this.node.id}`.substring(0, 32);
+        this.setSerialNumber(`dLt-`);
         this.device = DimmableLightDevice
     }
 
