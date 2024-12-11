@@ -3,6 +3,9 @@ import { type Node, type NodeContext } from 'node-red';
 import { matterHub } from "../server/server";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors";
 import { Endpoint } from "@matter/main";
+/*
+import { powerControl } from "../../behaviours/powerManagement"
+*/
 
 export class BaseEndpoint {
     public withs: any[] = [];
@@ -19,6 +22,10 @@ export class BaseEndpoint {
     public confirmations: any = {}
     public awaitingConfirmation: any = {};
     public device: any = null;
+    public Behaviours: any = {
+        //    powerControl: powerControl
+    }
+    public filters: { filterName: CallableFunction[] };
 
     constructor(node: Node, config: Record<string, never>, name = "") {
         this.node = node;
@@ -55,9 +62,46 @@ export class BaseEndpoint {
         this.withs.push(BridgedDeviceBasicInformationServer);
     }
 
+    addFilter(name: string, callback: CallableFunction) {
+        if (Object.hasOwn(this.filters, name)) {
+            this.filters[name].push(callback)
+        } else {
+            this.filters = Object.assign(this.filters, { [name]: [callback] });
+        }
+    }
+
+    removeFilter(name: string, callback: CallableFunction) {
+        if (Object.hasOwn(this.filters, name)) {
+            let index = this.filters[name].indexOf(callback);
+            if (index > -1) {
+                this.filters[name][index].splice(index, 1);
+            }
+        }
+    }
+
+    callFilters(name, ...args) {
+        if (Object.hasOwn(this.filters, name)) {
+            for (let func of this.filters[name]) {
+                func(...args);
+            }
+        }
+    }
+
     getEnumKeyByEnumValue(myEnum, enumValue) {
         let keys = Object.keys(myEnum).filter(x => myEnum[x] == enumValue);
         return keys.length > 0 ? keys[0] : null;
+    }
+
+    addBehaviour(behaviour: string) {
+        let e: any;
+        if (Object.hasOwn(this.Behaviours, behaviour)) {
+            e = new this.Behaviours[behaviour](this.config);
+            this.attributes = Object.assign(this.attributes, e.attributes);
+            this.mapping = Object.assign(this.mapping, e.mapping);
+            this.withs.push(e.withs);
+        } else {
+            this.node.error(`Behaviour ${behaviour} is unknown`);
+        }
     }
 
     setSerialNumber(value: string) {
@@ -167,18 +211,23 @@ export class BaseEndpoint {
     }
 
     async clearConfirmation(item: string): Promise<void | Boolean> {
+        this.node.debug(`checking for confirmation for item ${item}.  Current confirmations awaiting are ${JSON.stringify(this.awaitingConfirmation, null, 2)}`);
         if (Object.hasOwn(this.awaitingConfirmation, item)) {
             delete this.awaitingConfirmation[item]
             clearTimeout(this.confirmations[item])
+            this.node.debug(`Confirmation ${item} cleared`)
             return true;
         }
+        this.node.debug(`No confirmations cleared for ${item}`)
         return false;
     }
 
     async awaitConfirmation(item: string, value: string) {
+        this.node.debug(`setting a confirmation await flag for item ${item}`)
         this.clearConfirmation(item);
         this.awaitingConfirmation[item] = value;
         this.confirmations[item] = setTimeout((item: string) => {
+            this.node.debug(`timeout for confirmation ${item}.  Clearing now.`)
             this.clearConfirmation(item);
         }, 1000, item);
         this.saveContext();
@@ -349,20 +398,32 @@ export class BaseEndpoint {
                             this.node.debug(`setting context item ${item} to ${value}`);
 
                             this.context.lastHeardFrom = this.now();
-                            if (!this.clearConfirmation(item)) {
+                            if (! await this.clearConfirmation(item)) {
+                                this.node.debug(`no confirmations awaiting so this is a matter originating message and can be reported`)
+                                let v = this.getVerbose(item, this.context[item]);
                                 let report = {
-                                    [item]: this.getVerbose(item, this.context[item]),
+                                    [item]: this.context[item],
                                     unit: this.mapping[item].unit,
                                     lastHeardFrom: this.context.lastHeardFrom,
                                     messageSource: "Matter"
                                 }
+                                if (v !== this.context[item]) {
+                                    report = Object.assign(report, { [`${item}_in_words`]: v });
+                                }
+
                                 if (this.mapping[item].unit == "") {
                                     delete report.unit;
                                 }
+
                                 //reports.push(report);
+                                this.node.debug(`About to send report of the matter change.  Report is ${JSON.stringify(report, null, 2)}`);
                                 report = await this.preProcessOutputReport(report)
+                                this.node.debug(`Report of a matter change has been pre-processed.  Report is ${JSON.stringify(report, null, 2)}`);
                                 this.node.send({ payload: report });
+                                this.node.debug(`Report of a matter change has been sent and is now being post-processed`);
                                 this.listenForChange_postProcess(report);
+                            } else {
+                                this.node.debug(`confirmations awaiting for item ${item} so this is a not a matter originating instruction and should not be reported`)
                             }
                             this.saveContext();
                             this.setStatus();
@@ -383,7 +444,11 @@ export class BaseEndpoint {
                 this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
-                        if (await this.clearConfirmation(item) === true) return;
+                        if (await this.clearConfirmation(item) === true) {
+                            this.node.debug(`Confirmations awaiting for this matter change.  so this does not originate from matter and should not be reported`);
+                            return;
+                        }
+                        this.node.debug(`no confirmations awaiting so this is a matter originating message and can be reported`)
                         value = this.preProcessDeviceChanges(value, s)
                         if (this.skip) {
                             this.skip = false;
@@ -452,7 +517,7 @@ export class BaseEndpoint {
                     let k = ks[0];
                     updates.push({
                         [key]: {
-                            [this.mapping[item][key]]: {
+                            [k]: {
                                 [this.mapping[item][key][k]]: v
                             }
                         }

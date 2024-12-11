@@ -1,7 +1,7 @@
 import type { Node } from 'node-red';
 import { PumpDevice, PumpRequirements } from "@matter/main/devices";
 import { dimmableLight } from "../light/dimmableLight";
-import { PumpConfigurationAndControl, OnOff } from "@matter/main/clusters";
+import { PumpConfigurationAndControl } from "@matter/main/clusters";
 
 export class pump extends dimmableLight {
 

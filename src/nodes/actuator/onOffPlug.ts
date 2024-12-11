@@ -115,15 +115,17 @@ export class onOffPlug extends onOffLight {
         for (let key in update) {
             if (key == "electricalEnergyMeasurement") {
                 this.node.debug("Found the energy key which needs special handling");
-                await this.endpoint.act(agent =>
-                    agent.get(ElectricalEnergyMeasurementServer).setMeasurement({
-                        cumulativeEnergy: {
-                            imported: {
-                                energy: update.electricalEnergyMeasurement.cumulativeEnergyImported.energy,
-                            },
+                const parsedUpdate = {
+                    cumulativeEnergy: {
+                        imported: {
+                            energy: update.electricalEnergyMeasurement.cumulativeEnergyImported.energy,
                         },
+                    },
+                }
+                this.node.debug(`Setting Measurement via agent: ${JSON.stringify(parsedUpdate, null, 2)}`);
 
-                    }),
+                await this.endpoint.act(agent =>
+                    agent.get(ElectricalEnergyMeasurementServer).setMeasurement(parsedUpdate),
                 );
                 delete update.electricalEnergyMeasurement;
             }

@@ -82,9 +82,9 @@ class windowCovering extends BaseEndpoint_1.BaseEndpoint {
         switch (item) {
             case "lift":
                 if (value == 0)
-                    return "Closed";
-                if (value == 100)
                     return "Open";
+                if (value == 100)
+                    return "Closed";
                 break;
             default:
                 return value;

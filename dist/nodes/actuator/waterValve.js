@@ -86,8 +86,8 @@ class waterValve extends BaseEndpoint_1.BaseEndpoint {
         }
         this.device = devices_1.WaterValveDevice;
     }
-    getStatusText() {
-        let stateVerbose = this.getVerbose(clusters_1.ValveConfigurationAndControl.ValveState, this.context.curretnState);
+    async getStatusText() {
+        let stateVerbose = this.getEnumKeyByEnumValue(clusters_1.ValveConfigurationAndControl.ValveState, this.context.curretnState);
         let text = `State: ${stateVerbose}`;
         return text;
     }
