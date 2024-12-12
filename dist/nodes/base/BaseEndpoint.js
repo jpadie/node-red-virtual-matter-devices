@@ -166,11 +166,18 @@ class BaseEndpoint {
         }
         this.saveContext();
     }
+    dumpSchemas() {
+        for (const item of ["config", "attributes", "context"]) {
+            this.node.debug(`${item} for ${this.name}`);
+            this.node.debug(JSON.stringify(this[item], null, 2));
+        }
+    }
     async getEndpoint() {
         if (server_1.matterHub) {
             try {
                 this.cleanUp();
                 await this.deploy();
+                this.dumpSchemas();
                 server_1.matterHub.addDevice(this.endpoint);
                 await this.endpoint.construction;
                 this.regularUpdate();
@@ -181,10 +188,6 @@ class BaseEndpoint {
                 setTimeout(async () => {
                     await this.syncContext();
                 }, 2000);
-                for (const item of ["config", "attributes", "context"]) {
-                    this.node.debug(`${item} for ${this.name}`);
-                    this.node.debug(JSON.stringify(this[item], null, 2));
-                }
             }
             catch (e) {
                 this.node.error(e);
@@ -229,8 +232,10 @@ class BaseEndpoint {
         this.Context.set('attributes', this.context);
     }
     async getStatusText() {
-        let keys = Object.keys(this.context);
-        return this.getVerbose(keys[0], this.context[keys[0]]) + (this.context.unit || "");
+        let keys = Object.keys(this.mapping);
+        let text = await this.getVerbose(keys[0], this.context[keys[0]]) + (this.mapping.unit || "");
+        this.node.debug(`top level status text: ${text}`);
+        return text;
     }
     async setStatus() {
         this.node.status({
@@ -465,7 +470,7 @@ class BaseEndpoint {
             return;
         return;
     }
-    preProcessNodeRedInput(item, value) {
+    async preProcessNodeRedInput(item, value) {
         return { a: item, b: value };
     }
     async processIncomingItem(item, value) {
@@ -495,51 +500,71 @@ class BaseEndpoint {
                         }
                     });
                 }
-                this.awaitConfirmation(item, v);
                 await this.awaitConfirmation(item, v);
             }
         }
         if (updates.length > 0) {
-            this.node.debug("raw updates");
+            this.node.debug("raw updates: ");
             this.node.debug(JSON.stringify(updates, null, 2));
+            this.node.debug(`transforming array into object`);
             let u = {};
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
             }
             u = await this.preProcessMatterUpdate(u);
-            if (Object.keys(u).length > 0) {
-                try {
-                    await this.endpoint.construction;
-                    this.node.debug("requested update");
-                    this.node.debug(JSON.stringify(u, null, 2));
-                    await this.endpoint.set(u);
-                }
-                catch (e) {
-                    this.node.error(e);
-                    this.node.error(JSON.stringify(updates, null, 2));
-                    console.trace();
-                }
-            }
+            this.node.debug(`Object created from array: ${JSON.stringify(u, null, 2)}`);
+            return u;
+        }
+        else {
+            this.node.debug(`Zero length update`);
+            return {};
         }
     }
     async preProcessMatterUpdate(update) {
         return update;
     }
-    processIncomingMessages(msg, send, done) {
+    async processIncomingMessages(msg, send, done) {
+        let update = {};
         if (this.config.passThroughMessage) {
             send(msg);
         }
         try {
             if (typeof msg.payload == "object") {
                 for (let item in msg.payload) {
-                    let { a, b } = this.preProcessNodeRedInput(item, msg.payload[item]);
+                    this.node.debug(`processing incoming message item ${item}`);
+                    if (!Object.keys(this.mapping).includes(item)) {
+                        this.node.debug(`skipping processing incoming message item ${item} as not in mapping`);
+                        continue;
+                    }
+                    let { a, b } = await this.preProcessNodeRedInput(item, msg.payload[item]);
                     if (Array.isArray(a)) {
                         for (let i = 0; i < a.length; i++) {
-                            this.processIncomingItem(a[i], b[i]);
+                            let u = await this.processIncomingItem(a[i], b[i]);
+                            this.node.debug(`receiving processed item: {${JSON.stringify(u, null, 2)}}`);
+                            update = Object.assign(update, u);
+                            this.node.debug(`adding to update object: {${JSON.stringify(update, null, 2)}}`);
                         }
                     }
                     else {
-                        this.processIncomingItem(a, b);
+                        let u = await this.processIncomingItem(a, b);
+                        this.node.debug(`receiving processed item: {${JSON.stringify(u, null, 2)}}`);
+                        update = Object.assign(update, u);
+                        this.node.debug(`adding to update object: {${JSON.stringify(update, null, 2)}}`);
+                    }
+                }
+                this.node.debug(`full update for matter device : ${JSON.stringify(update, null, 2)}`);
+                if (Object.keys(update).length > 0) {
+                    update = await this.preProcessMatterUpdate(update);
+                    try {
+                        await this.endpoint.construction;
+                        this.node.debug("requested update");
+                        this.node.debug(JSON.stringify(update, null, 2));
+                        await this.endpoint.set(update);
+                    }
+                    catch (e) {
+                        this.node.error(e);
+                        this.node.debug(JSON.stringify(update, null, 2));
+                        console.trace();
                     }
                 }
             }
@@ -603,18 +628,22 @@ class BaseEndpoint {
     contextToMatter(item, value) {
         this.node.debug(`Converting a Context value to a Matter value. Item: ${item} Value: ${value}`);
         let v = value;
+        if (!Object.hasOwn(this.mapping, item)) {
+            this.node.debug(`Cannot proceed as there is no mapping for item ${item}`);
+            return value;
+        }
         if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
             if (typeof this.mapping[item].multiplier == "object") {
-                v = this.mapping[item].multiplier[0](value);
+                v = this.mapping[item].multiplier[0](v);
             }
             else {
-                v = this.mapping[item].multiplier * value;
+                v = this.mapping[item].multiplier * v;
             }
             if (Object.hasOwn(this.mapping[item], "min")) {
-                v = Math.max(this.mapping[item].min, value);
+                v = Math.max(this.mapping[item].min, v);
             }
             if (Object.hasOwn(this.mapping[item], "max")) {
-                v = Math.min(this.mapping[item].max, value);
+                v = Math.min(this.mapping[item].max, v);
             }
             v = this.matterRefine(item, v);
         }

@@ -9,6 +9,7 @@
             telemetryInterval: { value: 60 },
             passThroughMessage: { value: 0 },
             windowCoveringType: { value: 0 },
+            windowCoveringPositionAware: { value: 1 },
             deviceType: { value: "doorLock" },
             doorLockType: { value: 2 }
         },
@@ -134,7 +135,7 @@
     <fieldset class="windowCovering hideable matter">
         <legend>Window Covering Feature Support</legend>
         <div class="form-row">
-            <label for="node-input-windowCoveringType">Matter Server</label>
+            <label for="node-input-windowCoveringType">Window Type</label>
             <select id="node-input-windowCoveringType" >
                 <option value="0">Blind</option>
                 <option value="7">Tilt Only Blind</option>
@@ -144,6 +145,11 @@
                 <option value="6">Shutters</option>
             </select>
         </div>
+        <!--<div class="form-row">
+            <label for="node-input-windowCoveringPositionAware">Position Aware</label>
+            <input type="checkbox" id="node-input-windowCoveringPositionAware" value="1" />
+        </div>
+    -->
     </fieldset>
 
     <fieldset class="hideable doorLock matter">

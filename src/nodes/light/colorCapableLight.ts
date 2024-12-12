@@ -213,24 +213,17 @@ export class colorLight extends dimmableLight {
                 default:
                     c = "unknown";
             }
-
+            this.node.debug(`color is ${c}`);
             this.context.colorName = c;
             this.saveContext();
         }
-        return `${super.getStatusText()} Color: ${this.context.colorName}`;
+        let upstreamText = await super.getStatusText();
+        let text = `${upstreamText} Color: ${this.context.colorName}`;
+        this.node.debug(`status text: ${text}`);
+        return text;
     }
 
-    override async setStatus() {
-        //need to override to make this async
-        const text = await this.getStatusText()
 
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        })
-
-    }
 
 
     /*
@@ -250,8 +243,8 @@ export class colorLight extends dimmableLight {
     };
     */
 
-    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
-        let { a, b } = super.preProcessNodeRedInput(item, value)
+    override async preProcessNodeRedInput(item: any, value: any) {
+        let { a, b } = await super.preProcessNodeRedInput(item, value)
         if (a === "color") {
             if (Object.hasOwn(b, "hue") && Object.hasOwn(b, "saturation")) {
                 delete b.colorX;
