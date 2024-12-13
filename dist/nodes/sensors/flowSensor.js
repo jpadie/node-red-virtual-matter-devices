@@ -11,7 +11,7 @@ class flowSensor extends BaseEndpoint_1.BaseEndpoint {
             flowRate: { flowMeasurement: "measuredValue", multiplier: 10, unit: "m3/h", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 1 } }
         };
         this.attributes.serialNumber = "fs-" + this.attributes.serialNumber;
-        this.setDefault("flowRate", 1);
+        this.setDefault("flowRate", 0);
         this.attributes.flowMeasurement = {
             measuredValue: this.contextToMatter("flowRate", this.context.flowRate)
         };
