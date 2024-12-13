@@ -16,7 +16,8 @@
             passThroughMessage: { value: 0 },
             regularUpdates: { value: 0 },
             supportsEnergyMeasurement: { value: 0 },
-            supportsVariableSpeed: { value: 0 }
+            supportsVariableSpeed: { value: 0 },
+            supportsFlowMeasurement: { value: 0 }
         },
         inputs: 1,
         outputs: 1,
@@ -203,6 +204,21 @@
         </div>
     </fieldset>
     
+    <fieldset class="waterValve hideable">
+        <legend>Features</legend>
+        <div class="form-row ">
+            <label for="node-input-supportsFlowMeasurement">Flow </label>
+            <input type="checkbox" value="1" id="node-input-supportsFlowMeasurement" />
+        </div>
+    </fieldset>
+    
+    <fieldset class="dimmablePlug pump">
+        <legend>Features</legend>
+        <div class="form-row ">
+            <label for="node-input-supportsVariableSpeed">Variable Speed</label>
+            <input type="checkbox" value="1" id="node-input-supportsVariableSpeed" />
+        </div>
+    </fieldset>
     <fieldset class="matter">
         <legend>Telemetry</legend>
         <div class="form-row">

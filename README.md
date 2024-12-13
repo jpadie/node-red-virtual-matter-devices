@@ -33,7 +33,9 @@ On/Off, dimmable and extended colour lights are supported.
 
 ## Actuators
 
-water valve devices are a work in progress
+### Water valves and pumps
+
+Water valves and pumps are supported.
 
 ### Pluggable Devices
 
@@ -136,7 +138,8 @@ Your sensor will need one or more of the following inputs, depending on what sen
 
     {
             occupancy:          boolean,
-            pressure:           float,      // in m3/hr
+            flowRate:           float,      // in m3/hr
+            pressure:           float,      // in kPa
             temperature:        float,      // in centigrade    *
             humidity:           float,      // in %RH           *
             rain:               boolean,
@@ -174,6 +177,29 @@ Your light will need one or more of the following inputs, depending on what sens
 The device should show (in its status) an approximate name for the colour you have picked.
 
 ## Actuators
+
+### Water valves
+
+To open or close a valve you should set its current state.  Optionally you can also set a duration after which the valve will automatically close.
+
+    {
+        valveState: [0,1],      //0 = closed, 1 = open
+        openDuration: int,      //in seconds
+        flowRate: float*         //m3/hr  - if your device supports flow rates in the config.
+    }
+
+The telemetry will also report the time remaining on an openDuration timer 
+
+    {
+        remainingDuration: int  //number of seconds left to auto close, if set
+    }
+
+### Pumps
+
+Pumps are currently not supported as I've not been able to find any real world devices to exemplify how the logic might work.  
+
+For simple on/off type pumps, consider using an on/off pluggable.
+
 
 ### Pluggables
 For pluggables (on/off and dimmable) see the Lights examples above
