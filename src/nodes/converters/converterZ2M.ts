@@ -96,10 +96,10 @@ module.exports = (RED: NodeAPI): void => {
                             }
                             break;
                         case "state" + suffix:
-                            Object.assign(updates, { onoff: value == "ON" ? 1 : 0 });
+                            updates = Object.assign(updates, { onoff: value == "ON" ? 1 : 0 });
                             break;
                         default:
-                            Object.assign(updates, { [key]: value });
+                            updates = Object.assign(updates, { [key]: value });
                     }
                 }
                 this.debug(`Z2M->Matter Updates for gang ${j}: ${JSON.stringify(updates, null, 2)}`);
@@ -143,7 +143,7 @@ module.exports = (RED: NodeAPI): void => {
                 }
                 return;
             }
-            if (msg.payload.messageSource.toLowerCase() != "matter") {
+            if (msg.payload.messageSource != "Matter") {
                 if (done) {
                     done();
                 }
@@ -157,7 +157,7 @@ module.exports = (RED: NodeAPI): void => {
             for ([key, value] of Object.entries(msg.payload)) {
                 this.debug(`Matter->Z2M: Item: ${key} ; Value: ${value}`);
                 value = Number(value);
-                if (!value) {
+                if (value === undefined || value === null) {
                     continue;
                 }
                 switch (key) {
@@ -189,10 +189,10 @@ module.exports = (RED: NodeAPI): void => {
                         updates["color" + suffix] = Object.assign(updates["color" + suffix], { saturation: refine(value) });
                         break;
                     case "onoff":
-                        Object.assign(updates, { ["state" + suffix]: isTruish(value) ? "ON" : "OFF" });
+                        updates = Object.assign(updates, { ["state" + suffix]: isTruish(value) ? "ON" : "OFF" });
                         break;
                     default:
-                        Object.assign(updates, { [key]: value })
+                        updates = Object.assign(updates, { [key]: value })
                 }
             }
             this.debug(`Matter->Z2M: Update: ${JSON.stringify(updates, null, 2)}`);

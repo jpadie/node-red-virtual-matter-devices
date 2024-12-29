@@ -4,6 +4,7 @@ import { WaterValveDevice } from "@matter/main/devices";
 import { WaterValveRequirements } from "@matter/main/devices";
 import { ValveConfigurationAndControl } from "@matter/main/clusters";
 import { flowSensor } from "../sensors/flowSensor";
+import { FlowMeasurementServer } from '@matter/main/behaviors';
 
 
 export class waterValve extends BaseEndpoint {
@@ -64,33 +65,43 @@ export class waterValve extends BaseEndpoint {
 
         this.setSerialNumber("wv-"); // + this.attributes.serialNumber;
         this.setDefault("openDuration", null);
-        this.setDefault("defaultOpenDuration", null);
-        this.setDefault("autoCloseTime", null);
+        //this.setDefault("defaultOpenDuration", null);
+        //this.setDefault("autoCloseTime", null);
         this.setDefault("remainingDuration", null);
-        this.setDefault("currentState", ValveConfigurationAndControl.ValveState.Closed)
+        this.setDefault("valveState", ValveConfigurationAndControl.ValveState.Closed)
         this.setDefault("targetState", null)
 
         this.attributes = {
             ...this.attributes,
             valveConfigurationAndControl: {
                 currentState: this.contextToMatter("valveState", this.context.valveState),
-                targetState: this.contextToMatter("targetState", this.context.targetState),
-                openDuration: this.contextToMatter("openDuration", this.context.openDuration),
-                defaultOpenDuration: this.contextToMatter("defaultOpenDuration", this.context.defaultOpenDuration),
-                autoCloseTime: this.contextToMatter("autoCloseTime", this.context.autoCloseTime),
-                remainingDuration: this.contextToMatter("remainingDuration", this.context.remainingDuration),
+                //targetState: this.contextToMatter("targetState", this.context.targetState),
+                //  openDuration: this.contextToMatter("openDuration", this.context.openDuration),
+                //  defaultOpenDuration: this.contextToMatter("defaultOpenDuration", this.context.defaultOpenDuration),
+                //  autoCloseTime: this.contextToMatter("autoCloseTime", this.context.autoCloseTime),
+                //  remainingDuration: this.contextToMatter("remainingDuration", this.context.remainingDuration),
             }
         };
         let fM = new flowSensor(node, this.config);
         if (this.config.supportsFlowMeasurement == 1) {
-            this.mapping = Object.assign(this.mapping, fM.mapping);
+            this.withs.push(FlowMeasurementServer);
+            this.mapping = {
+                ...this.mapping,
+                ...fM.mapping
+            };
             this.setDefault("flowRate", 0);
-            this.attributes = Object.assign(this.attributes, { flowMeasurement: this.contextToMatter("flowRate", this.context.flowRate) });
+            this.attributes = {
+                ...this.attributes,
+                flowMeasurement: {
+                    measuredValue: this.contextToMatter("flowRate", this.context.flowRate)
+                }
+            };
         } else {
             for (let item in fM.mapping) {
                 this.prune(item);
             }
         }
+
         this.device = WaterValveDevice;
     }
 

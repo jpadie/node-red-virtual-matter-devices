@@ -34,7 +34,9 @@
                     //pump: "Pump",
                     waterValve: "Water Valve"
                 };
-                return deviceTypes[this.deviceType];
+                if (Object.hasOwn(deviceTypes, this.deviceType)) {
+                    return deviceTypes[this.deviceType];
+                }
             }
             return "Actuator";
         },
@@ -53,7 +55,7 @@
             let deviceTypes = {
                 onOffPlug: "On/Off Plug",
                 dimmablePlug: "Dimmable Plug",
-                pump: "Pump",
+                // pump: "Pump",
                 waterValve: "Water Valve"
             };
             $(document).ready(() => {
@@ -135,8 +137,8 @@
                 }
 
                 $("#node-input-deviceType").on("change", (e) => {
-                    $("fieldset.hideable").hide();
-                    let elem = "fieldset." + $(e.target).val();
+                    $("div.hideable").hide();
+                    let elem = "div." + $(e.target).val();
                     $(elem).show();
                 }).trigger("change");
 
@@ -189,36 +191,22 @@
             </select>
         </div>
     </fieldset>
-    <fieldset class="dimmablePlug onOffPlug hideable">
+    <fieldset >
         <legend>Features</legend>
-        <div class="form-row ">
+        <div class="form-row dimmablePlug onOffPlug hideable">
             <label for="node-input-supportsEnergyMeasurement">Energy Monitoring</label>
             <input type="checkbox" value="1" id="node-input-supportsEnergyMeasurement" />
         </div>
-    </fieldset>
-    <fieldset class="dimmablePlug pump">
-        <legend>Features</legend>
-        <div class="form-row ">
+        <div class="form-row hideable pump">
             <label for="node-input-supportsVariableSpeed">Variable Speed</label>
             <input type="checkbox" value="1" id="node-input-supportsVariableSpeed" />
         </div>
-    </fieldset>
-    
-    <fieldset class="waterValve hideable">
-        <legend>Features</legend>
-        <div class="form-row ">
+        <div class="form-row hideable waterValve">
             <label for="node-input-supportsFlowMeasurement">Flow </label>
             <input type="checkbox" value="1" id="node-input-supportsFlowMeasurement" />
         </div>
     </fieldset>
     
-    <fieldset class="dimmablePlug pump">
-        <legend>Features</legend>
-        <div class="form-row ">
-            <label for="node-input-supportsVariableSpeed">Variable Speed</label>
-            <input type="checkbox" value="1" id="node-input-supportsVariableSpeed" />
-        </div>
-    </fieldset>
     <fieldset class="matter">
         <legend>Telemetry</legend>
         <div class="form-row">

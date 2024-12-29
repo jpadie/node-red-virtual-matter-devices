@@ -6,6 +6,7 @@ const devices_1 = require("@matter/main/devices");
 const devices_2 = require("@matter/main/devices");
 const clusters_1 = require("@matter/main/clusters");
 const flowSensor_1 = require("../sensors/flowSensor");
+const behaviors_1 = require("@matter/main/behaviors");
 class waterValve extends BaseEndpoint_1.BaseEndpoint {
     timer;
     constructor(node, config, _name = "") {
@@ -38,27 +39,29 @@ class waterValve extends BaseEndpoint_1.BaseEndpoint {
         };
         this.setSerialNumber("wv-");
         this.setDefault("openDuration", null);
-        this.setDefault("defaultOpenDuration", null);
-        this.setDefault("autoCloseTime", null);
         this.setDefault("remainingDuration", null);
-        this.setDefault("currentState", clusters_1.ValveConfigurationAndControl.ValveState.Closed);
+        this.setDefault("valveState", clusters_1.ValveConfigurationAndControl.ValveState.Closed);
         this.setDefault("targetState", null);
         this.attributes = {
             ...this.attributes,
             valveConfigurationAndControl: {
                 currentState: this.contextToMatter("valveState", this.context.valveState),
-                targetState: this.contextToMatter("targetState", this.context.targetState),
-                openDuration: this.contextToMatter("openDuration", this.context.openDuration),
-                defaultOpenDuration: this.contextToMatter("defaultOpenDuration", this.context.defaultOpenDuration),
-                autoCloseTime: this.contextToMatter("autoCloseTime", this.context.autoCloseTime),
-                remainingDuration: this.contextToMatter("remainingDuration", this.context.remainingDuration),
             }
         };
         let fM = new flowSensor_1.flowSensor(node, this.config);
         if (this.config.supportsFlowMeasurement == 1) {
-            this.mapping = Object.assign(this.mapping, fM.mapping);
+            this.withs.push(behaviors_1.FlowMeasurementServer);
+            this.mapping = {
+                ...this.mapping,
+                ...fM.mapping
+            };
             this.setDefault("flowRate", 0);
-            this.attributes = Object.assign(this.attributes, { flowMeasurement: this.contextToMatter("flowRate", this.context.flowRate) });
+            this.attributes = {
+                ...this.attributes,
+                flowMeasurement: {
+                    measuredValue: this.contextToMatter("flowRate", this.context.flowRate)
+                }
+            };
         }
         else {
             for (let item in fM.mapping) {
