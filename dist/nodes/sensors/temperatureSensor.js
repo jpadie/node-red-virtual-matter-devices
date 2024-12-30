@@ -11,12 +11,12 @@ class temperatureSensor extends BaseEndpoint_1.BaseEndpoint {
             localTemperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         };
         this.setSerialNumber("ts-");
-        this.setDefault("temperature", 20);
+        this.setDefault("localTemperature", 20);
         this.device = devices_1.TemperatureSensorDevice;
         this.attributes = {
             ...this.attributes,
             temperatureMeasurement: {
-                measuredValue: this.contextToMatter("temperature", this.context.temperature)
+                measuredValue: this.contextToMatter("localTemperature", this.context.temperature)
             }
         };
     }

@@ -233,7 +233,7 @@ class BaseEndpoint {
     }
     async getStatusText() {
         let keys = Object.keys(this.mapping);
-        let text = await this.getVerbose(keys[0], this.context[keys[0]]) + (this.mapping.unit || "");
+        let text = await this.getVerbose(keys[0], this.context[keys[0]]) + (this.mapping[keys[0]].unit || "");
         this.node.debug(`top level status text: ${text}`);
         return text;
     }
