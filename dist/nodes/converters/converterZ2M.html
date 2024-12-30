@@ -77,6 +77,18 @@
                     }
                 }).trigger("change");
 
+                $("#node-input-numberOfGangs").on("change", (e) => {
+                    const dir = $("#node-input-direction").val();
+                    if (dir == "toZ2M") {
+                        if ($(e.target).val() > 1) {
+                            $(".which-gang").show();
+                        } else {
+                            $(".which-gang").hide();
+                            $(".which-gang").val(1);
+                        }
+                    }
+                }).trigger("change");
+
             });
         },
         oneditdelete: function () {
@@ -147,7 +159,7 @@
                 </select>
             </div>
         </div>
-        <div class="form-row which-gang">
+        <div class="form-row which-gang hideable which-gang">
             <label for="node-input-gang">Which gang</label>
             <div class="fR">
                 <select id="node-input-gang">

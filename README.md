@@ -1,12 +1,22 @@
-DO NOT USE THIS PROJECT IN A PRODUCTION ENVIRONMENT AT THE MOMENT.  
-IT IS READY FOR TESTING
+# WHAT
 
+This project builds nearly all devices currently supported by the matter protocol and makes them available in a node-red environment.
+
+In this way the project creates a bridge between Matter controllers (e.g. Alexa, Apple, Google Home) and whatever you can dream up (e.g. purely virtual devices or zigbee, tasmota or whatever device type you can communicate with).
+
+Whilst it can be seen as "just" a bridge, this project enables a very easy method of creating virtual or synthetic devices which controllers will recognise; making it ideal for testing matter development.
+
+# STATUS
+
+READY FOR TESTING
+
+I DON'T SUGGEST USING THIS PROJECT IN A PRODUCTION ENVIRONMENT AT THE MOMENT.  
 
 Reference is made to version 1.3 of the Matter Specification found [here](https://csa-iot.org/wp-content/uploads/2024/05/matter-1-3-device-library-specification.pdf)
 
 This project heavily leans almost entirely on the fantastic work by Ingo Fischer, Greg Lauckhart and the development team on [Matter.js](https://github.com/project-chip/matter.js); not to mention the tireless help that they provide via Discord.
 
-Version 1.4 of the Matter Specification has been recently published (in November 2024) however is not yet supported by Matter.Js nor by most controller ecosystems.
+Version 1.4 of the Matter Specification has been recently published (in November 2024) and will be supported in due course.
 
 
 # To Dos
@@ -35,17 +45,18 @@ On/Off, dimmable and extended colour lights are supported.
 
 ### Water valves and pumps
 
-Water valves and pumps are supported.
+Water valves are supported.  Pumps are a work in progress.
 
 ### Pluggable Devices
 
 On/Off plugs and dimmable plugs are supported 
-Energy monitoring will be added to these in the coming weeks.
+Energy monitoring is supported by this project but not currently supported by the main commercial controller ecosystems.
 
 ## HVAC Devices
 
 Air Purifiers, Fans and Thermostats* are supported.
-*Thermostat schedules are a work in progress and will be implemented when fully supported by Matter and by the more popular ecosystems.
+
+Thermostat schedules are a work in progress and will be implemented when fully supported by Matter and by the more popular ecosystems.  In the meantime you can easily emulate schedules in node-red.
 
 ## Closure Devices
 
@@ -69,7 +80,7 @@ If anyone needs a particular device synthesised or features added then please ge
 ## Installation 
 To install, navigate to your node-red folder (typically ~/.node-red) and run this command
 
-    npm i @jpadie/node-red-node-red-virtual-matter-devices@latest
+    npm i @jpadie/node-red-virtual-matter-devices
 
 Once out of testing this project will (hopefully) be available via the Node-Red package manager.  
 
@@ -140,7 +151,7 @@ Your sensor will need one or more of the following inputs, depending on what sen
             occupancy:          boolean,
             flowRate:           float,      // in m3/hr
             pressure:           float,      // in kPa
-            temperature:        float,      // in centigrade    *
+            localTemperature:   float,      // in centigrade    *
             humidity:           float,      // in %RH           *
             rain:               boolean,
             contact:            boolean,

@@ -137,7 +137,7 @@
                 }
 
                 $("#node-input-deviceType").on("change", (e) => {
-                    $("div.hideable").hide();
+                    $(".hideable").hide();
                     let elem = "div." + $(e.target).val();
                     $(elem).show();
                 }).trigger("change");

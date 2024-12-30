@@ -11,16 +11,16 @@ export class temperatureSensor extends BaseEndpoint {
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
-            temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
+            localTemperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         }
 
         this.setSerialNumber("ts-");
-        this.setDefault("temperature", 20);
+        this.setDefault("localTemperature", 20);
         this.device = TemperatureSensorDevice;
         this.attributes = {
             ...this.attributes,
             temperatureMeasurement: {
-                measuredValue: this.contextToMatter("temperature", this.context.temperature)
+                measuredValue: this.contextToMatter("localTemperature", this.context.temperature)
             }
         }
     }

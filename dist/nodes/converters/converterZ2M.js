@@ -135,7 +135,7 @@ module.exports = (RED) => {
                 }
                 return;
             }
-            if (msg.payload.messageSource.toLowerCase() != "matter") {
+            if (msg.payload.messageSource != "Matter") {
                 if (done) {
                     done();
                 }
@@ -149,7 +149,7 @@ module.exports = (RED) => {
             for ([key, value] of Object.entries(msg.payload)) {
                 this.debug(`Matter->Z2M: Item: ${key} ; Value: ${value}`);
                 value = Number(value);
-                if (!value) {
+                if (value === undefined || value === null) {
                     continue;
                 }
                 switch (key) {

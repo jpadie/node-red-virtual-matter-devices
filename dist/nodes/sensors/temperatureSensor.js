@@ -8,7 +8,7 @@ class temperatureSensor extends BaseEndpoint_1.BaseEndpoint {
         let name = _name || "Temperature Sensor";
         super(node, config, name);
         this.mapping = {
-            temperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
+            localTemperature: { temperatureMeasurement: "measuredValue", multiplier: 100, unit: "C", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         };
         this.setSerialNumber("ts-");
         this.setDefault("temperature", 20);
