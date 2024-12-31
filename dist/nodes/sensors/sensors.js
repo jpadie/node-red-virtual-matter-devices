@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 type: module;
-require("@project-chip/matter-node.js");
+require("@matter/main");
 const contactSensor_1 = require("./contactSensor");
 const flowSensor_1 = require("./flowSensor");
 const humiditySensor_1 = require("./humiditySensor");

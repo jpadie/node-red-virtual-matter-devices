@@ -1,12 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.colorLight = void 0;
-require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
 const dimmableLight_js_1 = require("./dimmableLight.js");
-const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
-const color_control_1 = require("@project-chip/matter.js/behaviors/color-control");
+const behaviors_1 = require("@matter/main/behaviors");
 const colourList_js_1 = require("./colourList.js");
 class colorLight extends dimmableLight_js_1.dimmableLight {
     constructor(node, config, _name = '') {
@@ -30,10 +26,10 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         };
         this.mapping = {
             ...this.mapping,
-            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 255 },
-            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 255 }
+            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
+            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
+            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } },
+            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } }
         };
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
         this.setDefault("hue", 0);
@@ -41,12 +37,7 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         this.setDefault("colorX", 0);
         this.setDefault("colorY", 0);
         this.setDefault("colorSpace", "xyY");
-    }
-    getVerbose(item, value) {
-        switch (item) {
-            default:
-                return super.getVerbose(item, value);
-        }
+        this.withs.push(behaviors_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation"));
     }
     convertHSVtoXY(hue, saturation, brightness) {
         let { r, g, b } = this.convertHSVtoRGB(hue, saturation, brightness);
@@ -137,23 +128,25 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
         };
     }
     async preProcessOutputReport(report) {
-        if (Object.hasOwn(report, "colorX")) {
-            report.colorY = this.context.colorY;
-            const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
-            const color = await this.getColorName(rgb.r, rgb.g, rgb.b);
-            this.context.colorName = color;
-            this.saveContext();
-        }
-        else if (Object.hasOwn(report, "colorY")) {
-            report.colorX = this.context.colorX;
-            const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
-            this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
-            this.saveContext();
-        }
-        else if (Object.hasOwn(report, "hue") || Object.hasOwn(report, "saturation")) {
+        if (Object.hasOwn(report, "hue") || Object.hasOwn(report, "saturation")) {
             const rgb = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
             this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
             this.saveContext();
+        }
+        else {
+            if (Object.hasOwn(report, "colorX")) {
+                report.colorY = this.context.colorY;
+                const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
+                const color = await this.getColorName(rgb.r, rgb.g, rgb.b);
+                this.context.colorName = color;
+                this.saveContext();
+            }
+            else if (Object.hasOwn(report, "colorY")) {
+                report.colorX = this.context.colorX;
+                const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
+                this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
+                this.saveContext();
+            }
         }
         return report;
     }
@@ -174,43 +167,19 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
                 default:
                     c = "unknown";
             }
+            this.node.debug(`color is ${c}`);
             this.context.colorName = c;
             this.saveContext();
         }
-        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: ${this.context.colorName}`;
+        let upstreamText = await super.getStatusText();
+        let text = `${upstreamText} Color: ${this.context.colorName}`;
+        this.node.debug(`status text: ${text}`);
+        return text;
     }
-    async setStatus() {
-        const text = await this.getStatusText();
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        });
-    }
-    listenForChange_postProcess(report = null) {
-        super.listenForChange_postProcess(report);
-        if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
-            if (Object.hasOwn(report, "colorX")) {
-                this.context.colorX = Math.round(report.colorX * 100 / 65536) / 100;
-            }
-            if (Object.hasOwn(report, "colorY")) {
-                this.context.colorY = Math.round(report.colorY * 100 / 65536) / 100;
-            }
-        }
-    }
-    ;
-    preProcessNodeRedInput(item, value) {
-        let { a, b } = super.preProcessNodeRedInput(item, value);
+    async preProcessNodeRedInput(item, value) {
+        let { a, b } = await super.preProcessNodeRedInput(item, value);
         if (a === "color") {
-            if (Object.hasOwn(b, "colorX") && Object.hasOwn(b, "colorY")) {
-                delete b.hue;
-                delete b.saturation;
-                if (this.context.colorSpace != "xyY") {
-                    this.context.colorSpace = "xyY";
-                    this.saveContext();
-                }
-            }
-            else if (Object.hasOwn(b, "hue") && Object.hasOwn(b, "saturation")) {
+            if (Object.hasOwn(b, "hue") && Object.hasOwn(b, "saturation")) {
                 delete b.colorX;
                 delete b.colorY;
                 if (this.context.colorSpace != "hsv") {
@@ -218,17 +187,16 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
                     this.saveContext();
                 }
             }
+            else if (Object.hasOwn(b, "colorX") && Object.hasOwn(b, "colorY")) {
+                delete b.hue;
+                delete b.saturation;
+                if (this.context.colorSpace != "xyY") {
+                    this.context.colorSpace = "xyY";
+                    this.saveContext();
+                }
+            }
         }
         return { a: a, b: b };
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, color_control_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")), this.attributes);
-        }
-        catch (e) {
-            this.node.error(e);
-            console.trace();
-        }
     }
 }
 exports.colorLight = colorLight;

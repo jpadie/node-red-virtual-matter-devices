@@ -2,21 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.thermostat = void 0;
 type: module;
-require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const ThermostatDevice_1 = require("@project-chip/matter.js/devices/ThermostatDevice");
-const thermostat_1 = require("@project-chip/matter.js/behaviors/thermostat");
-const cluster_1 = require("@project-chip/matter.js/cluster");
-const relative_humidity_measurement_1 = require("@project-chip/matter.js/behaviors/relative-humidity-measurement");
+const devices_1 = require("@matter/main/devices");
+const behaviors_1 = require("@matter/main/behaviors");
+const clusters_1 = require("@matter/main/clusters");
+const behaviors_2 = require("@matter/main/behaviors");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class thermostat extends BaseEndpoint_1.BaseEndpoint {
     heating_coolingState = 1;
-    withs = [];
     constructor(node, config, _name = "") {
         let name = _name || config.name || "Thermostat";
         super(node, config, name);
         this.mapping = {
+            ...this.mapping,
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
@@ -29,6 +26,23 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
         };
+        for (const i in this.mapping) {
+            switch (i) {
+                case "systemMode":
+                case "occupied":
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "int" }
+                    });
+                    break;
+                default:
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "float", valueDecimals: 2 }
+                    });
+                    break;
+            }
+        }
         this.setSerialNumber("tstat-");
         let a = {};
         this.setDefault("localTemperature", 20);
@@ -38,12 +52,12 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             outdoorTemperature: this.config.supportsOutdoorTemperature ? true : false,
             occupancy: this.config.supportsOccupancy ? true : false
         };
-        a.setpointChangeSource = cluster_1.Thermostat.SetpointChangeSource.External;
+        a.setpointChangeSource = clusters_1.Thermostat.SetpointChangeSource.External;
         if (this.config.supportsHeating) {
-            this.setDefault("systemMode", cluster_1.Thermostat.SystemMode.Heat);
+            this.setDefault("systemMode", clusters_1.Thermostat.SystemMode.Heat);
         }
         else {
-            this.setDefault("systemMode", cluster_1.Thermostat.SystemMode.Cool);
+            this.setDefault("systemMode", clusters_1.Thermostat.SystemMode.Cool);
         }
         a.systemMode = this.context.systemMode;
         if (this.config.supportsOutdoorTemperature) {
@@ -62,7 +76,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                 physical: 0
             };
             a.unoccupiedSetbackMin = 0;
-            a.unoccupiedSetbackMax = (cluster_1.Thermostat.SetbackAndOccupancyComponent.attributes.unoccupiedSetbackMax.default || 20) * 10;
+            a.unoccupiedSetbackMax = (clusters_1.Thermostat.SetbackAndOccupancyComponent.attributes.unoccupiedSetbackMax.default || 20) * 10;
             if (this.config.supportsCooling) {
                 this.setDefault("unoccupiedCoolingSetpoint", 25);
                 a.unoccupiedCoolingSetpoint = this.context.unoccupiedCoolingSetpoint * 100;
@@ -87,13 +101,13 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             this.prune("unoccupiedSetback");
         }
         a.occupiedSetbackMin = 0;
-        a.occupiedSetbackMax = (cluster_1.Thermostat.SetbackComponent.attributes.occupiedSetbackMax.default || 5) * 10;
+        a.occupiedSetbackMax = (clusters_1.Thermostat.SetbackComponent.attributes.occupiedSetbackMax.default || 5) * 10;
         this.setDefault("occupiedSetback", 1);
         a.occupiedSetback = this.context.occupiedSetback * 10;
         if (this.config.supportsHeating) {
-            a.absMinHeatSetpointLimit = cluster_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600;
+            a.absMinHeatSetpointLimit = clusters_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600;
             a.minHeatSetpointLimit = a.absMinHeatSetpointLimit;
-            a.absMaxHeatSetpointLimit = cluster_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000;
+            a.absMaxHeatSetpointLimit = clusters_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000;
             a.maxHeatSetpointLimit = a.absMaxHeatSetpointLimit;
             this.setDefault("occupiedHeatingSetpoint", 19);
             a.occupiedHeatingSetpoint = this.context.occupiedHeatingSetpoint * 100;
@@ -103,9 +117,9 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             this.prune("unoccupiedHeatingSetpoint");
         }
         if (this.config.supportsCooling) {
-            a.absMinCoolSetpointLimit = cluster_1.Thermostat.CoolingComponent.attributes.absMinCoolSetpointLimit.default || 1600;
+            a.absMinCoolSetpointLimit = clusters_1.Thermostat.CoolingComponent.attributes.absMinCoolSetpointLimit.default || 1600;
             a.minCoolSetpointLimit = a.absMinCoolSetpointLimit;
-            a.absMaxCoolSetpointLimit = cluster_1.Thermostat.CoolingComponent.attributes.absMaxCoolSetpointLimit.default || 3000;
+            a.absMaxCoolSetpointLimit = clusters_1.Thermostat.CoolingComponent.attributes.absMaxCoolSetpointLimit.default || 3000;
             a.maxCoolSetpointLimit = a.absMaxCoolSetpointLimit;
             this.setDefault("occupiedCoolingSetpoint", 23);
             a.occupiedCoolingSetpoint = this.context.occupiedCoolingSetpoint * 100;
@@ -116,14 +130,14 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         }
         if (this.config.supportsHeating) {
             if (this.config.supportsCooling) {
-                a.controlSequenceOfOperation = cluster_1.Thermostat.ControlSequenceOfOperation.CoolingAndHeating;
+                a.controlSequenceOfOperation = clusters_1.Thermostat.ControlSequenceOfOperation.CoolingAndHeating;
             }
             else {
-                a.controlSequenceOfOperation = cluster_1.Thermostat.ControlSequenceOfOperation.HeatingOnly;
+                a.controlSequenceOfOperation = clusters_1.Thermostat.ControlSequenceOfOperation.HeatingOnly;
             }
         }
         else {
-            a.controlSequenceOfOperation = cluster_1.Thermostat.ControlSequenceOfOperation.CoolingOnly;
+            a.controlSequenceOfOperation = clusters_1.Thermostat.ControlSequenceOfOperation.CoolingOnly;
         }
         if (this.config.supportsHumidity) {
             this.setDefault("humidity", 50);
@@ -134,37 +148,41 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         else {
             this.prune("humidity");
         }
-        this.attributes.thermostat = a;
+        this.attributes = {
+            ...this.attributes,
+            thermostat: a
+        };
         let withs = [];
-        let features = [cluster_1.Thermostat.Feature.Setback];
+        let features = [clusters_1.Thermostat.Feature.Setback];
         if (this.config.supportsCooling)
-            features.push(cluster_1.Thermostat.Feature.Cooling);
+            features.push(clusters_1.Thermostat.Feature.Cooling);
         if (this.config.supportsHeating)
-            features.push(cluster_1.Thermostat.Feature.Heating);
+            features.push(clusters_1.Thermostat.Feature.Heating);
         if (this.config.supportsOccupancy)
-            features.push(cluster_1.Thermostat.Feature.Occupancy);
-        withs.push(thermostat_1.ThermostatServer.with(...features));
+            features.push(clusters_1.Thermostat.Feature.Occupancy);
+        withs.push(behaviors_1.ThermostatServer.with(...features));
         if (this.config.supportsHumidity)
-            withs.push(relative_humidity_measurement_1.RelativeHumidityMeasurementServer);
-        withs.push(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer);
-        this.withs = withs;
+            withs.push(behaviors_2.RelativeHumidityMeasurementServer);
+        this.withs.push(...withs);
+        this.device = devices_1.ThermostatDevice;
     }
     getVerbose(item, value) {
         switch (item) {
             case "systemMode":
-                return this.getEnumKeyByEnumValue(cluster_1.Thermostat.SystemMode, value);
+                return this.getEnumKeyByEnumValue(clusters_1.Thermostat.SystemMode, value);
                 break;
             default:
                 return value;
         }
     }
-    setStatus() {
-        let text = (this.deriveOnOff() ? (this.context.systemMode == cluster_1.Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        });
+    async getStatusText() {
+        return (this.deriveOnOff() ? (this.context.systemMode == clusters_1.Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
+    }
+    matterRefine(item, value) {
+        if (['systemMode'].includes(item)) {
+            return value;
+        }
+        return super.matterRefine(item, value);
     }
     preProcessDeviceChanges(value, item) {
         console.log("matter input");
@@ -202,10 +220,10 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
     deriveOnOff() {
         let ret = false;
         switch (this.context.systemMode) {
-            case cluster_1.Thermostat.SystemMode.Off:
+            case clusters_1.Thermostat.SystemMode.Off:
                 ret = false;
                 break;
-            case cluster_1.Thermostat.SystemMode.Cool:
+            case clusters_1.Thermostat.SystemMode.Cool:
                 if (this.config.supportsOccupancy && !this.context.occupied) {
                     if (this.heating_coolingState) {
                         if (this.context.localTemperature > this.context.unoccupiedCoolingSetpoint) {
@@ -247,7 +265,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
                     }
                 }
                 break;
-            case cluster_1.Thermostat.SystemMode.Heat:
+            case clusters_1.Thermostat.SystemMode.Heat:
                 if (this.config.supportsOccupancy && !this.context.occupied) {
                     if (this.heating_coolingState) {
                         if (this.context.localTemperature > this.context.unoccupiedHeatingSetpoint) {
@@ -293,9 +311,6 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         this.context.heating_coolingState = this.heating_coolingState;
         this.saveContext();
         return ret;
-    }
-    async deploy() {
-        this.endpoint = new endpoint_1.Endpoint(ThermostatDevice_1.ThermostatDevice.with(...this.withs), this.attributes);
     }
 }
 exports.thermostat = thermostat;

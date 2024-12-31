@@ -1,9 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseEndpoint = void 0;
-require("@project-chip/matter-node.js");
+require("@matter/main");
 const server_1 = require("../server/server");
+const behaviors_1 = require("@matter/main/behaviors");
+const main_1 = require("@matter/main");
 class BaseEndpoint {
+    withs = [];
     mapping = {};
     config = {};
     node;
@@ -14,6 +17,11 @@ class BaseEndpoint {
     name = "";
     state = false;
     skip = false;
+    confirmations = {};
+    awaitingConfirmation = {};
+    device = null;
+    Behaviours = {};
+    filters;
     constructor(node, config, name = "") {
         this.node = node;
         this.config = config;
@@ -27,7 +35,7 @@ class BaseEndpoint {
         }
         this.Context = node.context();
         this.context = this.Context.get("attributes") || {};
-        this.name = name;
+        this.name = this.config.name || name;
         this.attributes = {
             id: this.node.id,
             bridgedDeviceBasicInformation: {
@@ -46,20 +54,60 @@ class BaseEndpoint {
             shape: "dot",
             text: "offline"
         });
+        this.withs.push(behaviors_1.BridgedDeviceBasicInformationServer);
+    }
+    addFilter(name, callback) {
+        if (Object.hasOwn(this.filters, name)) {
+            this.filters[name].push(callback);
+        }
+        else {
+            this.filters = Object.assign(this.filters, { [name]: [callback] });
+        }
+    }
+    removeFilter(name, callback) {
+        if (Object.hasOwn(this.filters, name)) {
+            let index = this.filters[name].indexOf(callback);
+            if (index > -1) {
+                this.filters[name][index].splice(index, 1);
+            }
+        }
+    }
+    callFilters(name, ...args) {
+        if (Object.hasOwn(this.filters, name)) {
+            for (let func of this.filters[name]) {
+                func(...args);
+            }
+        }
     }
     getEnumKeyByEnumValue(myEnum, enumValue) {
         let keys = Object.keys(myEnum).filter(x => myEnum[x] == enumValue);
         return keys.length > 0 ? keys[0] : null;
     }
+    addBehaviour(behaviour) {
+        let e;
+        if (Object.hasOwn(this.Behaviours, behaviour)) {
+            e = new this.Behaviours[behaviour](this.config);
+            this.attributes = Object.assign(this.attributes, e.attributes);
+            this.mapping = Object.assign(this.mapping, e.mapping);
+            this.withs.push(e.withs);
+        }
+        else {
+            this.node.error(`Behaviour ${behaviour} is unknown`);
+        }
+    }
     setSerialNumber(value) {
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+        if (this.attributes.bridgedDeviceBasicInformation.serialNumber.includes("-")) {
+            let dash = this.attributes.bridgedDeviceBasicInformation.serialNumber.indexOf("-");
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = value + this.attributes.bridgedDeviceBasicInformation.serialNumber.slice(dash + 1);
+        }
+        else {
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+        }
     }
     prune(item) {
         if (Object.hasOwn(this.mapping, item)) {
             if (!delete this.mapping[item]) {
-                console.log("Error deleting mapping item: " + item);
-            }
-            else {
+                this.node.error("Error deleting mapping item: " + item);
             }
         }
         if (Object.hasOwn(this.context, item)) {
@@ -86,22 +134,63 @@ class BaseEndpoint {
     zigbee() {
         return false;
     }
-    deploy() {
-        return;
+    async deploy() {
+        if (this.device) {
+            try {
+                this.endpoint = await new main_1.Endpoint(this.device.with(...this.withs), this.attributes);
+            }
+            catch (e) {
+                this.node.error(e);
+                console.trace(e);
+                this.node.error(`device is : ${JSON.stringify(this.device, null, 2)}`);
+                this.node.error(`withs are : ${JSON.stringify(this.withs, null, 2)}`);
+                this.node.error(`attributes are: ${JSON.stringify(this.attributes, null, 2)}`);
+            }
+        }
+    }
+    cleanUp() {
+        this.node.debug("cleaning up old context entries");
+        let mappings = Object.keys(this.mapping);
+        this.node.debug(`Permitted keys: ${JSON.stringify(mappings, null, 2)}`);
+        for (let item in this.context) {
+            this.node.debug(`testing context item: ${item}`);
+            if (item == "lastHeardFrom")
+                continue;
+            if (item.includes("_in_words"))
+                continue;
+            if (!mappings.includes(item)) {
+                this.node.debug(`Found prohibited item: ${item}`);
+                this.prune(item);
+                this.prune(`${item}_in_words`);
+            }
+        }
+        this.saveContext();
+    }
+    dumpSchemas() {
+        for (const item of ["config", "attributes", "context"]) {
+            this.node.debug(`${item} for ${this.name}`);
+            this.node.debug(JSON.stringify(this[item], null, 2));
+        }
     }
     async getEndpoint() {
         if (server_1.matterHub) {
             try {
+                this.cleanUp();
                 await this.deploy();
+                this.dumpSchemas();
+                server_1.matterHub.addDevice(this.endpoint);
+                await this.endpoint.construction;
                 this.regularUpdate();
                 this.listen();
                 this.setStatus();
                 this.setDefault("lastHeardFrom", "");
                 this.saveContext();
-                server_1.matterHub.addDevice(this.endpoint);
+                setTimeout(async () => {
+                    await this.syncContext();
+                }, 2000);
             }
             catch (e) {
-                console.error(e);
+                this.node.error(e);
                 console.trace();
             }
         }
@@ -113,6 +202,27 @@ class BaseEndpoint {
             });
         }
     }
+    async clearConfirmation(item) {
+        this.node.debug(`checking for confirmation for item ${item}.  Current confirmations awaiting are ${JSON.stringify(this.awaitingConfirmation, null, 2)}`);
+        if (Object.hasOwn(this.awaitingConfirmation, item)) {
+            delete this.awaitingConfirmation[item];
+            clearTimeout(this.confirmations[item]);
+            this.node.debug(`Confirmation ${item} cleared`);
+            return true;
+        }
+        this.node.debug(`No confirmations cleared for ${item}`);
+        return false;
+    }
+    async awaitConfirmation(item, value) {
+        this.node.debug(`setting a confirmation await flag for item ${item}`);
+        this.clearConfirmation(item);
+        this.awaitingConfirmation[item] = value;
+        this.confirmations[item] = setTimeout((item) => {
+            this.node.debug(`timeout for confirmation ${item}.  Clearing now.`);
+            this.clearConfirmation(item);
+        }, 1000, item);
+        this.saveContext();
+    }
     now() {
         let n = Date.now();
         let d = new Date(n);
@@ -121,18 +231,112 @@ class BaseEndpoint {
     saveContext() {
         this.Context.set('attributes', this.context);
     }
-    setStatus() {
-        let keys = Object.keys(this.context);
+    async getStatusText() {
+        let keys = Object.keys(this.mapping);
+        let text = await this.getVerbose(keys[0], this.context[keys[0]]) + (this.mapping[keys[0]].unit || "");
+        this.node.debug(`top level status text: ${text}`);
+        return text;
+    }
+    async setStatus() {
         this.node.status({
             fill: "green",
             shape: "dot",
-            text: this.context[keys[0]] + (this.context.unit || "")
+            text: await this.getStatusText()
         });
     }
     setDefault(item, value) {
-        if (!Object.hasOwn(this.context, item) || this.context[item] == null) {
+        if (!Object.hasOwn(this.context, item) || this.context[item] == null || this.context[item] == "") {
             this.context[item] = value;
         }
+    }
+    refine(value, decimals = 0) {
+        if (Object.is(value, undefined) || Object.is(value, null)) {
+            value = 0;
+        }
+        if (Number.isNaN(value)) {
+            return value;
+        }
+        else {
+            if (decimals == 0) {
+                return Math.round(value);
+            }
+            else {
+                const e = Math.pow(10, decimals);
+                return Math.round(e * value) / e;
+            }
+        }
+    }
+    matterRefine(item, value) {
+        this.node.debug("refining values for matter");
+        this.node.debug("item: " + item);
+        this.node.debug("value: " + value);
+        let ret = value;
+        if (value != 0) {
+            if (Object.hasOwn(this.mapping[item], "matter")) {
+                if (Object.hasOwn(this.mapping[item].matter, "valueType")) {
+                    switch (this.mapping[item].matter.valueType) {
+                        case "int":
+                            ret = this.refine(ret, 0);
+                            break;
+                        case "float":
+                            if (Object.hasOwn(this.mapping[item].matter, "valueDecimals")) {
+                                ret = this.refine(ret, this.mapping[item].matter.valueDecimals);
+                            }
+                            else {
+                                ret = this.refine(ret, 2);
+                            }
+                            break;
+                        case "boolean":
+                            ret = value ? true : false;
+                            break;
+                        default:
+                    }
+                }
+            }
+        }
+        if (Object.hasOwn(this.mapping[item], "permittedValues")) {
+            if (!this.mapping[item].permittedValues.includes(ret)) {
+                this.node.debug(`Dropping update as value ${ret} is not a permitted value`);
+                return null;
+            }
+        }
+        this.node.debug("refined values for matter");
+        this.node.debug("item: " + item);
+        this.node.debug("value: " + ret);
+        return ret;
+    }
+    contextRefine(item, value) {
+        let ret = value;
+        this.node.debug(`Refining value for context: item ${item} and value ${value}`);
+        if (Object.hasOwn(this.mapping, item)) {
+            if (Object.hasOwn(this.mapping[item], "context")) {
+                if (Object.hasOwn(this.mapping[item].context, "valueType")) {
+                    switch (this.mapping[item].context.valueType) {
+                        case "int":
+                            ret = this.refine(value);
+                            break;
+                        case "float":
+                            if (Object.hasOwn(this.mapping[item].context, "valueDecimals")) {
+                                ret = this.refine(value, this.mapping[item].context.valueDecimals);
+                            }
+                            else {
+                                ret = this.refine(value, 2);
+                            }
+                            break;
+                        default:
+                            ret = value;
+                    }
+                }
+            }
+        }
+        if (Object.hasOwn(this.mapping[item], "permittedValues")) {
+            if (!this.mapping[item].permittedValues.includes(ret)) {
+                this.node.debug(`Dropping update as value ${ret} is not a permitted value`);
+                return null;
+            }
+        }
+        this.node.debug(`Refined value for context: item ${item} and value ${ret}`);
+        return ret;
     }
     getVerbose(item, value) {
         switch (item) {
@@ -147,56 +351,63 @@ class BaseEndpoint {
     async preProcessOutputReport(report) {
         return report;
     }
-    listenForChange() {
-        if (!this.endpoint) {
-            console.error("endpoint is not established.  Waiting 0.5 seconds");
-            console.log(this.endpoint);
-            setInterval(this.listenForChange, 500);
-            return;
-        }
+    async listenForChange() {
+        await this.endpoint.construction;
         for (const item in this.mapping) {
             let keys = Object.keys(this.mapping[item]);
             let key = keys[0];
             if (typeof this.mapping[item][key] == "string") {
                 let s = `${this.mapping[item][key]}$Changed`;
+                this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
-                        value = this.preProcessDeviceChanges(value, s);
+                        this.node.debug(`Message received from Matter key: ${key}, item: ${s}, value: ${value}`);
+                        let v = this.preProcessDeviceChanges(value, s);
                         if ((this.skip)) {
                             this.skip = false;
                         }
                         else {
-                            if (typeof value == "number") {
-                                if (typeof this.mapping[item].multiplier == "object") {
-                                    this.context[item] = this.mapping[item].multiplier[1](value);
+                            v = this.matterToContext(item, v);
+                            if (v === null) {
+                                this.node.debug(`skipping as not a permitted value or otherwise NULL`);
+                                return;
+                            }
+                            this.context[item] = v;
+                            this.node.debug(`setting context item ${item} to ${value}`);
+                            this.context.lastHeardFrom = this.now();
+                            if (!await this.clearConfirmation(item)) {
+                                this.node.debug(`no confirmations awaiting so this is a matter originating message and can be reported`);
+                                let v = this.getVerbose(item, this.context[item]);
+                                let report = {
+                                    [item]: this.context[item],
+                                    unit: this.mapping[item].unit,
+                                    lastHeardFrom: this.context.lastHeardFrom,
+                                    messageSource: "Matter"
+                                };
+                                if (v !== this.context[item]) {
+                                    report = Object.assign(report, { [`${item}_in_words`]: v });
                                 }
-                                else {
-                                    this.context[item] = value / this.mapping[item].multiplier;
+                                if (this.mapping[item].unit == "") {
+                                    delete report.unit;
                                 }
+                                this.node.debug(`About to send report of the matter change.  Report is ${JSON.stringify(report, null, 2)}`);
+                                report = await this.preProcessOutputReport(report);
+                                this.node.debug(`Report of a matter change has been pre-processed.  Report is ${JSON.stringify(report, null, 2)}`);
+                                this.node.send({ payload: report });
+                                this.node.debug(`Report of a matter change has been sent and is now being post-processed`);
+                                this.listenForChange_postProcess(report);
                             }
                             else {
-                                this.context[item] = value;
+                                this.node.debug(`confirmations awaiting for item ${item} so this is a not a matter originating instruction and should not be reported`);
                             }
-                            this.context.lastHeardFrom = this.now();
-                            let report = {
-                                [item]: this.getVerbose(item, this.context[item]),
-                                unit: this.mapping[item].unit,
-                                lastHeardFrom: this.context.lastHeardFrom,
-                                messageSource: "Matter"
-                            };
-                            if (this.mapping[item].unit == "")
-                                delete report.unit;
-                            report = await this.preProcessOutputReport(report);
-                            this.node.send({ payload: report });
-                            this.listenForChange_postProcess(report);
                             this.saveContext();
                             this.setStatus();
                         }
                     });
                 }
                 catch (e) {
-                    console.error("error in setting up listener");
-                    console.error(e);
+                    this.node.error("error in setting up listener");
+                    this.node.error(e);
                     console.trace();
                 }
             }
@@ -204,8 +415,14 @@ class BaseEndpoint {
                 let ks = Object.keys(this.mapping[item][key]);
                 let k = ks[0];
                 let s = `${k}$Changed`;
+                this.node.debug(`listening at ${key}.${s}`);
                 try {
                     this.endpoint.events[key][s].on(async (value) => {
+                        if (await this.clearConfirmation(item) === true) {
+                            this.node.debug(`Confirmations awaiting for this matter change.  so this does not originate from matter and should not be reported`);
+                            return;
+                        }
+                        this.node.debug(`no confirmations awaiting so this is a matter originating message and can be reported`);
                         value = this.preProcessDeviceChanges(value, s);
                         if (this.skip) {
                             this.skip = false;
@@ -223,24 +440,26 @@ class BaseEndpoint {
                                 this.context[item] = value;
                             }
                             this.context.lastHeardFrom = this.now();
-                            let report = {
-                                [item]: this.getVerbose(item, this.context[item]),
-                                unit: this.mapping[item].unit,
-                                lastHeardFrom: this.context.lastHeardFrom
-                            };
-                            if (this.mapping[item].unit == "")
-                                delete report.unit;
-                            report = await this.preProcessOutputReport(report);
-                            this.node.send({ payload: report });
-                            this.listenForChange_postProcess(report);
+                            if (!this.clearConfirmation(item)) {
+                                let report = {
+                                    [item]: this.getVerbose(item, this.context[item]),
+                                    unit: this.mapping[item].unit,
+                                    lastHeardFrom: this.context.lastHeardFrom
+                                };
+                                if (this.mapping[item].unit == "")
+                                    delete report.unit;
+                                report = await this.preProcessOutputReport(report);
+                                this.node.send({ payload: report });
+                                this.listenForChange_postProcess(report);
+                            }
                             this.saveContext();
                             this.setStatus();
                         }
                     });
                 }
                 catch (e) {
-                    console.error("error in setting up listener");
-                    console.error(e);
+                    this.node.error("error in setting up listener");
+                    this.node.error(e);
                     console.trace();
                 }
             }
@@ -251,117 +470,101 @@ class BaseEndpoint {
             return;
         return;
     }
-    preProcessNodeRedInput(item, value) {
+    async preProcessNodeRedInput(item, value) {
         return { a: item, b: value };
     }
-    processIncomingItem(item, value) {
+    async processIncomingItem(item, value) {
+        this.node.debug(`after pre processing item is now ${item} value is now ${value}`);
         let updates = [];
         if (Object.hasOwn(this.mapping, item)) {
-            const keys = Object.keys(this.mapping[item]);
-            let key = keys[0];
-            if (typeof this.mapping[item][key] == "string") {
-                if (typeof this.mapping[item].multiplier == "object") {
-                    if (this.mapping[item].multiplier[0] != 1) {
-                        value = Math.round(this.mapping[item].multiplier[0] * value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "min")) {
-                        value = Math.max(this.mapping[item].min, value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "max")) {
-                        value = Math.min(this.mapping[item].max, value);
-                    }
+            let v;
+            if (this.context[item] != value) {
+                v = this.contextToMatter(item, value);
+                if (v == null)
+                    return;
+                const keys = Object.keys(this.mapping[item]);
+                let key = keys[0];
+                if (typeof this.mapping[item][key] == "string") {
                     updates.push({
-                        [key]: { [this.mapping[item][key]]: value }
+                        [key]: { [this.mapping[item][key]]: v }
                     });
                 }
-                else {
-                    if (this.mapping[item].multiplier != 1) {
-                        value = Math.round(this.mapping[item].multiplier * value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "min")) {
-                        value = Math.max(this.mapping[item].min, value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "max")) {
-                        value = Math.min(this.mapping[item].max, value);
-                    }
-                    updates.push({
-                        [key]: { [this.mapping[item][key]]: value }
-                    });
-                }
-            }
-            else if (typeof this.mapping[item][key] == "object") {
-                const ks = Object.keys(this.mapping[item][key]);
-                let k = ks[0];
-                if (typeof this.mapping[item].multiplier == "object") {
-                    if (this.mapping[item].multiplier[0] != 1) {
-                        value = Math.round(this.mapping[item].multiplier[0] * value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "min")) {
-                        value = Math.max(this.mapping[item].min, value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "max")) {
-                        value = Math.min(this.mapping[item].max, value);
-                    }
+                else if (typeof this.mapping[item][key] == "object") {
+                    const ks = Object.keys(this.mapping[item][key]);
+                    let k = ks[0];
                     updates.push({
                         [key]: {
-                            [this.mapping[item][key]]: {
-                                [this.mapping[item][key][k]]: value
+                            [k]: {
+                                [this.mapping[item][key][k]]: v
                             }
                         }
                     });
                 }
-                else {
-                    if (this.mapping[item].multiplier != 1) {
-                        value = Math.round(this.mapping[item].multiplier * value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "min")) {
-                        value = Math.max(this.mapping[item].min, value);
-                    }
-                    if (Object.hasOwn(this.mapping[item], "max")) {
-                        value = Math.min(this.mapping[item].max, value);
-                    }
-                    updates.push({
-                        [key]: {
-                            [this.mapping[item][key]]: {
-                                [this.mapping[item][key][k]]: value
-                            }
-                        }
-                    });
-                }
+                await this.awaitConfirmation(item, v);
             }
         }
         if (updates.length > 0) {
+            this.node.debug("raw updates: ");
+            this.node.debug(JSON.stringify(updates, null, 2));
+            this.node.debug(`transforming array into object`);
             let u = {};
             for (let i = 0; i < updates.length; i++) {
                 u = Object.assign(u, updates[i]);
             }
-            try {
-                if (this.endpoint.lifecycle.isReady) {
-                    this.endpoint.set(u);
-                }
-            }
-            catch (e) {
-                console.log(e);
-                console.log(updates);
-                console.trace();
-            }
+            u = await this.preProcessMatterUpdate(u);
+            this.node.debug(`Object created from array: ${JSON.stringify(u, null, 2)}`);
+            return u;
+        }
+        else {
+            this.node.debug(`Zero length update`);
+            return {};
         }
     }
-    processIncomingMessages(msg, send, done) {
+    async preProcessMatterUpdate(update) {
+        return update;
+    }
+    async processIncomingMessages(msg, send, done) {
+        let update = {};
         if (this.config.passThroughMessage) {
             send(msg);
         }
         try {
             if (typeof msg.payload == "object") {
                 for (let item in msg.payload) {
-                    let { a, b } = this.preProcessNodeRedInput(item, msg.payload[item]);
+                    this.node.debug(`processing incoming message item ${item}`);
+                    if (!Object.keys(this.mapping).includes(item)) {
+                        this.node.debug(`skipping processing incoming message item ${item} as not in mapping`);
+                        continue;
+                    }
+                    let { a, b } = await this.preProcessNodeRedInput(item, msg.payload[item]);
                     if (Array.isArray(a)) {
                         for (let i = 0; i < a.length; i++) {
-                            this.processIncomingItem(a[i], b[i]);
+                            let u = await this.processIncomingItem(a[i], b[i]);
+                            this.node.debug(`receiving processed item: {${JSON.stringify(u, null, 2)}}`);
+                            update = Object.assign(update, u);
+                            this.node.debug(`adding to update object: {${JSON.stringify(update, null, 2)}}`);
                         }
                     }
                     else {
-                        this.processIncomingItem(a, b);
+                        let u = await this.processIncomingItem(a, b);
+                        this.node.debug(`receiving processed item: {${JSON.stringify(u, null, 2)}}`);
+                        update = Object.assign(update, u);
+                        this.node.debug(`adding to update object: {${JSON.stringify(update, null, 2)}}`);
+                    }
+                }
+                this.node.debug(`full update for matter device : ${JSON.stringify(update, null, 2)}`);
+                if (Object.keys(update).length > 0) {
+                    update = await this.preProcessMatterUpdate(update);
+                    try {
+                        await this.endpoint.construction;
+                        this.node.debug("requested update");
+                        this.node.debug(JSON.stringify(update, null, 2));
+                        await this.endpoint.set(update);
+                    }
+                    catch (e) {
+                        this.node.error(e);
+                        this.node.debug(JSON.stringify(update, null, 2));
+                        console.trace();
                     }
                 }
             }
@@ -369,19 +572,28 @@ class BaseEndpoint {
         catch (e) {
             if (e instanceof Error) {
                 this.node.error(e);
-                done(e);
-                console.log(e.stack);
+                this.node.error(JSON.stringify(e.stack, null, 2));
+                if (done) {
+                    done(e);
+                }
             }
             else {
                 this.node.error(e);
-                done();
+                if (done) {
+                    done(e);
+                }
             }
         }
     }
     listenForMessages() {
         this.node.on("input", (msg, send, done) => {
+            this.node.debug("incoming message in listen for messages");
+            this.node.debug(JSON.stringify(msg, null, 2));
             if (Object.hasOwn(msg, "payload") && typeof msg.payload == "object") {
                 msg.payload = Object.assign(msg.payload, { messageSource: "node-red input" });
+            }
+            else {
+                Object.assign(msg, { payload: { messageSource: "node-red input" } });
             }
             this.processIncomingMessages(msg, send, done);
         });
@@ -392,12 +604,105 @@ class BaseEndpoint {
         this.listenForClose();
     }
     listenForClose() {
-        this.node.on("close", () => {
-            server_1.matterHub.timeToClose();
+        this.node.on("close", async () => {
+            await server_1.matterHub.timeToClose();
         });
     }
     lcFirst(val) {
         return val.charAt(0).toLowerCase() + val.slice(1);
+    }
+    matterToContext(item, value) {
+        this.node.debug(`Converting Matter value ${value} for item ${item} to Context value`);
+        let v = value;
+        if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
+            if (typeof this.mapping[item].multiplier == "object") {
+                v = this.mapping[item].multiplier[1](value);
+            }
+            else {
+                v = value / this.mapping[item].multiplier;
+            }
+        }
+        this.node.debug(`Converted Matter value to unrefined context value. Value: ${v} for item ${item} `);
+        return this.contextRefine(item, v);
+    }
+    contextToMatter(item, value) {
+        this.node.debug(`Converting a Context value to a Matter value. Item: ${item} Value: ${value}`);
+        let v = value;
+        if (!Object.hasOwn(this.mapping, item)) {
+            this.node.debug(`Cannot proceed as there is no mapping for item ${item}`);
+            return value;
+        }
+        if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
+            if (typeof this.mapping[item].multiplier == "object") {
+                v = this.mapping[item].multiplier[0](v);
+            }
+            else {
+                v = this.mapping[item].multiplier * v;
+            }
+            if (Object.hasOwn(this.mapping[item], "min")) {
+                v = Math.max(this.mapping[item].min, v);
+            }
+            if (Object.hasOwn(this.mapping[item], "max")) {
+                v = Math.min(this.mapping[item].max, v);
+            }
+            v = this.matterRefine(item, v);
+        }
+        return v;
+    }
+    async syncContext() {
+        this.node.debug("Syncing Context");
+        await this.endpoint.construction;
+        let state;
+        try {
+            state = this.endpoint.state;
+        }
+        catch (e) {
+            this.node.error(`Problem retrieving endpoint state`);
+            this.node.error(e);
+            console.trace();
+            return;
+        }
+        this.node.debug(`Endpoint state: ${JSON.stringify(state, null, 2)}`);
+        for (let item in this.mapping) {
+            const keys = Object.keys(this.mapping[item]);
+            const key = keys[0];
+            const subkey = this.mapping[item][key];
+            let c;
+            if (typeof subkey != "object") {
+                if (Object.hasOwn(state, key)) {
+                    if (Object.hasOwn(state[key], subkey)) {
+                        c = state[key][subkey];
+                        this.node.debug(`retrieved state of ${key} ${subkey} (item: ${item}) as ${c}`);
+                    }
+                }
+            }
+            else {
+                const _keys = Object.keys(subkey);
+                const _key = _keys[0];
+                const _value = subkey[_key];
+                if (Object.hasOwn(state, key)) {
+                    if (Object.hasOwn(state[key], _key)) {
+                        if (Object.hasOwn(state[key][_key], _value)) {
+                            c = state[key][_key][_value];
+                            this.node.debug(`retrieved state of ${key} ${_key} ${_value} (item: ${item}) as ${c}`);
+                        }
+                    }
+                }
+            }
+            if (c == undefined) {
+                c = 0;
+            }
+            let v = this.matterToContext(item, c);
+            if (v === null) {
+                this.node.debug(`not setting context for ${item} as value reported as null or not permitted (which should not happen...)`);
+                continue;
+            }
+            else {
+                this.context[item] = v;
+            }
+        }
+        this.saveContext();
+        this.setStatus();
     }
 }
 exports.BaseEndpoint = BaseEndpoint;

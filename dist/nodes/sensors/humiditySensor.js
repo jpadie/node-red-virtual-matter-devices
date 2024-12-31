@@ -1,37 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.humiditySensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const HumiditySensorDevice_1 = require("@project-chip/matter.js/devices/HumiditySensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class humiditySensor extends BaseEndpoint_1.BaseEndpoint {
     constructor(node, config) {
         super(node, config);
         this.name = this.config.name || "Humidity Sensor";
         this.mapping = {
-            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" }
+            humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 2 } }
         };
-        this.attributes.serialNumber = "hs-" + this.attributes.serialNumber;
-    }
-    async deploy() {
-        this.context = Object.assign({
-            humidity: 50.0,
-            lastHeardFrom: ""
-        }, this.context);
-        this.saveContext();
-        this.attributes.relativeHumidityMeasurement = {
-            measuredValue: (this.context.humidity ?? 0) * 100
+        this.setSerialNumber("hs-");
+        this.setDefault("humidity", 50.0);
+        this.attributes = {
+            ...this.attributes,
+            relativeHumidityMeasurement: {
+                measuredValue: this.contextToMatter("humidity", this.context.humidity)
+            }
         };
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(HumiditySensorDevice_1.HumiditySensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-        }
-        catch (e) {
-            this.node.error(e);
-        }
+        this.device = devices_1.HumiditySensorDevice;
     }
 }
 exports.humiditySensor = humiditySensor;

@@ -1,7 +1,8 @@
 type: module
-import "@project-chip/matter-node.js";
+require("@matter/main");
 import type { Node, NodeAPI } from 'node-red';
 /* tslint:disable */
+
 
 import { contactSensor } from "./contactSensor";
 import { flowSensor } from "./flowSensor";
@@ -49,10 +50,6 @@ module.exports = (RED: NodeAPI): void => {
         device = new module(this, config);
 
         device.getEndpoint();
-        /*.then((endpoint) => {
-            matterServer.addDevice(endpoint);
-        });
-        */
     };
 
     RED.nodes.registerType('matter-sensors', MatterSensors);

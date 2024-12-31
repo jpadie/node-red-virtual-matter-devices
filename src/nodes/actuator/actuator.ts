@@ -1,8 +1,9 @@
 type: module
-import "@project-chip/matter-node.js";
+import "@matter/main";
 import type { Node, NodeAPI } from 'node-red';
 import { onOffPlug } from "./onOffPlug";
 import { dimmablePlug } from "./dimmablePlug";
+import { waterValve } from "./waterValve";
 
 /* tslint:disable */
 
@@ -20,9 +21,10 @@ module.exports = (RED: NodeAPI): void => {
             case "onOffPlug": module = onOffPlug; break;
 
             case "dimmablePlug": module = dimmablePlug; break;
+
+            case "waterValve": module = waterValve; break;
+
             /*
-                        case "waterValve": module = waterValve; break;
-            
                         case "pump": module = pump; break;
             */
 
@@ -34,10 +36,7 @@ module.exports = (RED: NodeAPI): void => {
         device = new module(this, config);
 
         device.getEndpoint();
-        /*.then((endpoint) => {
-            matterServer.addDevice(endpoint);
-        });
-        */
+
     };
 
     RED.nodes.registerType('matter-actuator', MatterActuator);

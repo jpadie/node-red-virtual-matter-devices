@@ -1,73 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.occupancySensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const OccupancySensorDevice_1 = require("@project-chip/matter.js/devices/OccupancySensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class occupancySensor extends BaseEndpoint_1.BaseEndpoint {
-    constructor(node, config) {
-        super(node, config);
-        this.name = this.config.name || "Contact Sensor";
+    constructor(node, config, _name = "") {
+        let name = _name || "Contact Sensor";
+        super(node, config, name);
         this.mapping = {
             occupied: {
                 occupancySensing: {
                     occupancy: "occupied"
                 },
                 multiplier: 1,
-                unit: ""
+                unit: "",
+                matter: { valueType: "boolean" },
+                context: { valueType: "int" }
             }
         };
-        this.attributes.serialNumber = "occ-" + this.attributes.serialNumber;
-    }
-    setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: `${this.context.occupied ? "Occupied" : "Empty"}`
-        });
-    }
-    preProcessDeviceChanges(value, item) {
-        if (item == "occupancy$Changed") {
-            return value.occupied;
-        }
-        return value;
-    }
-    listenForMessages() {
-        this.node.on("input", (msg, send, done) => {
-            if (this.config.passThroughMessage) {
-                send(msg);
-            }
-            try {
-                let payload = {
-                    occupancySensing: {
-                        occupancy: {
-                            occupied: msg.payload.occupied ? 1 : 0
-                        }
-                    }
-                };
-                this.endpoint.set(payload);
-                done();
-            }
-            catch (e) {
-                if (e instanceof Error) {
-                    done(e);
-                }
-                this.node.error(e);
-                done();
-            }
-        });
-    }
-    async deploy() {
-        this.context = Object.assign({
-            occupied: false,
-            lastHeardFrom: ""
-        }, this.context);
+        this.setSerialNumber("occ-");
+        this.setDefault("occupied", 0);
         this.attributes = {
             ...this.attributes,
             occupancySensing: {
                 occupancy: {
-                    occupied: this.context.occupied ? true : false
+                    occupied: this.contextToMatter("occupied", this.context.occupied)
                 },
                 occupancySensorTypeBitmap: {
                     pir: true,
@@ -77,15 +34,20 @@ class occupancySensor extends BaseEndpoint_1.BaseEndpoint {
                 occupancySensorType: 2
             }
         };
-        this.saveContext();
-        try {
-            this.endpoint = new endpoint_1.Endpoint(OccupancySensorDevice_1.OccupancySensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
+        this.device = devices_1.OccupancySensorDevice;
+    }
+    getVerbose(item, value = "") {
+        if (value = "") {
+            if (Object.hasOwn(this.context, item)) {
+                value = this.context[item];
+            }
         }
-        catch (e) {
-            this.node.error(e);
+        switch (item) {
+            case "occupied":
+                return value ? "Occupied" : "Empty";
+                break;
+            default:
+                return super.getVerbose(item, value);
         }
     }
 }

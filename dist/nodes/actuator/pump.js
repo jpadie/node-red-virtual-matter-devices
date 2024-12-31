@@ -1,50 +1,49 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pump = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const PumpDevice_1 = require("@project-chip/matter.js/devices/PumpDevice");
-const onOffLight_1 = require("../light/onOffLight");
-class pump extends onOffLight_1.onOffLight {
+const devices_1 = require("@matter/main/devices");
+const dimmableLight_1 = require("../light/dimmableLight");
+const clusters_1 = require("@matter/main/clusters");
+class pump extends dimmableLight_1.dimmableLight {
     constructor(node, config, _name = "") {
         let name = config.name || _name || "Pump";
         super(node, config, name);
         this.mapping = {
             ...this.mapping,
+            speed: {
+                pumpConfigurationAndControl: "speed",
+                min: 0,
+                max: 100,
+                multiplier: 1,
+                unit: "%",
+                context: { valueType: "int" },
+                matter: { valueType: "int" }
+            }
         };
-        this.attributes.serialNumber = "pump-" + this.attributes.serialNumber;
-        this.attributes.pumpConfigurationAndControl = {};
-        this.attributes.pumpConfigutationAndControl = {
-            maxSpeed: 65534,
-            maxPressure: 3276,
-            maxFlow: 6553.4,
-            effectiveControlMode: 0,
-            effectiveOperationMode: 0,
-            capacity: 0
-        };
-        this.context = Object.assign({
-            occupied: false,
-            lastHeardFrom: ""
-        }, this.context);
+        delete this.mapping.brightness;
+        this.setSerialNumber("pump-");
+        this.setDefault("speed", 0);
         this.attributes = {
             ...this.attributes,
+            pumpConfigurationAndControl: {
+                maxSpeed: 65534,
+                maxPressure: 3276,
+                maxFlow: 6553.4,
+                effectiveOperationMode: clusters_1.PumpConfigurationAndControl.OperationMode.Normal,
+                capacity: 0,
+                speed: this.contextToMatter("speed", this.context.speed),
+                operationMode: clusters_1.PumpConfigurationAndControl.OperationMode.Normal,
+            },
         };
-    }
-    setStatus() {
-        let text = '';
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        });
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(PumpDevice_1.PumpDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, PumpDevice_1.PumpRequirements.OnOffServer, PumpDevice_1.PumpRequirements.PumpConfigurationAndControlServer.with("Automatic", "CompensatedPressure", "ConstantFlow", "ConstantPressure", "ConstantSpeed", "ConstantTemperature", "LocalOperation")), this.attributes);
+        if (this.config.supportsVariableSpeed) {
+            this.attributes.levelControl.currentLevel = this.contextToMatter("speed", this.context.speed);
+            this.withs.push(devices_1.PumpRequirements.LevelControlServer);
         }
-        catch (e) {
-            this.node.error(e);
+        else {
+            delete this.attributes.levelControl;
         }
+        this.withs.push(devices_1.PumpRequirements.PumpConfigurationAndControlServer, devices_1.PumpRequirements.OnOffServer);
+        this.device = devices_1.PumpDevice;
     }
 }
 exports.pump = pump;

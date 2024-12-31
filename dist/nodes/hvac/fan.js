@@ -2,35 +2,69 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fan = void 0;
 type: module;
-require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
-const FanDevice_1 = require("@project-chip/matter.js/devices/FanDevice");
-const FanDevice_2 = require("@project-chip/matter.js/devices/FanDevice");
-const cluster_1 = require("@project-chip/matter.js/cluster");
+const devices_1 = require("@matter/main/devices");
+const devices_2 = require("@matter/main/devices");
+const clusters_1 = require("@matter/main/clusters");
 class fan extends BaseEndpoint_1.BaseEndpoint {
     features = [];
     constructor(node, config, _name = "") {
         let name = config.name || _name || "Fan";
         super(node, config, name);
         this.mapping = {
-            fanMode: { fanControl: "fanMode", multiplier: 1, unit: "" },
-            percentSetting: { fanControl: "percentSetting", multiplier: 1, unit: "" },
-            percentCurrent: { fanControl: "percentCurrent", multiplier: 1, unit: "" },
-            airFlow: { fanControl: "airflowDirection", multiplier: 1, unit: "" },
-            speedSetting: { fanControl: "speedSetting", multiplier: 1, unit: "" },
-            speedCurrent: { fanControl: "speedCurrent", multiplier: 1, unit: "" },
-            rockUpDown: { fanControl: { rockSetting: "rockUpDown" }, multiplier: 1, unit: '' },
-            rockLeftRight: { fanControl: { rockSetting: "rockLeftRight" }, multiplier: 1, unit: '' },
-            rockRound: { fanControl: { rockSetting: "rockRound" }, multiplier: 1, unit: '' },
-            sleepWind: { fanControl: { windSetting: "sleepWind" }, multiplier: 1, unit: '' },
-            naturalWind: { fanControl: { windSetting: "naturalWind" }, multiplier: 1, unit: '' }
+            fanMode: {
+                fanControl: "fanMode", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            percentSetting: {
+                fanControl: "percentSetting", multiplier: 1, unit: "", matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            percentCurrent: {
+                fanControl: "percentCurrent", multiplier: 1, unit: "", matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            airFlow: {
+                fanControl: "airflowDirection", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            speedSetting: {
+                fanControl: "speedSetting", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            speedCurrent: {
+                fanControl: "speedCurrent", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockUpDown: {
+                fanControl: { rockSetting: "rockUpDown" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockLeftRight: {
+                fanControl: { rockSetting: "rockLeftRight" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockRound: {
+                fanControl: { rockSetting: "rockRound" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            sleepWind: {
+                fanControl: { windSetting: "sleepWind" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            naturalWind: {
+                fanControl: { windSetting: "naturalWind" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            }
         };
         this.setSerialNumber("fan-");
         this.attributes.fanControl = {};
         if (this.config.supportsRocking) {
-            this.features.push(cluster_1.FanControl.Feature.Rocking);
+            this.features.push(clusters_1.FanControl.Feature.Rocking);
             this.attributes.fanControl.rockSupport = {};
             this.attributes.fanControl.rockSetting = {};
             if ((this.config.supportsRocking & (1 << 0)) !== 0) {
@@ -64,7 +98,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.prune("rockUpDown");
         }
         if (this.config.supportsWind) {
-            this.features.push(cluster_1.FanControl.Feature.Wind);
+            this.features.push(clusters_1.FanControl.Feature.Wind);
             this.attributes.fanControl.windSupport = {};
             this.attributes.fanControl.windSetting = {};
             if ((this.config.supportsWind & (1 << 0)) !== 0) {
@@ -89,15 +123,15 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.prune("sleepWind");
         }
         if (this.config.supportsAirflow) {
-            this.features.push(cluster_1.FanControl.Feature.AirflowDirection);
-            this.setDefault("airFlow", cluster_1.FanControl.AirflowDirection.Forward);
+            this.features.push(clusters_1.FanControl.Feature.AirflowDirection);
+            this.setDefault("airFlow", clusters_1.FanControl.AirflowDirection.Forward);
             this.attributes.fanControl.airflowDirection = this.context.airFlow;
         }
         else {
             this.prune("airFlow");
         }
         if (this.config.supportsMultiSpeed) {
-            this.features.push(cluster_1.FanControl.Feature.MultiSpeed);
+            this.features.push(clusters_1.FanControl.Feature.MultiSpeed);
             this.setDefault("speedCurrent", 0);
             this.attributes.fanControl.speedCurrent = this.context.speedCurrent;
             this.setDefault("speedMax", 100);
@@ -108,28 +142,19 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.prune("speedSetting");
             this.prune("speedMax");
         }
-        this.attributes.fanControl.fanModeSequence = cluster_1.FanControl.FanModeSequence.OffLowMedHigh;
-        this.setDefault("fanMode", cluster_1.FanControl.FanMode.Off);
+        this.attributes.fanControl.fanModeSequence = clusters_1.FanControl.FanModeSequence.OffLowMedHigh;
+        this.setDefault("fanMode", clusters_1.FanControl.FanMode.Off);
         this.attributes.fanControl.fanMode = this.context.fanMode;
         this.setDefault("percentCurrent", 0);
         this.setDefault("percentSetting", 0);
         this.attributes.fanControl.percentCurrent = this.context.percentCurrent;
-    }
-    regularUpdate() {
-        if (this.config.regularUpdates) {
-            setInterval(() => {
-                let m = {};
-                for (const item in this.context) {
-                    m[item] = this.getVerbose(item, this.context[item]);
-                }
-                this.node.send({ payload: m });
-            }, this.config.telemetryInterval * 1000);
-        }
+        this.device = devices_1.FanDevice;
+        this.withs.push(devices_2.FanRequirements.FanControlServer.with(...this.features));
     }
     getVerbose(item, value) {
         switch (item) {
             case "fanMode":
-                return (Object.keys(cluster_1.FanControl.FanMode)[Object.values(cluster_1.FanControl.FanMode).indexOf(value)]) || value;
+                return (Object.keys(clusters_1.FanControl.FanMode)[Object.values(clusters_1.FanControl.FanMode).indexOf(value)]) || value;
                 break;
             case "rockUpDown":
             case "rockLeftRight":
@@ -139,29 +164,10 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
                 return (value) ? "ON" : "OFF";
                 break;
             case "airFlow":
-                return (Object.keys(cluster_1.FanControl.AirflowDirection)[Object.values(cluster_1.FanControl.AirflowDirection).indexOf(value)]) || value;
+                return (Object.keys(clusters_1.FanControl.AirflowDirection)[Object.values(clusters_1.FanControl.AirflowDirection).indexOf(value)]) || value;
                 break;
             default:
                 return value;
-        }
-    }
-    setStatus() {
-        let fanSpeed = this.getVerbose("fanMode", this.context.fanMode);
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: fanSpeed
-        });
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(FanDevice_1.FanDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, FanDevice_2.FanRequirements.FanControlServer.with(...this.features)), this.attributes);
-            this.endpoint.set({
-                fanControl: {}
-            });
-        }
-        catch (e) {
-            this.node.error(e);
         }
     }
 }

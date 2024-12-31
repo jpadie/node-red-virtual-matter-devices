@@ -1,11 +1,6 @@
-import "@project-chip/matter-node.js";
-//import { ExtendedColorLightDevice } from "@project-chip/matter.js/devices/ExtendedColorLightDevice";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
 import type { Node } from 'node-red';
 import { dimmableLight } from "./dimmableLight.js";
-import { DimmableLightDevice } from "@project-chip/matter.js/devices/DimmableLightDevice";
-import { ColorControlServer } from "@project-chip/matter.js/behaviors/color-control";
+import { ColorControlServer } from "@matter/main/behaviors";
 import { colourList } from "./colourList.js";
 
 
@@ -38,11 +33,11 @@ export class colorLight extends dimmableLight {
 
         this.mapping = {
             ...this.mapping,
-            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF },
-            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 255 },
-            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 255 }
-        }
+            colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
+            colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
+            hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } },
+            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } }
+        };
 
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
 
@@ -53,15 +48,11 @@ export class colorLight extends dimmableLight {
         this.setDefault("colorX", 0);
         this.setDefault("colorY", 0);
         this.setDefault("colorSpace", "xyY");
+
+        this.withs.push(ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation"));
+        //no need to set this.device as done by dimmable light;
     }
 
-    override getVerbose(item, value) {
-        switch (item) {
-
-            default:
-                return super.getVerbose(item, value);
-        }
-    }
 
     convertHSVtoXY(hue, saturation, brightness) {
         let { r, g, b } = this.convertHSVtoRGB(hue, saturation, brightness);
@@ -182,29 +173,30 @@ export class colorLight extends dimmableLight {
     }
     override async preProcessOutputReport(report: any) {
         //this.node.warn(report);
-        if (Object.hasOwn(report, "colorX")) {
-            report.colorY = this.context.colorY;
-            const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
-            const color = await this.getColorName(rgb.r, rgb.g, rgb.b)
-            this.context.colorName = color;
-            this.saveContext();
-        }
-        else if (Object.hasOwn(report, "colorY")) {
-            report.colorX = this.context.colorX;
-            const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
-            this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
-            this.saveContext();
-        }
-        else if (Object.hasOwn(report, "hue") || Object.hasOwn(report, "saturation")) {
+        if (Object.hasOwn(report, "hue") || Object.hasOwn(report, "saturation")) {
             const rgb = this.convertHSVtoRGB(this.context.hue, this.context.saturation, this.context.brightness);
             this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
             this.saveContext();
+        } else {
+            if (Object.hasOwn(report, "colorX")) {
+                report.colorY = this.context.colorY;
+                const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
+                const color = await this.getColorName(rgb.r, rgb.g, rgb.b)
+                this.context.colorName = color;
+                this.saveContext();
+            }
+            else if (Object.hasOwn(report, "colorY")) {
+                report.colorX = this.context.colorX;
+                const rgb = this.convertXYtoRGB(report.colorX, report.colorY);
+                this.context.colorName = await this.getColorName(rgb.r, rgb.g, rgb.b);
+                this.saveContext();
+            }
         }
         //this.node.warn(report);
         return report;
     }
 
-    async getStatusText() {
+    override async getStatusText() {
         if (Object.hasOwn(this.context, "colorName") && this.context.colorName) {
             //
         } else {
@@ -221,25 +213,20 @@ export class colorLight extends dimmableLight {
                 default:
                     c = "unknown";
             }
-
+            this.node.debug(`color is ${c}`);
             this.context.colorName = c;
             this.saveContext();
         }
-        return `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("currentLevel", this.context.brightness)}% Color: ${this.context.colorName}`;
-    }
-
-    override async setStatus() {
-        const text = await this.getStatusText()
-
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        })
-
+        let upstreamText = await super.getStatusText();
+        let text = `${upstreamText} Color: ${this.context.colorName}`;
+        this.node.debug(`status text: ${text}`);
+        return text;
     }
 
 
+
+
+    /*
     override listenForChange_postProcess(report: any = null) {
         super.listenForChange_postProcess(report);
         if (typeof report == "object" && (Object.hasOwn(report, "colorX") || Object.hasOwn(report, "colorY"))) {
@@ -254,11 +241,19 @@ export class colorLight extends dimmableLight {
 
         }
     };
+    */
 
-    override preProcessNodeRedInput(item: any, value: any): { a: any; b: any; } {
-        let { a, b } = super.preProcessNodeRedInput(item, value)
+    override async preProcessNodeRedInput(item: any, value: any) {
+        let { a, b } = await super.preProcessNodeRedInput(item, value)
         if (a === "color") {
-            if (Object.hasOwn(b, "colorX") && Object.hasOwn(b, "colorY")) {
+            if (Object.hasOwn(b, "hue") && Object.hasOwn(b, "saturation")) {
+                delete b.colorX;
+                delete b.colorY;
+                if (this.context.colorSpace != "hsv") {
+                    this.context.colorSpace = "hsv";
+                    this.saveContext();
+                }
+            } else if (Object.hasOwn(b, "colorX") && Object.hasOwn(b, "colorY")) {
                 //ignore H and S
                 delete b.hue;
                 delete b.saturation;
@@ -267,37 +262,8 @@ export class colorLight extends dimmableLight {
                     this.saveContext();
                 }
             }
-            else if (Object.hasOwn(b, "hue") && Object.hasOwn(b, "saturation")) {
-                delete b.colorX;
-                delete b.colorY;
-                if (this.context.colorSpace != "hsv") {
-                    this.context.colorSpace = "hsv";
-                    this.saveContext();
-                }
-            }
         }
         return { a: a, b: b };
     }
 
-    override async deploy() {
-        try {
-
-            this.endpoint = await new Endpoint(
-                DimmableLightDevice.with(
-                    BridgedDeviceBasicInformationServer,
-                    ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation")
-                ),
-                this.attributes);
-
-            /*this.endpoint = await new Endpoint(
-                ExtendedColorLightDevice.with(
-                    BridgedDeviceBasicInformationServer
-                ), this.attributes);
-            */
-
-        } catch (e) {
-            this.node.error(e);
-            console.trace();
-        }
-    }
 }

@@ -1,37 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.flowSensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const FlowSensorDevice_1 = require("@project-chip/matter.js/devices/FlowSensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class flowSensor extends BaseEndpoint_1.BaseEndpoint {
-    constructor(node, config) {
-        super(node, config);
-        this.name = this.config.name || "Flow Sensor";
+    constructor(node, config, _name = "") {
+        let name = config.name || _name || "Flow Sensor";
+        super(node, config, name);
         this.mapping = {
-            flowRate: { flowMeasurement: "measuredValue", multiplier: 10, unit: "m3/h" }
+            flowRate: { flowMeasurement: "measuredValue", multiplier: 10, unit: "m3/h", matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 1 } }
         };
         this.attributes.serialNumber = "fs-" + this.attributes.serialNumber;
-    }
-    async deploy() {
-        this.context = Object.assign({
-            flowRate: 1,
-            lastHeardFrom: ""
-        }, this.context);
-        this.saveContext();
+        this.setDefault("flowRate", 0);
         this.attributes.flowMeasurement = {
-            measuredValue: this.context.flowRate * 10
+            measuredValue: this.contextToMatter("flowRate", this.context.flowRate)
         };
-        try {
-            this.endpoint = new endpoint_1.Endpoint(FlowSensorDevice_1.FlowSensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-        }
-        catch (e) {
-            this.node.error(e);
-        }
+        this.device = devices_1.FlowSensorDevice;
     }
 }
 exports.flowSensor = flowSensor;

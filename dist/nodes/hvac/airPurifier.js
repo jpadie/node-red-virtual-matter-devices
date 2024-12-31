@@ -2,13 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.airPurifier = void 0;
 type: module;
-require("@project-chip/matter-node.js");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const AirPurifierDevice_1 = require("@project-chip/matter.js/devices/AirPurifierDevice");
+const devices_1 = require("@matter/main/devices");
 const fan_1 = require("./fan");
-const cluster_1 = require("@project-chip/matter.js/cluster");
-const FanDevice_1 = require("@project-chip/matter.js/devices/FanDevice");
+const clusters_1 = require("@matter/main/clusters");
 class airPurifier extends fan_1.fan {
     constructor(node, config) {
         let name = config.name || "Air Purifier";
@@ -19,9 +15,18 @@ class airPurifier extends fan_1.fan {
             };
             this.mapping = {
                 ...this.mapping,
-                hepaChanged: { hepaFilterMonitoring: "changeIndication", multiplier: 1, unit: "" },
-                hepaCondition: { hepaFilterMonitoring: "condition", multiplier: 1, unit: "" },
-                hepaDegradationDirection: { hepaFilterMonitoring: "degradationDirection", multiplier: 1, unit: "" }
+                hepaChanged: {
+                    hepaFilterMonitoring: "changeIndication", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                },
+                hepaCondition: {
+                    hepaFilterMonitoring: "condition", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                },
+                hepaDegradationDirection: {
+                    hepaFilterMonitoring: "degradationDirection", multiplier: 1, unit: "", matter: { valueType: "int" },
+                    context: { valueType: "int" }
+                }
             };
             this.setDefault("hepaChanged", 0);
             this.setDefault("hepaCondition", 0);
@@ -37,37 +42,22 @@ class airPurifier extends fan_1.fan {
                 activatedCarbonDegradationDirection: { activatedCarbonFilterMonitoring: "degradationDirection", multiplier: 1, unit: "" }
             };
         }
+        if (Object.hasOwn(this.attributes, "hepaFilterMonitoring")) {
+            this.withs.push(devices_1.AirPurifierRequirements.HepaFilterMonitoringServer);
+        }
+        if (Object.hasOwn(this.attributes, "ActivateCarbonFilterMonitoring")) {
+            this.withs.push(devices_1.AirPurifierRequirements.ActivatedCarbonFilterMonitoringServer);
+        }
         this.setSerialNumber("airPur-");
+        this.device = devices_1.AirPurifierDevice;
     }
     getVerbose(item, value) {
         switch (item) {
             case "changeIndication":
-                return Object.keys(cluster_1.ResourceMonitoring.ChangeIndication)[value];
+                return this.getEnumKeyByEnumValue(clusters_1.ResourceMonitoring.ChangeIndication, value);
                 break;
             default:
                 return super.getVerbose(item, value);
-        }
-    }
-    setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: ''
-        });
-    }
-    async deploy() {
-        let withs = [];
-        if (Object.hasOwn(this.attributes, "hepaFilterMonitoring")) {
-            withs.push(AirPurifierDevice_1.AirPurifierRequirements.HepaFilterMonitoringServer);
-        }
-        if (Object.hasOwn(this.attributes, "ActivateCarbonFilterMonitoring")) {
-            withs.push(AirPurifierDevice_1.AirPurifierRequirements.ActivatedCarbonFilterMonitoringServer);
-        }
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(AirPurifierDevice_1.AirPurifierDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer, FanDevice_1.FanRequirements.FanControlServer.with(...this.features), ...withs), this.attributes);
-        }
-        catch (e) {
-            this.node.error(e);
         }
     }
 }

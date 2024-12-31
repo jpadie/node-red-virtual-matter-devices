@@ -1,11 +1,8 @@
 type: module
-import "@project-chip/matter-node.js";
 import type { Node, NodeAPI } from 'node-red';
 import { thermostat } from "./thermostat";
 import { fan } from "./fan";
 import { airPurifier } from "./airPurifier";
-
-
 
 /* tslint:disable */
 
@@ -32,12 +29,7 @@ module.exports = (RED: NodeAPI): void => {
         }
 
         device = new module(this, config);
-
         device.getEndpoint();
-        /*.then((endpoint) => {
-            matterServer.addDevice(endpoint);
-        });
-        */
     };
 
     RED.nodes.registerType('matter-hvac', MatterHVAC);

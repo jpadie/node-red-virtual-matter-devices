@@ -1,16 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 type: module;
-require("@project-chip/matter-node.js");
+require("@matter/main");
 const server_1 = require("../server/server");
 module.exports = (RED) => {
     function MatterHub(config) {
         RED.nodes.createNode(this, config);
-        this.status({
-            fill: "green",
-            shape: "dot",
-            text: server_1.matterHub.getStatus().commissioned ? "Commissioned" : "Not commissioned"
-        });
+        setInterval(() => {
+            let status = server_1.matterHub.getStatus();
+            this.status({
+                fill: "green",
+                shape: "dot",
+                text: status.commissioned ? "Commissioned" : "Not commissioned"
+            });
+        }, 3000);
     }
     RED.nodes.registerType('matter-hub-status', MatterHub);
     RED.httpAdmin.post("/matter-hub/:id", function (req, res) {

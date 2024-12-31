@@ -1,9 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.lightSensor = void 0;
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
-const LightSensorDevice_1 = require("@project-chip/matter.js/devices/LightSensorDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
+const devices_1 = require("@matter/main/devices");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class lightSensor extends BaseEndpoint_1.BaseEndpoint {
     lx2val(value) {
@@ -12,34 +10,27 @@ class lightSensor extends BaseEndpoint_1.BaseEndpoint {
     val2lx(value) {
         return Math.round(Math.pow(10, (value - 1) / 10000));
     }
-    constructor(node, config) {
-        super(node, config);
-        this.name = this.config.name || "Temperature Sensor";
+    constructor(node, config, _name = "") {
+        let name = _name || "Temperature Sensor";
+        super(node, config, name);
         this.mapping = {
-            brightness: { illuminanceMeasurement: "measuredValue", multiplier: [this.lx2val.bind(this), this.val2lx.bind(this)], unit: "lx" }
+            illuminance: {
+                illuminanceMeasurement: "measuredValue",
+                multiplier: [this.lx2val.bind(this), this.val2lx.bind(this)],
+                unit: "lx",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            }
         };
-        this.attributes.serialNumber = "lxs-" + this.attributes.serialNumber;
-    }
-    async deploy() {
-        this.context = Object.assign({
-            brightness: 10000,
-            lastHeardFrom: ""
-        }, this.context);
+        this.setSerialNumber("lxs-");
+        this.setDefault("illuminance", 10000);
         this.attributes = Object.assign(this.attributes, {
             illuminanceMeasurement: {
-                measuredValue: this.lx2val(this.context.brightness),
+                measuredValue: this.contextToMatter("illuminance", this.context.illuminance),
                 lightSensorType: 0
             }
         });
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(LightSensorDevice_1.LightSensorDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
-            this.listen();
-            this.regularUpdate();
-            this.setStatus();
-        }
-        catch (e) {
-            this.node.error(e);
-        }
+        this.device = devices_1.LightSensorDevice;
     }
 }
 exports.lightSensor = lightSensor;

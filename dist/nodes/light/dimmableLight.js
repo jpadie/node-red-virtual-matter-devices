@@ -1,10 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dimmableLight = void 0;
-require("@project-chip/matter-node.js");
-const DimmableLightDevice_1 = require("@project-chip/matter.js/devices/DimmableLightDevice");
-const bridged_device_basic_information_1 = require("@project-chip/matter.js/behaviors/bridged-device-basic-information");
-const endpoint_1 = require("@project-chip/matter.js/endpoint");
+const devices_1 = require("@matter/main/devices");
 const onOffLight_1 = require("./onOffLight");
 class dimmableLight extends onOffLight_1.onOffLight {
     constructor(node, config, _name = '') {
@@ -20,56 +17,29 @@ class dimmableLight extends onOffLight_1.onOffLight {
                 },
                 onLevel: null,
                 onOffTransitionTime: 150,
+                currentLevel: this.contextToMatter("brightness", this.context.brightness)
             },
         };
         this.mapping = {
             ...this.mapping,
-            brightness: { levelControl: "currentLevel", multiplier: 255 / 100, unit: "%" }
-        };
-        this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
-    }
-    getVerbose(item, value) {
-        switch (item) {
-            case "currentLevel":
-            case "brightness":
-            case "level":
-                return Math.round(value);
-                break;
-            default:
-                return super.getVerbose(item, value);
-        }
-    }
-    listenForChange_postProcess(report = null) {
-        super.listenForChange_postProcess(report);
-    }
-    ;
-    preProcessNodeRedInput(item, value) {
-        let { a, b } = super.preProcessNodeRedInput(item, value);
-        if (this.zigbee()) {
-            switch (a) {
-                case "brightness":
-                    a = "brightness";
-                    b = Math.round(value * 100 / 255);
-                    break;
-                default:
+            brightness: {
+                levelControl: "currentLevel",
+                multiplier: 2.55,
+                unit: "%",
+                min: 0,
+                max: 254,
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
             }
-        }
-        return { a: a, b: b };
+        };
+        this.setSerialNumber(`dLt-`);
+        this.device = devices_1.DimmableLightDevice;
     }
-    setStatus() {
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: `${this.getVerbose("onOff", this.context.onoff)}; ${this.getVerbose("brightness", this.context.brightness)}%`
-        });
-    }
-    async deploy() {
-        try {
-            this.endpoint = await new endpoint_1.Endpoint(DimmableLightDevice_1.DimmableLightDevice.with(bridged_device_basic_information_1.BridgedDeviceBasicInformationServer), this.attributes);
-        }
-        catch (e) {
-            this.node.error(e);
-        }
+    async getStatusText() {
+        let text = await super.getStatusText();
+        text += ` ${await this.getVerbose("brightness", this.context.brightness)}%`;
+        this.node.debug(`dimmable light status text: ${text}`);
+        return text;
     }
 }
 exports.dimmableLight = dimmableLight;

@@ -1,12 +1,10 @@
 type: module
-import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { FanDevice } from "@project-chip/matter.js/devices/FanDevice";
-import { FanRequirements } from "@project-chip/matter.js/devices/FanDevice";
-import { FanControl } from "@project-chip/matter.js/cluster";
+import { FanDevice } from "@matter/main/devices";
+import { FanRequirements } from "@matter/main/devices";
+import { FanControl } from "@matter/main/clusters";
+
 
 export class fan extends BaseEndpoint {
     public features: FanControl.Feature[] = [];
@@ -16,28 +14,62 @@ export class fan extends BaseEndpoint {
 
 
         this.mapping = {   //must be a 1 : 1 mapping
-            fanMode: { fanControl: "fanMode", multiplier: 1, unit: "" },
+            fanMode: {
+                fanControl: "fanMode", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
 
-            percentSetting: { fanControl: "percentSetting", multiplier: 1, unit: "" },
-            percentCurrent: { fanControl: "percentCurrent", multiplier: 1, unit: "" },
+            percentSetting: {
+                fanControl: "percentSetting", multiplier: 1, unit: "", matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            percentCurrent: {
+                fanControl: "percentCurrent", multiplier: 1, unit: "", matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
 
-            airFlow: { fanControl: "airflowDirection", multiplier: 1, unit: "" },
+            airFlow: {
+                fanControl: "airflowDirection", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
 
-            speedSetting: { fanControl: "speedSetting", multiplier: 1, unit: "" },
-            speedCurrent: { fanControl: "speedCurrent", multiplier: 1, unit: "" },
+            speedSetting: {
+                fanControl: "speedSetting", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            speedCurrent: {
+                fanControl: "speedCurrent", multiplier: 1, unit: "",
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
 
-            rockUpDown: { fanControl: { rockSetting: "rockUpDown" }, multiplier: 1, unit: '' },
-            rockLeftRight: { fanControl: { rockSetting: "rockLeftRight" }, multiplier: 1, unit: '' },
-            rockRound: { fanControl: { rockSetting: "rockRound" }, multiplier: 1, unit: '' },
+            rockUpDown: {
+                fanControl: { rockSetting: "rockUpDown" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockLeftRight: {
+                fanControl: { rockSetting: "rockLeftRight" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            rockRound: {
+                fanControl: { rockSetting: "rockRound" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
 
-            sleepWind: { fanControl: { windSetting: "sleepWind" }, multiplier: 1, unit: '' },
-            naturalWind: { fanControl: { windSetting: "naturalWind" }, multiplier: 1, unit: '' }
+            sleepWind: {
+                fanControl: { windSetting: "sleepWind" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            },
+            naturalWind: {
+                fanControl: { windSetting: "naturalWind" }, multiplier: 1, unit: '', matter: { valueType: "int" },
+                context: { valueType: "int" }
+            }
         }
 
         this.setSerialNumber("fan-");
-
-
-
         this.attributes.fanControl = {};
         if (this.config.supportsRocking) {
             this.features.push(FanControl.Feature.Rocking);
@@ -132,24 +164,12 @@ export class fan extends BaseEndpoint {
         this.setDefault("percentSetting", 0);
 
         this.attributes.fanControl.percentCurrent = this.context.percentCurrent;
-    }
-    /*
-        override preProcessDeviceChanges(value: any, item: any) {
-    
-        }
-    */
-    override regularUpdate() {
-        if (this.config.regularUpdates) {
-            setInterval(() => {
-                let m = {};
 
-                for (const item in this.context) {
-                    m[item] = this.getVerbose(item, this.context[item]);
-                }
-                this.node.send({ payload: m });
-            }, this.config.telemetryInterval * 1000);
-        }
+        this.device = FanDevice;
+        this.withs.push(FanRequirements.FanControlServer.with(...this.features));
+
     }
+
     override getVerbose(item, value) {
         switch (item) {
             case "fanMode":
@@ -167,38 +187,6 @@ export class fan extends BaseEndpoint {
                 break;
             default:
                 return value;
-        }
-    }
-
-    override setStatus() {
-        let fanSpeed = this.getVerbose("fanMode", this.context.fanMode);
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: fanSpeed
-        })
-    }
-
-    override async deploy() {
-
-        //console.log(this.attributes);
-        try {
-            this.endpoint = await new Endpoint(
-                FanDevice.with(
-                    BridgedDeviceBasicInformationServer,
-                    FanRequirements.FanControlServer.with(...this.features)
-                ),
-                this.attributes);
-
-            this.endpoint.set(
-                {
-                    fanControl: {
-
-                    }
-                });
-
-        } catch (e) {
-            this.node.error(e);
         }
     }
 }

@@ -25,6 +25,7 @@
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "preserveConstEnums": true,
+        "strictPropertyInitialization": false
     },
     "include": [
         "src/nodes/hub/*.ts",
@@ -34,12 +35,13 @@
         "src/nodes/closures/*.ts",
         "src/nodes/base/*.ts",
         "src/nodes/hvac/*.ts",
-        "src/nodes/actuator/*.ts"
+        "src/nodes/actuator/*.ts",
+        "src/nodes/converters/*.ts"
     ],
     "exclude": [
         "node_modules",
         "src/nodes/appliances",
         "src/nodes/energy",
-        "src/nodes/actuator/waterValve.ts"
+        "src/behaviours/*.ts"
     ]
 }

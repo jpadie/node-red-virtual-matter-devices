@@ -1,13 +1,11 @@
 import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
+import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors"
+import { Endpoint } from "@matter/main";
 import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
-import { RoomAirConditionerDevice } from "@project-chip/matter.js/devices/RoomAirConditionerDevice";
-import { RoomAirConditionerRequirements } from "@project-chip/matter.js/devices/RoomAirConditionerDevice";
+import { RoomAirConditionerDevice, RoomAirConditionerRequirements, ThermostatDevice } from "@matter/main/devices";
 import { fan } from "../hvac/fan";
 import { thermostat } from "../hvac/thermostat";
-import { ThermostatDevice } from "@project-chip/matter.js/devices/ThermostatDevice";
 
 
 export class roomAirConditioner extends thermostat {

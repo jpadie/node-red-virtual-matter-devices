@@ -1,5 +1,5 @@
 type: module
-import "@project-chip/matter-node.js";
+import "@matter/main";
 import type { Node, NodeAPI } from 'node-red';
 import { matterHub } from "../server/server";
 
@@ -13,11 +13,15 @@ module.exports = (RED: NodeAPI): void => {
 
         RED.nodes.createNode(this, config);
 
-        this.status({
-            fill: "green",
-            shape: "dot",
-            text: matterHub.getStatus().commissioned ? "Commissioned" : "Not commissioned"
-        })
+
+        setInterval(() => {
+            let status = matterHub.getStatus();
+            this.status({
+                fill: "green",
+                shape: "dot",
+                text: status.commissioned ? "Commissioned" : "Not commissioned"
+            })
+        }, 3000);
 
     }
     RED.nodes.registerType('matter-hub-status', MatterHub);

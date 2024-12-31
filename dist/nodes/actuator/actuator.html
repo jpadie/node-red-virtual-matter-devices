@@ -13,12 +13,16 @@
             telemetryInterval: {
                 value: 60
             },
-            passThroughMessage: { value: 1 },
-            regularUpdates: { value: 1 },
+            passThroughMessage: { value: 0 },
+            regularUpdates: { value: 0 },
+            supportsEnergyMeasurement: { value: 0 },
+            supportsVariableSpeed: { value: 0 },
+            supportsFlowMeasurement: { value: 0 }
         },
         inputs: 1,
         outputs: 1,
-        color: "#F3B567",
+        //color: "#F3B567",
+        color: "#ff711f",
         label: function () {
             if (this.name && this.name != "") {
                 return this.name;
@@ -27,9 +31,12 @@
                 let deviceTypes = {
                     onOffPlug: "On/Off Plug",
                     dimmablePlug: "Dimmable Plug",
-                    pump: "Pump"
+                    //pump: "Pump",
+                    waterValve: "Water Valve"
                 };
-                return deviceTypes[this.deviceType];
+                if (Object.hasOwn(deviceTypes, this.deviceType)) {
+                    return deviceTypes[this.deviceType];
+                }
             }
             return "Actuator";
         },
@@ -48,6 +55,8 @@
             let deviceTypes = {
                 onOffPlug: "On/Off Plug",
                 dimmablePlug: "Dimmable Plug",
+                // pump: "Pump",
+                waterValve: "Water Valve"
             };
             $(document).ready(() => {
 
@@ -128,10 +137,12 @@
                 }
 
                 $("#node-input-deviceType").on("change", (e) => {
-                    $("fieldset.hideable").hide();
-                    let elem = "fieldset." + $(e.target).val();
+                    $(".hideable").hide();
+                    let elem = "div." + $(e.target).val();
                     $(elem).show();
                 }).trigger("change");
+
+
             });
         }
     });
@@ -153,14 +164,16 @@
         }
         fieldset.matter div.form-row label {
             width: 9rem !important;
-            float: left;
+            display: inline-block;
+            vertical-align:middle
         }
         fieldset.matter div.form-row div.fR{
             margin-left: 1rem;
-            float:left;
             min-width: 15rem;
             width: fit-content;
             max-width: 55%;
+            display: inline-block;
+            vertical-align: middle;
         }
         fieldset.matter div.fR button.toggle{
             margin-right:0.5rem;
@@ -171,8 +184,6 @@
 
     </style>
     <fieldset class="matter">
-       
-    
         <div class="form-row">
             <label for="node-input-deviceType">Actuator Device</label>
             <select id="node-input-deviceType" >
@@ -180,7 +191,39 @@
             </select>
         </div>
     </fieldset>
+    <fieldset >
+        <legend>Features</legend>
+        <div class="form-row dimmablePlug onOffPlug hideable">
+            <label for="node-input-supportsEnergyMeasurement">Energy Monitoring</label>
+            <input type="checkbox" value="1" id="node-input-supportsEnergyMeasurement" />
+        </div>
+        <div class="form-row hideable pump">
+            <label for="node-input-supportsVariableSpeed">Variable Speed</label>
+            <input type="checkbox" value="1" id="node-input-supportsVariableSpeed" />
+        </div>
+        <div class="form-row hideable waterValve">
+            <label for="node-input-supportsFlowMeasurement">Flow </label>
+            <input type="checkbox" value="1" id="node-input-supportsFlowMeasurement" />
+        </div>
+    </fieldset>
     
+    <fieldset class="matter">
+        <legend>Telemetry</legend>
+        <div class="form-row">
+            <label for="node-input-regularUpdates">Enable Telemetry</label>
+            <input type="checkbox" id="node-input-regularUpdates" value="1" />
+        </div>
+        <div class="form-row">
+            <label for="node-input-telemetryInterval">Telemetry Period (secs)</label>
+            <div class="fR">
+            <input type="text" id="node-input-telemetryInterval" placeholder="60" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-passThroughMessage">Pass through msg</label>
+            <input type="checkbox" id="node-input-passThroughMessage" value="1" />
+        </div>
+    </fieldset>
     <fieldset class="matter">
         <legend>Name</legend>
         <div class="form-row">
@@ -196,5 +239,5 @@
 
 
 <script type="text/html" data-help-name="matter-actuator">
-
+If your pluggable device has energy monitoring built in then you can enable energy monitoring in this synthetic device.  See the README for details of payloads.
 </script>

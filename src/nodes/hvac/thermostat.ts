@@ -1,24 +1,21 @@
 type: module
-import "@project-chip/matter-node.js";
-import { BridgedDeviceBasicInformationServer } from "@project-chip/matter.js/behaviors/bridged-device-basic-information";
-import { Endpoint } from "@project-chip/matter.js/endpoint";
 import type { Node } from 'node-red';
-import { ThermostatDevice } from "@project-chip/matter.js/devices/ThermostatDevice";
-import { ThermostatServer } from "@project-chip/matter.js/behaviors/thermostat";
-import { Thermostat } from "@project-chip/matter.js/cluster";
-import { RelativeHumidityMeasurementServer } from "@project-chip/matter.js/behaviors/relative-humidity-measurement";
+import { ThermostatDevice } from "@matter/main/devices"
+import { ThermostatServer } from "@matter/main/behaviors"
+import { Thermostat } from "@matter/main/clusters";
+import { RelativeHumidityMeasurementServer } from "@matter/main/behaviors"
 import { BaseEndpoint } from "../base/BaseEndpoint";
 
 
 export class thermostat extends BaseEndpoint {
     private heating_coolingState: Number = 1;
-    private withs: any = [];
 
     constructor(node: Node, config: any, _name: any = "") {
         let name = _name || config.name || "Thermostat"
         super(node, config, name);
 
         this.mapping = {   //must be a 1 : 1 mapping
+            ...this.mapping,
             localTemperature: { thermostat: "localTemperature", multiplier: 100, unit: "C" },
             systemMode: { thermostat: "systemMode", multiplier: 1, unit: "" },
             occupiedHeatingSetpoint: { thermostat: "occupiedHeatingSetpoint", multiplier: 100, unit: "C" },
@@ -30,6 +27,23 @@ export class thermostat extends BaseEndpoint {
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
+        }
+        for (const i in this.mapping) {
+            switch (i) {
+                case "systemMode":
+                case "occupied":
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "int" }
+                    });
+                    break;
+                default:
+                    this.mapping[i] = Object.assign(this.mapping[i], {
+                        matter: { valueType: "int" },
+                        context: { valueType: "float", valueDecimals: 2 }
+                    });
+                    break;
+            }
         }
 
         this.setSerialNumber("tstat-");
@@ -142,7 +156,10 @@ export class thermostat extends BaseEndpoint {
             this.prune("humidity");
         }
 
-        this.attributes.thermostat = a;
+        this.attributes = {
+            ...this.attributes,
+            thermostat: a
+        }
 
         let withs: any = [];
         let features: Thermostat.Feature[] = [Thermostat.Feature.Setback];
@@ -153,8 +170,8 @@ export class thermostat extends BaseEndpoint {
 
         withs.push(ThermostatServer.with(...features));
         if (this.config.supportsHumidity) withs.push(RelativeHumidityMeasurementServer);
-        withs.push(BridgedDeviceBasicInformationServer);
-        this.withs = withs;
+        //withs.push(OnOffBehavior);
+        this.withs.push(...withs);
         /*
         console.log("thermostat config");
         console.log(this.config);
@@ -163,6 +180,7 @@ export class thermostat extends BaseEndpoint {
         console.log("thermostat attributes");
         console.log(this.attributes);
         */
+        this.device = ThermostatDevice;
     }
 
     override getVerbose(item: any, value: any) {
@@ -174,13 +192,15 @@ export class thermostat extends BaseEndpoint {
                 return value;
         }
     }
-    override setStatus() {
-        let text = (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
-        this.node.status({
-            fill: "green",
-            shape: "dot",
-            text: text
-        })
+    override async getStatusText() {
+        return (this.deriveOnOff() ? (this.context.systemMode == Thermostat.SystemMode.Cool ? "Cooling" : "Heating") : "Off") + " Temp: " + this.context.localTemperature;
+    }
+
+    override matterRefine(item: any, value: any) {
+        if (['systemMode'].includes(item)) {
+            return value;
+        }
+        return super.matterRefine(item, value);
     }
 
     override preProcessDeviceChanges(value: any, item: any) {
@@ -305,9 +325,5 @@ export class thermostat extends BaseEndpoint {
         this.context.heating_coolingState = this.heating_coolingState;
         this.saveContext();
         return ret;
-    }
-    override async deploy() {
-        this.endpoint = new Endpoint(ThermostatDevice.with(...this.withs), this.attributes);
-
     }
 }
