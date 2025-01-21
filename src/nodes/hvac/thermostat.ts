@@ -27,7 +27,9 @@ export class thermostat extends BaseEndpoint {
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
+            maxHeatSetpointLimit: { thermostat: "maxHeatSetpointLimit", multiplier: 100, unit: "C" },
         }
+
         for (const i in this.mapping) {
             switch (i) {
                 case "systemMode":
@@ -112,11 +114,11 @@ export class thermostat extends BaseEndpoint {
 
         this.setDefault("occupiedSetback", 1);
         a.occupiedSetback = this.context.occupiedSetback * 10;
-
+        this.setDefault("maxHeatSetpointLimit", Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000)
         if (this.config.supportsHeating) {
             a.absMinHeatSetpointLimit = Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600;
             a.minHeatSetpointLimit = a.absMinHeatSetpointLimit;
-            a.absMaxHeatSetpointLimit = Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000;
+            a.absMaxHeatSetpointLimit = this.context("maxHeatSetpointLimit");
             a.maxHeatSetpointLimit = a.absMaxHeatSetpointLimit;
             this.setDefault("occupiedHeatingSetpoint", 19);
             a.occupiedHeatingSetpoint = this.context.occupiedHeatingSetpoint * 100;

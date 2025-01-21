@@ -101,7 +101,7 @@ class BaseEndpoint {
             this.attributes.bridgedDeviceBasicInformation.serialNumber = value + this.attributes.bridgedDeviceBasicInformation.serialNumber.slice(dash + 1);
         }
         else {
-            this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 30);
+            this.attributes.bridgedDeviceBasicInformation.serialNumber = (value + this.attributes.bridgedDeviceBasicInformation.serialNumber).substring(0, 32);
         }
     }
     prune(item) {

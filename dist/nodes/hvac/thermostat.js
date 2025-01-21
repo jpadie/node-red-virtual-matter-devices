@@ -25,6 +25,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
+            maxHeatSetpointLimit: { thermostat: "maxHeatSetpointLimit", multiplier: 100, unit: "C" },
         };
         for (const i in this.mapping) {
             switch (i) {
@@ -104,10 +105,11 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         a.occupiedSetbackMax = (clusters_1.Thermostat.SetbackComponent.attributes.occupiedSetbackMax.default || 5) * 10;
         this.setDefault("occupiedSetback", 1);
         a.occupiedSetback = this.context.occupiedSetback * 10;
+        this.setDefault("maxHeatSetpointLimit", clusters_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000);
         if (this.config.supportsHeating) {
             a.absMinHeatSetpointLimit = clusters_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600;
             a.minHeatSetpointLimit = a.absMinHeatSetpointLimit;
-            a.absMaxHeatSetpointLimit = clusters_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000;
+            a.absMaxHeatSetpointLimit = this.context("maxHeatSetpointLimit");
             a.maxHeatSetpointLimit = a.absMaxHeatSetpointLimit;
             this.setDefault("occupiedHeatingSetpoint", 19);
             a.occupiedHeatingSetpoint = this.context.occupiedHeatingSetpoint * 100;

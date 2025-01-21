@@ -21,8 +21,7 @@ export class evse extends BaseEndpoint {
 
         this.attributes.serialNumber = ("evse-" + this.attributes.serialNumber);
     }
-
-    override setStatus() {
+    override async setStatus() {
         let text = "State: " + this.getVerbose("mode", this.context.mode);
         try {
             this.node.status({
@@ -41,5 +40,6 @@ export class evse extends BaseEndpoint {
     }
 
     override async deploy() {
+        //this.endpoint = new Endpoint(EVSE)
     }
 }
