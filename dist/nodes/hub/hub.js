@@ -16,7 +16,7 @@ module.exports = (RED) => {
         }, 3000);
     }
     RED.nodes.registerType('matter-hub-status', MatterHub);
-    RED.httpAdmin.post("/matter-hub/:id", function (req, res) {
+    RED.httpAdmin.post("/matter-hub/:id", async function (req, res) {
         const node = RED.nodes.getNode(req.params.id);
         if (node == null) {
             res.sendStatus(404);
@@ -36,8 +36,9 @@ module.exports = (RED) => {
                     res.end();
                     break;
                 case "reInitialise":
-                    server_1.matterHub.reInitialise();
-                    res.sendStatus(200);
+                    responseData = await server_1.matterHub.reInitialise();
+                    res.send(responseData);
+                    res.end();
                     break;
                 case "shutdown":
                     server_1.matterHub.shutDown();

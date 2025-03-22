@@ -44,12 +44,13 @@
                     sel.append(o);
                 }
                 sel.val(this.numberOfGangs);
-
+                $("#node-input-gang").val(node.gang);
                 $(sel).on("change", (e) => {
                     let cV = $("#node-input-gang").val();
                     let numOptions = $("#node-input-gang option").length;
                     let newNumOptions = $(sel).val();
                     if (newNumOptions == numOptions) {
+                        $("#node-input-gang").val(cV);
                         return;
                     }
                     if (newNumOptions > numOptions) {
@@ -64,7 +65,7 @@
                             $(`#node-input-gang option[value="${i}"]`).remove();
                         }
                         if (cV > newNumOptions) {
-                            $("#node-input-gang").value(1);
+                            $("#node-input-gang").val(1);
                         }
                     }
                 }).trigger("change");
@@ -82,12 +83,14 @@
                     if (dir == "toZ2M") {
                         if ($(e.target).val() > 1) {
                             $(".which-gang").show();
+                            $("#node-input-gang").val(node.gang);
                         } else {
                             $(".which-gang").hide();
-                            $(".which-gang").val(1);
+                            $("#node-input-gang").val(1);
                         }
                     }
                 }).trigger("change");
+
 
             });
         },

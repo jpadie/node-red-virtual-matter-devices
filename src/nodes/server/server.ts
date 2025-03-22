@@ -180,12 +180,15 @@ class MatterHub {
     }
 
     public async reInitialise() {
+        console.debug("ReInitialising Matter Server");
         this.started = false;
         if (this.matterServer.lifecycle.isOnline) {
             await this.matterServer.cancel(); // offline if it was online
         }
         await this.matterServer.erase();
+        await this.matterServer.construction;
         this.started = true;
+        console.debug("Finished matter server reinit");
         //await this.deploy();
         //await this.matterServer.start();
         //this.started = true;
@@ -195,6 +198,7 @@ class MatterHub {
         setTimeout(() => {
             logEndpoint(EndpointServer.forEndpoint(this.matterServer));
         }, 2000);
+        return this.getStatus();
     }
 
     public async killDevice(id: string) {

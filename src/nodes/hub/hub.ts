@@ -28,7 +28,7 @@ module.exports = (RED: NodeAPI): void => {
 
     RED.httpAdmin.post(
         "/matter-hub/:id",
-        function (req, res) {
+        async function (req, res) {
             const node = RED.nodes.getNode(req.params.id);
             //console.log(req.body);
             if (node == null) {
@@ -49,8 +49,10 @@ module.exports = (RED: NodeAPI): void => {
                         res.end();
                         break;
                     case "reInitialise":
-                        matterHub.reInitialise();
-                        res.sendStatus(200);
+                        responseData = await matterHub.reInitialise();
+                        res.send(responseData);
+                        res.end();
+                        //res.sendStatus(200);    
                         break;
                     case "shutdown":
                         matterHub.shutDown();

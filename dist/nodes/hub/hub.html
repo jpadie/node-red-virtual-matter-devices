@@ -36,8 +36,27 @@
             const node = this;
             //console.log(node);
             let interval;
+
             $(document).ready(() => {
                 //  $("fieldset.qrCode").hide();
+                let processIncomingStatusData = function (data) {
+                    //data = JSON.parse(data);
+                    console.log(data);
+                    $("#node-input-qrcode").text("\n" + data.qrcode);
+                    $("#node-input-manualPairingCode").text(data.manualPairingCode);
+                    $("#node-input-qrCodeURL")
+                        .attr("href", data.qrcodeURL)
+                        .text("Click Here");
+                    $("#node-input-commissioned").text(data.commissioned ? "Yes" : "No");
+
+                    if (data.commissioned) {
+                        $("fieldset.qrCode").hide();
+                        if (interval) clearInterval(interval);
+                    } else {
+                        $("fieldset.qrCode").show();
+                        interval = setInterval(() => { getStatus(); }, 3500);
+                    }
+                }
                 $("#node-input-reInitialise").on("click", (e) => {
                     let myNotification = RED.notify("Reinitialisation will regenerate the matter hub and decommission it.  All virtual devices will remain but you will need to use the QR Code (or manually pair) the hub with each controller ", {
                         modal: true,
@@ -79,22 +98,7 @@
                         contentType: "application/json; charset=utf-8",
                         data: JSON.stringify({ request: "getStatus" }),
                         success: function (data) {
-                            //data = JSON.parse(data);
-                            console.log(data);
-                            $("#node-input-qrcode").text("\n" + data.qrcode);
-                            $("#node-input-manualPairingCode").text(data.manualPairingCode);
-                            $("#node-input-qrCodeURL")
-                                .attr("href", data.qrcodeURL)
-                                .text("Click Here");
-                            $("#node-input-commissioned").text(data.commissioned ? "Yes" : "No");
-
-                            if (data.commissioned) {
-                                $("fieldset.qrCode").hide();
-                                if (interval) clearInterval(interval);
-                            } else {
-                                $("fieldset.qrCode").show();
-                                interval = setInterval(() => { getStatus(); }, 3500);
-                            }
+                            processIncomingStatusData(data);
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             $("fieldset.qrCode").hide();

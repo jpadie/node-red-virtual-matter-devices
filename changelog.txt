@@ -1,1 +1,2 @@
 0.3.1   added configurable maxHeatSetpointLimit to the available thermostat options 
+0.3.2   added info on maxHeatSetpointLimit to the Readme

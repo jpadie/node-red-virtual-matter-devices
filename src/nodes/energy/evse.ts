@@ -7,8 +7,8 @@ import { EnergyEvse, EnergyEvseCluster } from "@matter/main/clusters";
 
 
 
-export class evse extends BaseEndpoint {
 
+export class evse extends BaseEndpoint {
 
     constructor(node: Node, config: any, _name: any = "") {
         let name = _name || config.name || "EVSE"

@@ -168,15 +168,19 @@ class MatterHub {
         };
     }
     async reInitialise() {
+        console.debug("ReInitialising Matter Server");
         this.started = false;
         if (this.matterServer.lifecycle.isOnline) {
             await this.matterServer.cancel();
         }
         await this.matterServer.erase();
+        await this.matterServer.construction;
         this.started = true;
+        console.debug("Finished matter server reinit");
         setTimeout(() => {
             (0, protocol_1.logEndpoint)(main_1.EndpointServer.forEndpoint(this.matterServer));
         }, 2000);
+        return this.getStatus();
     }
     async killDevice(id) {
         return;

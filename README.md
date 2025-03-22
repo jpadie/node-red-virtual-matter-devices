@@ -272,10 +272,11 @@ For a thermostat one of more of the inputs below will be supported, depending on
     {
         localTemperature: [0,100]
         systemMode: [0, 3, 4] (0 = Off, 3 = Cool, 4 = Heat) 
-        occupiedHeatingSetpoint: [6,30],
-        occupiedCoolingSetpoint: [16,30],
-        unoccupiedHeatingSetpoint: [6,30],
-        unoccupiedCoolingSetpoint: [6,30],
+        maxHeatSetpointLimit: [float], 
+        occupiedHeatingSetpoint: [6,maxHeatSetpointLimit],
+        occupiedCoolingSetpoint: [16,maxHeatSetpointLimit],
+        unoccupiedHeatingSetpoint: [6,maxHeatSetpointLimit],
+        unoccupiedCoolingSetpoint: [6,maxHeatSetpointLimit],
         occupied: [0,1]  (1 = occupied, 0 = unoccupied),
         occupiedSetback: [0,20] 
         unoccupiedSetback: [0,20]
@@ -283,13 +284,13 @@ For a thermostat one of more of the inputs below will be supported, depending on
         outdoorTemperature: float
     }
 
-All temperature values should be supplied in degrees celsius. 
+All temperature values should be supplied in degrees celsius. They can be floats (e.g. 20.1).
 
-NB If you provide a value for systemMode that is not permitted by your configuration you may well crash your node-red instance.  
+NB If you provide a value for systemMode that is not permitted by your configuration you may well crash your node-red instance.  e.g. if you have not specified that the thermostat can handle cooling and provide a systemMode = 3, the instance will crash. Adding error handling for this case is a work in progress.
 
-Setback is a way of expressing hysteresis. In heating mode, when the device starts it will heat the room to the setpoint and then turn off until the room temperature falls below the setpoint by the amount of the setback value.  
+Setback is a way of expressing hysteresis. In heating mode, when the device starts it will heat the room to the setpoint and then turn off until the room temperature falls below the setpoint by the amount of the setback value.  e.g. if the target room temperature is 20°C and the setback is 0.5 the thermostat will output an "on" value until the room temperature reaches 20°C and then turn off. It will turn on again when the room temperature drops to 19.5°C.
 
-NB be careful setting a setback value too high if you are using wet underfloor heating.  the thermal mass would usually mean a value of 0.2 - 0.5C would be better.
+NB be careful setting a setback value too high if you are using wet underfloor heating.  the thermal mass of a wet installation (in concrete with a floor covering) would usually mean a value of 0.2 - 0.5C would be better.
 
 
 
