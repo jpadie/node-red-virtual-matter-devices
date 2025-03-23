@@ -184,7 +184,6 @@ module.exports = (RED) => {
                         updates = Object.assign(updates, { ["state" + suffix]: isTruish(value) ? "ON" : "OFF" });
                         break;
                     default:
-                        updates = Object.assign(updates, { [key]: value });
                 }
             }
             this.debug(`Matter->Z2M: Update: ${JSON.stringify(updates, null, 2)}`);

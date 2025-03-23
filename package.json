@@ -1,6 +1,6 @@
 {
   "name": "@jpadie/node-red-virtual-matter-devices",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Virtual Matter Devices for Node-Red",
   "main": "index.js",
   "scripts": {
@@ -39,8 +39,10 @@
     "matter",
     "matterjs",
     "Project CHiP",
+    "connected home alliance",
     "virtual-devices",
-    "synthetic-devices"
+    "synthetic-devices",
+    "node-red"
   ],
   "bugs": {
     "url": "https://github.com/jpadie/node-red-virtual-matter-devices/issues"
