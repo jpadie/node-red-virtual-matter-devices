@@ -48,7 +48,7 @@ export class BaseEndpoint {
                 nodeLabel: this.name,
                 productName: this.name,
                 productLabel: this.name,
-                productId: this.node.id,
+                // productId: this.node.id,
                 serialNumber: `${node.id}`.substring(0, 32),
                 reachable: true,
                 uniqueId: this.node.id
@@ -266,6 +266,7 @@ export class BaseEndpoint {
         if (!Object.hasOwn(this.context, item) || this.context[item] == null || this.context[item] == "") {
             this.context[item] = value;
         }
+
     }
     refine(value, decimals = 0) {
         if (Object.is(value, undefined) || Object.is(value, null)) {

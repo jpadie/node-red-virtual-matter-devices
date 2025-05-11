@@ -38,12 +38,15 @@ module.exports = (RED) => {
         });
         let convertFromZ2M = (msg, send, done, i = 1) => {
             this.debug(`Z2M->Matter:  Number of gangs: ${i}`);
-            if (!Object.hasOwn(msg, "payload")) {
+            if (!Object.hasOwn(msg, "payload") && !Object.hasOwn(msg, "payload_raw")) {
                 this.debug(`Z2M->Matter:  aborting as no payload`);
                 if (done) {
                     done();
                 }
                 return;
+            }
+            if (Object.hasOwn(msg, "payload_raw")) {
+                msg.payload = msg.payload_raw;
             }
             let key;
             let value;

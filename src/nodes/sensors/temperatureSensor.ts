@@ -2,8 +2,6 @@ import type { Node } from 'node-red';
 import { BaseEndpoint } from "../base/BaseEndpoint";
 import { TemperatureSensorDevice } from "@matter/main/devices"
 
-
-
 export class temperatureSensor extends BaseEndpoint {
 
     constructor(node: Node, config: any, _name: string = "") {
@@ -16,11 +14,12 @@ export class temperatureSensor extends BaseEndpoint {
 
         this.setSerialNumber("ts-");
         this.setDefault("localTemperature", 20);
+        // console.debug(JSON.stringify(this.context, null, 4));
         this.device = TemperatureSensorDevice;
         this.attributes = {
             ...this.attributes,
             temperatureMeasurement: {
-                measuredValue: this.contextToMatter("localTemperature", this.context.temperature)
+                measuredValue: this.contextToMatter("localTemperature", this.context.localTemperature)
             }
         }
     }

@@ -16,7 +16,7 @@ class temperatureSensor extends BaseEndpoint_1.BaseEndpoint {
         this.attributes = {
             ...this.attributes,
             temperatureMeasurement: {
-                measuredValue: this.contextToMatter("localTemperature", this.context.temperature)
+                measuredValue: this.contextToMatter("localTemperature", this.context.localTemperature)
             }
         };
     }

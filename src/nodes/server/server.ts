@@ -21,6 +21,8 @@ class MatterHub {
     private deviceStorage: any;
     private shuttingDown: boolean = false;
 
+    private endPointOrder: any;
+
     private constructor() {
         this.init();
     }
@@ -50,14 +52,22 @@ class MatterHub {
         this.passcode = environment.vars.number("passcode") ?? (await this.deviceStorage.get("passcode", passcode));
         this.discriminator = environment.vars.number("discriminator") ?? (await this.deviceStorage.get("discriminator", this.randomNumber(0, 0xFFF)));
         this.id = environment.vars.string("uniqueid") ?? (await this.deviceStorage.get("uniqueid", this.getID()));
+        let eo = JSON.parse(environment.vars.string("endPointOrder") ?? (await this.deviceStorage.get("endPointOrder", null)));
+        if (!Array.isArray(eo)) {
+            this.endPointOrder = [];
+        } else {
+            this.endPointOrder = eo;
+        }
         await this.saveVars();
     }
 
     private async saveVars() {
+        this.endPointOrder = Array.from(new Set(this.endPointOrder));
         await this.deviceStorage.set({
             passcode: this.passcode,
             discriminator: this.discriminator,
-            uniqueid: this.id
+            uniqueid: this.id,
+            endPointOrder: JSON.stringify(this.endPointOrder)
         })
     }
 
@@ -116,15 +126,23 @@ class MatterHub {
         try {
             console.log(this.started)
             this.matterServer = await ServerNode.create(serverOpts);
-
             this.aggregator = new Endpoint(AggregatorEndpoint, { id: "matterHub" });
             await this.matterServer.add(this.aggregator);
 
             this.started = true;
-            for (const e in this.endpoints) {
-                this.addDevice(this.endpoints[e]);
+            let tempEndpoints = structuredClone(this.endpoints);
+            for (const ix in this.endPointOrder) {
+                if (Object.hasOwn(tempEndpoints, ix)) {
+                    await this.addDevice(tempEndpoints[ix]);
+                    delete (tempEndpoints[ix])
+                }
             }
-
+            for (const e in tempEndpoints) {
+                await this.addDevice(tempEndpoints[e]);
+                this.endPointOrder.push(e);
+                delete (tempEndpoints[e])
+            }
+            await this.saveVars();
             await this.matterServer.start();
             await this.matterServer.construction;
             setTimeout(() => {

@@ -43,7 +43,6 @@ class BaseEndpoint {
                 nodeLabel: this.name,
                 productName: this.name,
                 productLabel: this.name,
-                productId: this.node.id,
                 serialNumber: `${node.id}`.substring(0, 32),
                 reachable: true,
                 uniqueId: this.node.id

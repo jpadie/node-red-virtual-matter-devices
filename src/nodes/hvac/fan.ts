@@ -13,6 +13,7 @@ export class fan extends BaseEndpoint {
         super(node, config, name);
 
 
+
         this.mapping = {   //must be a 1 : 1 mapping
             fanMode: {
                 fanControl: "fanMode", multiplier: 1, unit: "",
@@ -144,17 +145,18 @@ export class fan extends BaseEndpoint {
             this.features.push(FanControl.Feature.MultiSpeed);
             this.setDefault("speedCurrent", 0);
             this.attributes.fanControl.speedCurrent = this.context.speedCurrent;
-
             this.setDefault("speedMax", 100);
             this.attributes.fanControl.speedMax = this.context.speedMax;
+            this.attributes.fanControl.fanModeSequence = FanControl.FanModeSequence.OffLowMedHigh;
 
         } else {
             this.prune("speedCurrent");
             this.prune("speedSetting");
             this.prune("speedMax");
+            this.attributes.fanControl.fanModeSequence = FanControl.FanModeSequence.OffHigh;
         }
 
-        this.attributes.fanControl.fanModeSequence = FanControl.FanModeSequence.OffLowMedHigh;
+
 
         this.setDefault("fanMode", FanControl.FanMode.Off);
 
@@ -173,7 +175,7 @@ export class fan extends BaseEndpoint {
     override getVerbose(item, value) {
         switch (item) {
             case "fanMode":
-                return (Object.keys(FanControl.FanMode)[Object.values(FanControl.FanMode).indexOf(value)]) || value;
+                return this.getEnumKeyByEnumValue(FanControl.FanMode, value) || value; //)[Object.values(FanControl.FanMode).indexOf(value)]) || value;
                 break;
             case "rockUpDown":
             case "rockLeftRight":
@@ -183,7 +185,7 @@ export class fan extends BaseEndpoint {
                 return (value) ? "ON" : "OFF";
                 break;
             case "airFlow":
-                return (Object.keys(FanControl.AirflowDirection)[Object.values(FanControl.AirflowDirection).indexOf(value)]) || value;
+                return this.getEnumKeyByEnumValue(FanControl.AirflowDirection, value) || value; //(Object.keys(FanControl.AirflowDirection)[Object.values(FanControl.AirflowDirection).indexOf(value)]) || value;
                 break;
             default:
                 return value;

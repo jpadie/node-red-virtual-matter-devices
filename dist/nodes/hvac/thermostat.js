@@ -47,6 +47,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         this.setSerialNumber("tstat-");
         let a = {};
         this.setDefault("localTemperature", 20);
+        console.debug(this.context);
         a.localTemperature = this.context.localTemperature * 100;
         a.remoteSensing = {
             localTemperature: true,
@@ -109,7 +110,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         if (this.config.supportsHeating) {
             a.absMinHeatSetpointLimit = clusters_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600;
             a.minHeatSetpointLimit = a.absMinHeatSetpointLimit;
-            a.absMaxHeatSetpointLimit = this.context("maxHeatSetpointLimit");
+            a.absMaxHeatSetpointLimit = this.context.maxHeatSetpointLimit;
             a.maxHeatSetpointLimit = a.absMaxHeatSetpointLimit;
             this.setDefault("occupiedHeatingSetpoint", 19);
             a.occupiedHeatingSetpoint = this.context.occupiedHeatingSetpoint * 100;

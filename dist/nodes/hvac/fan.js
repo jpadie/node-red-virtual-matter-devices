@@ -136,13 +136,14 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
             this.attributes.fanControl.speedCurrent = this.context.speedCurrent;
             this.setDefault("speedMax", 100);
             this.attributes.fanControl.speedMax = this.context.speedMax;
+            this.attributes.fanControl.fanModeSequence = clusters_1.FanControl.FanModeSequence.OffLowMedHigh;
         }
         else {
             this.prune("speedCurrent");
             this.prune("speedSetting");
             this.prune("speedMax");
+            this.attributes.fanControl.fanModeSequence = clusters_1.FanControl.FanModeSequence.OffHigh;
         }
-        this.attributes.fanControl.fanModeSequence = clusters_1.FanControl.FanModeSequence.OffLowMedHigh;
         this.setDefault("fanMode", clusters_1.FanControl.FanMode.Off);
         this.attributes.fanControl.fanMode = this.context.fanMode;
         this.setDefault("percentCurrent", 0);
@@ -154,7 +155,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
     getVerbose(item, value) {
         switch (item) {
             case "fanMode":
-                return (Object.keys(clusters_1.FanControl.FanMode)[Object.values(clusters_1.FanControl.FanMode).indexOf(value)]) || value;
+                return this.getEnumKeyByEnumValue(clusters_1.FanControl.FanMode, value) || value;
                 break;
             case "rockUpDown":
             case "rockLeftRight":
@@ -164,7 +165,7 @@ class fan extends BaseEndpoint_1.BaseEndpoint {
                 return (value) ? "ON" : "OFF";
                 break;
             case "airFlow":
-                return (Object.keys(clusters_1.FanControl.AirflowDirection)[Object.values(clusters_1.FanControl.AirflowDirection).indexOf(value)]) || value;
+                return this.getEnumKeyByEnumValue(clusters_1.FanControl.AirflowDirection, value) || value;
                 break;
             default:
                 return value;

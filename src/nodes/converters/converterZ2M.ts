@@ -49,7 +49,7 @@ module.exports = (RED: NodeAPI): void => {
                 }
                 return;
             }
-            let tmpMsg = msg;
+            //  let tmpMsg = msg;
             if (Object.hasOwn(msg, "payload_raw")) {
                 msg.payload = msg.payload_raw;
             }
