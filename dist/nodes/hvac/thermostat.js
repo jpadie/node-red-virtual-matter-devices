@@ -9,6 +9,21 @@ const behaviors_2 = require("@matter/main/behaviors");
 const BaseEndpoint_1 = require("../base/BaseEndpoint");
 class thermostat extends BaseEndpoint_1.BaseEndpoint {
     heating_coolingState = 1;
+    setDefault(item, value) {
+        super.setDefault(item, value);
+        let v = this.context[item];
+        if (item.includes("Setpoint")) {
+            if (item.includes("Heat")) {
+                v = Math.max(v, this.context.minHeatSetpointLimit);
+                v = Math.min(v, this.context.maxHeatSetpointLimit);
+            }
+            else if (item.includes("Cool")) {
+                v = Math.max(v, this.context.minCoolSetpointLimit);
+                v = Math.min(v, this.context.maxCoolSetpointLimit);
+            }
+            this.context[item] = v;
+        }
+    }
     constructor(node, config, _name = "") {
         let name = _name || config.name || "Thermostat";
         super(node, config, name);
@@ -25,7 +40,14 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             unoccupiedSetback: { thermostat: "unoccupiedSetback", multiplier: 10, unit: "C" },
             humidity: { relativeHumidityMeasurement: "measuredValue", multiplier: 100, unit: "%" },
             outdoorTemperature: { thermostat: "outdoorTemperature", multiplier: 100, unit: "C" },
-            maxHeatSetpointLimit: { thermostat: "maxHeatSetpointLimit", multiplier: 100, unit: "C" },
+            minHeatSetpointLimit: { thermostat: "minHeatSetpointLimit", multiplier: 100, unit: "C", min: 18, max: 30 },
+            maxHeatSetpointLimit: { thermostat: "maxHeatSetpointLimit", multiplier: 100, unit: "C", min: 18, max: 30 },
+            minCoolSetpointLimit: { thermostat: "minCoolSetpointLimit", multiplier: 100, unit: "C", min: 15, max: 30 },
+            maxCoolSetpointLimit: { thermostat: "maxCoolSetpointLimit", multiplier: 100, unit: "C", min: 15, max: 30 },
+            absMinHeatSetpointLimit: { thermostat: "absMinHeatSetpointLimit", multiplier: 100, unit: "C", min: 18, max: 30 },
+            absMaxHeatSetpointLimit: { thermostat: "absMaxHeatSetpointLimit", multiplier: 100, unit: "C", min: 18, max: 30 },
+            absMinCoolSetpointLimit: { thermostat: "absMinCoolSetpointLimit", multiplier: 100, unit: "C", min: 15, max: 30 },
+            absMaxCoolSetpointLimit: { thermostat: "absMaxCoolSetpointLimit", multiplier: 100, unit: "C", min: 15, max: 30 },
         };
         for (const i in this.mapping) {
             switch (i) {
@@ -64,7 +86,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         a.systemMode = this.context.systemMode;
         if (this.config.supportsOutdoorTemperature) {
             this.setDefault("outdoorTemperature", 15);
-            a.outdoorTemperature = this.context.outdoorTemperature * 100;
+            a.outdoorTemperature = this.contextToMatter("outdoorTemperature", this.context.outdoorTemperature);
         }
         else {
             this.prune("outdoorTemperature");
@@ -81,20 +103,22 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
             a.unoccupiedSetbackMax = (clusters_1.Thermostat.SetbackAndOccupancyComponent.attributes.unoccupiedSetbackMax.default || 20) * 10;
             if (this.config.supportsCooling) {
                 this.setDefault("unoccupiedCoolingSetpoint", 25);
-                a.unoccupiedCoolingSetpoint = this.context.unoccupiedCoolingSetpoint * 100;
+                a.unoccupiedCoolingSetpoint = this.contextToMatter("unoccupiedCoolingSetpoint", this.context.unoccupiedCoolingSetpoint);
             }
             else {
                 this.prune('unoccupiedCoolingSetpoint');
             }
             if (this.config.supportsHeating) {
                 this.setDefault("unoccupiedHeatingSetpoint", 19);
-                a.unoccupiedHeatingSetpoint = this.context.unoccupiedHeatingSetpoint * 100;
+                a.unoccupiedHeatingSetpoint =
+                    this.contextToMatter("unoccupiedHeatingSetpoint", this.context.unoccupiedHeatingSetpoint);
+                ;
             }
             else {
                 this.prune("unoccupiedHeatingSetpoint");
             }
             this.setDefault("unoccupiedSetback", 3);
-            a.unoccupiedSetback = this.context.unoccupiedSetback * 10;
+            a.unoccupiedSetback = this.contextToMatter("unoccupiedSetback", this.context.unoccupiedSetback);
         }
         else {
             this.prune("occupied");
@@ -105,32 +129,33 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         a.occupiedSetbackMin = 0;
         a.occupiedSetbackMax = (clusters_1.Thermostat.SetbackComponent.attributes.occupiedSetbackMax.default || 5) * 10;
         this.setDefault("occupiedSetback", 1);
-        a.occupiedSetback = this.context.occupiedSetback * 10;
-        this.setDefault("maxHeatSetpointLimit", clusters_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000);
+        a.occupiedSetback = this.contextToMatter("occupiedSetback", this.context.occupiedSetback);
+        this.setDefault("maxHeatSetpointLimit", this.matterToContext("maxHeatSetpointLimit", clusters_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000));
+        this.setDefault("minHeatSetpointLimit", this.matterToContext("minHeatSetpointLimit", clusters_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600));
+        this.setDefault("absMaxHeatSetpointLimit", this.matterToContext("absMaxHeatSetpointLimit", clusters_1.Thermostat.HeatingComponent.attributes.absMaxHeatSetpointLimit.default || 3000));
+        this.setDefault("absMinHeatSetpointLimit", this.matterToContext("absMinHeatSetpointLimit", clusters_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600));
+        this.setDefault("occupiedHeatingSetpoint", 19);
+        const heatingItems = ['occupiedHeatingSetpoint', 'absMinHeatSetpointLimit', 'minHeatSetpointLimit', 'absMaxHeatSetpointLimit', 'maxHeatSetpointLimit'];
         if (this.config.supportsHeating) {
-            a.absMinHeatSetpointLimit = clusters_1.Thermostat.HeatingComponent.attributes.absMinHeatSetpointLimit.default || 600;
-            a.minHeatSetpointLimit = a.absMinHeatSetpointLimit;
-            a.absMaxHeatSetpointLimit = this.context.maxHeatSetpointLimit;
-            a.maxHeatSetpointLimit = a.absMaxHeatSetpointLimit;
-            this.setDefault("occupiedHeatingSetpoint", 19);
-            a.occupiedHeatingSetpoint = this.context.occupiedHeatingSetpoint * 100;
+            heatingItems.forEach((value) => {
+                a[value] = this.contextToMatter(value, this.context[value]);
+            });
         }
         else {
             this.prune("occupiedHeatingSetpoint");
             this.prune("unoccupiedHeatingSetpoint");
         }
-        if (this.config.supportsCooling) {
-            a.absMinCoolSetpointLimit = clusters_1.Thermostat.CoolingComponent.attributes.absMinCoolSetpointLimit.default || 1600;
-            a.minCoolSetpointLimit = a.absMinCoolSetpointLimit;
-            a.absMaxCoolSetpointLimit = clusters_1.Thermostat.CoolingComponent.attributes.absMaxCoolSetpointLimit.default || 3000;
-            a.maxCoolSetpointLimit = a.absMaxCoolSetpointLimit;
-            this.setDefault("occupiedCoolingSetpoint", 23);
-            a.occupiedCoolingSetpoint = this.context.occupiedCoolingSetpoint * 100;
-        }
-        else {
-            this.prune('occupiedCoolingSetpoint');
-            this.prune('unoccupiedCoolingSetpoint');
-        }
+        const coolingItems = ['occupiedCoolingSetpoint', 'absMinCoolSetpointLimit', 'minCoolSetpointLimit', 'absMaxCoolSetpointLimit', 'maxCoolSetpointLimit'];
+        coolingItems.forEach((value) => {
+            const threshold = value.includes("min") ? 10 : 30;
+            this.setDefault(value, this.matterToContext(value, clusters_1.Thermostat.CoolingComponent.attributes[value].default || threshold));
+            if (this.config.supportsCooling) {
+                a[value] = this.contextToMatter(value, this.context[value]);
+            }
+            else {
+                this.prune(value);
+            }
+        });
         if (this.config.supportsHeating) {
             if (this.config.supportsCooling) {
                 a.controlSequenceOfOperation = clusters_1.Thermostat.ControlSequenceOfOperation.CoolingAndHeating;
@@ -145,7 +170,7 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
         if (this.config.supportsHumidity) {
             this.setDefault("humidity", 50);
             a.relativeHumidity = {
-                measuredValue: this.context.humidity * 100
+                measuredValue: this.contextToMatter("humidity", this.context.humidity)
             };
         }
         else {
@@ -196,29 +221,40 @@ class thermostat extends BaseEndpoint_1.BaseEndpoint {
     regularUpdate() {
         if (this.config.regularUpdates) {
             setInterval(() => {
-                let update = {};
-                for (const item in this.context) {
-                    let value = this.getVerbose(item, this.context[item]);
-                    if (value != this.context[item]) {
-                        update[`${item}_in_words`] = value;
-                    }
-                }
-                let onOff = this.deriveOnOff();
-                this.node.send([{
-                        payload: { ...this.context, ...update },
-                        topic: "regular update"
-                    }, {
-                        payload: {
-                            onOffBoolean: onOff,
-                            onOff: onOff ? "on" : "off"
-                        }
-                    }]);
+                this.sendUpdate();
             }, this.config.telemetryInterval * 1000);
         }
     }
-    listenForChange_postProcess() {
+    sendUpdate() {
+        let update = {};
+        for (const item in this.context) {
+            let value = this.getVerbose(item, this.context[item]);
+            if (value != this.context[item]) {
+                update[`${item}_in_words`] = value;
+            }
+        }
         let onOff = this.deriveOnOff();
-        this.node.send([null, { payload: { onOff: onOff ? "on" : "off", onOffBoolean: onOff ? true : false } }]);
+        this.node.send([{
+                payload: {
+                    ...this.context,
+                    ...update,
+                    ...{
+                        onOffBoolean: onOff,
+                        onOff: onOff ? "on" : "off",
+                        name: this.name
+                    }
+                },
+                topic: "regular update"
+            }, {
+                payload: {
+                    name: this.name,
+                    onOffBoolean: onOff,
+                    onOff: onOff ? "on" : "off"
+                }
+            }]);
+    }
+    listenForChange_postProcess() {
+        this.sendUpdate();
     }
     deriveOnOff() {
         let ret = false;

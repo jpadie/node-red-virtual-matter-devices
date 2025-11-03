@@ -1,3 +1,6 @@
+# Temporary local utilities
+scripts/dev-deploy-10.5.10.90.sh
+
 node_modules/
 .vscode
 package.lock.json

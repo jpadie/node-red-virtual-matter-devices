@@ -9,6 +9,7 @@
             },
             name: { value: "" },
             lightType: { value: "colorLight" },
+            supportsColorTemperature: { value: 0 },
             regularUpdates: { value: 0 },
             telemetryInterval: { value: 60 },
             passThroughMessage: { value: 0 }
@@ -94,6 +95,17 @@
             });
 
             $("#node-input-telemetryInterval").typedInput("width", `${5 * fsRoot}px`)
+
+            const toggleCtRow = () => {
+                const lt = $("#node-input-lightType").val();
+                if (lt === 'colorLight') {
+                    $("#ct-row").removeClass('hidden');
+                } else {
+                    $("#ct-row").addClass('hidden');
+                }
+            };
+            $("#node-input-lightType").on('change', toggleCtRow);
+            toggleCtRow();
         },
         oneditsave: function () {
             for (const item of booleanNodes) {
@@ -169,6 +181,10 @@
                 </select>
             </div>
         </div>
+        <div class="form-row hidden" id="ct-row">
+            <label for="node-input-supportsColorTemperature">Color temperature</label>
+            <input type="checkbox" id="node-input-supportsColorTemperature" value="1" />
+        </div>
     </fieldset>
     <fieldset class="matter">
         <legend>Regular Updates</legend>
@@ -204,21 +220,30 @@
 <script type="text/html" data-help-name="matter-light">
     <p>This node provides a synthetic light for matter controllers</p>
     <h2>Input</h2>
-    <p>An input will send an update to Matter to change the light's state. e.g. its colour, dimmer level or on-off state.</p>    
+    <p>An input will send an update to Matter to change the light's state. e.g. its colour, colour temperature, dimmer level or on-off state.</p>    
 		<h3>Example input msg</h3>
 		<div>
 <pre>
 msg.payload = {
-	onoff: true,
-    brightness: 50,
-    color: {
-        x: value,
-        y, value
+    onoff: true,
+    brightness: 50,          // percent (0-100)
+    color: {                 // either HSV or XY
+        hue: 38,             // degrees (0-360)
+        saturation: 100      // percent (0-100)
+        // OR
+        // x: 0.5,
+        // y: 0.4
     }
 }
+
+// Color Temperature (alternative to color)
+msg.payload = {
+    colorTemperatureMireds: 370 // typical range 100-1000 mireds
+}
 </pre>
-        <p>color values as XY and as HS {hue: value, saturation: value} are supported. Value limits are 0 - 254</p>
-        <p>brightness should be a value in percent.</p>
+        <p>Color can be specified as XY or HS {hue, saturation}. Internally these map to Matter attributes.</p>
+        <p>Brightness is percent (0-100). Hue and saturation are scaled to valid Matter ranges.</p>
+        <p>Color temperature is provided as <code>colorTemperatureMireds</code> (approx 100-1000). Using CT switches the light into CT mode.</p>
 		</div>
 		
         <h3>Output</h3>
@@ -231,9 +256,11 @@ msg.payload = {
         <p>The name of the node will be sent to the controller (e.g. Alexa). This should make it easier to identify the device in your controller app.  NB not all controllers support this.</p>
 		<h3>Notes</h3>
 		<div>
-		<ul>
+        <ul>
 		<li>If properties are provided that are not in the list above, they will be ignored.</li>
 		<li>You do not need to provide all the properties on each input; only those provided will be taken into account.</li>
+        <li>When sending hue/saturation changes together, they are applied atomically. If using a converter, it will coalesce HS updates.</li>
+        <li>When using colorTemperatureMireds, hue/saturation and XY are ignored for that update.</li>
 		</ul>
 		</div>
 

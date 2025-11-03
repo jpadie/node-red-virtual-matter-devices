@@ -1,0 +1,224 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matter-plant', {
+        category: 'matter',
+        defaults: {
+            serverNode: {
+                value: "",
+                type: "matter-hub"
+            },
+            name: { value: "" },
+            plantConfig: {
+                value: "",
+                type: "plant-config"
+            },
+            minOnTime: { value: 300 },
+            minOffTime: { value: 300 },
+            changeoverDelay: { value: 300 }
+        },
+        inputs: 1,
+        outputs: 1,
+        color: "#ff711f",
+        label: function () {
+            if (this.name && this.name != "") {
+                return this.name;
+            }
+            return "Plant Controller";
+        },
+        paletteLabel: "Plant",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+
+        oneditsave: function () {
+            this.minOnTime = parseInt($("#node-input-minOnTime").val());
+            this.minOffTime = parseInt($("#node-input-minOffTime").val());
+            this.changeoverDelay = parseInt($("#node-input-changeoverDelay").val());
+        },
+
+        oneditprepare: function () {
+            let node = this;
+
+            $(document).ready(() => {
+                // Plant Config selector
+                $("#node-input-plantConfig").typedInput({
+                    type: "plant-config",
+                    types: ["plant-config"]
+                });
+
+                // Numeric inputs
+                $(".hasType").each((index, elem) => {
+                    let l = $(elem).find("label:first");
+                    let id = l.attr("for");
+                    $("#" + id).typedInput({
+                        type: "num",
+                        types: ["num"],
+                        typeField: "#" + id + "-type"
+                    })
+                });
+
+                // Update plant status display
+                let updateStatus = () => {
+                    let configNode = RED.nodes.getNode(node.plantConfig);
+                    if (configNode) {
+                        let state = configNode.getState();
+                        $("#plant-status").html(`
+                            <strong>Current Mode:</strong> ${state.plantMode}<br>
+                            <strong>Lockout:</strong> ${state.lockout ? 'Yes' : 'No'}<br>
+                            <strong>Changeover Delay:</strong> ${state.changeoverDelaySec}s
+                        `);
+                    } else {
+                        $("#plant-status").html("<em>No Plant Config selected</em>");
+                    }
+                };
+
+                // Update status on config change
+                $("#node-input-plantConfig").on("change", updateStatus);
+                updateStatus();
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matter-plant">
+    <style>
+        fieldset.matter div.form-row{
+            clear:both;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        fieldset.matter div.form-row label {
+            width: 9rem !important;
+            display: inline-block;
+            vertical-align:middle
+        }
+        fieldset.matter div.form-row div.fR{
+            margin-left: 1rem;
+            min-width: 15rem;
+            width: fit-content;
+            max-width: 55%;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        fieldset.matter .hidden{
+            display: none !important;
+        }
+        .plant-status {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 3px;
+        }
+    </style>
+
+    <fieldset class="matter hidden">
+        <div class="form-row">
+            <label for="node-input-serverNode">Hub</label>
+            <input type="text" id="node-input-serverNode" placeholder="server node" />
+        </div>
+    </fieldset>
+    
+    <fieldset class="matter">
+        <legend>Plant Configuration</legend>
+        <div class="form-row">
+            <label for="node-input-plantConfig">Plant Config</label>
+            <div class="fR">
+                <input type="text" id="node-input-plantConfig" placeholder="Select Plant Config" />
+            </div>
+        </div>
+        
+        <div class="plant-status" id="plant-status">
+            <em>No Plant Config selected</em>
+        </div>
+    </fieldset>
+
+    <fieldset class="matter">
+        <legend>Timing Settings</legend>
+        <div class="form-row hasType">
+            <label for="node-input-minOnTime">Min On Time (secs)</label>
+            <div class="fR">
+                <input type="text" id="node-input-minOnTime" placeholder="300" />
+            </div>
+        </div>
+        
+        <div class="form-row hasType">
+            <label for="node-input-minOffTime">Min Off Time (secs)</label>
+            <div class="fR">
+                <input type="text" id="node-input-minOffTime" placeholder="300" />
+            </div>
+        </div>
+        
+        <div class="form-row hasType">
+            <label for="node-input-changeoverDelay">Changeover Delay (secs)</label>
+            <div class="fR">
+                <input type="text" id="node-input-changeoverDelay" placeholder="300" />
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="matter">
+        <legend>Name</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <div class="fR">
+                <input type="text" id="node-input-name" placeholder="Plant Controller" />
+            </div>
+        </div>
+    </fieldset>
+</script>
+
+<script type="text/html" data-help-name="matter-plant">
+    <p>This node controls a central heating/cooling plant and coordinates with slave thermostats.</p>
+    
+    <h2>Input</h2>
+    <p>Send commands via <code>msg.payload</code> to control the plant:</p>
+    <dl>
+        <dt>plantMode (string)</dt>
+        <dd>Set plant mode: "heat", "cool", or "off"</dd>
+        
+        <dt>lockout (boolean)</dt>
+        <dd>Enable/disable plant lockout (prevents all operation)</dd>
+        
+        <dt>changeoverDelaySec (number)</dt>
+        <dd>Set changeover delay in seconds</dd>
+    </dl>
+
+    <h3>Example input msg</h3>
+    <div>
+<pre>
+msg.payload = {
+    plantMode: "heat"
+}
+</pre>
+    </div>
+
+    <h2>Output</h2>
+    <p>Emits plant state changes and status updates. Typical <code>msg.payload</code> fields:</p>
+    <ul>
+        <li><strong>plantMode</strong>: "heat", "cool", or "off"</li>
+        <li><strong>lockout</strong>: true/false</li>
+        <li><strong>changeoverDelaySec</strong>: delay in seconds</li>
+        <li><strong>lastChanged</strong>: ISO timestamp</li>
+        <li><strong>messageSource</strong>: "Plant"</li>
+    </ul>
+
+    <h3>Example output msg</h3>
+    <div>
+<pre>
+msg.payload = {
+    plantMode: "heat",
+    lockout: false,
+    changeoverDelaySec: 300,
+    lastChanged: "2025-09-16T12:34:56.789Z",
+    messageSource: "Plant"
+}
+</pre>
+    </div>
+
+    <h2>Notes</h2>
+    <ul>
+        <li>Requires a Plant Config node to be configured.</li>
+        <li>Enforces minimum on/off times and changeover delays to protect equipment.</li>
+        <li>Coordinates with slave thermostats that reference the same Plant Config.</li>
+        <li>Standalone thermostats are unaffected by plant state.</li>
+    </ul>
+</script>

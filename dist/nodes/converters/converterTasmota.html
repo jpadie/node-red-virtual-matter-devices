@@ -1,0 +1,188 @@
+<script type="text/javascript">
+    RED.nodes.registerType("matter2Tasmota", {
+        category: 'matter',
+        inputs: 1,
+        outputs: 1,
+        defaults: {
+            name: { value: "" },
+            direction: { value: "toTasmota" },
+            transport: { value: "mqtt" },
+            deviceTopic: { value: "DEVICE", required: true },
+            fullTopic: { value: "%prefix%/%topic%/" },
+            host: { value: "" },
+            port: { value: 80 },
+            httpUser: { value: "" },
+            httpPassword: { value: "" },
+            useBacklog: { value: false }
+        },
+        label: function () {
+            if (this.direction === "toTasmota") {
+                return this.name || "Matter -> Tasmota";
+            } else {
+                return this.name || "Tasmota -> Matter";
+            }
+        },
+        color: "#1FADFF",
+        paletteLabel: "Tasmota Converter",
+        icon: "matter-icon-seeklogo.svg",
+        align: "left",
+        oneditprepare: function () {
+            const $transport = $("#node-input-transport");
+            const toggleHttp = () => {
+                const isHttp = $transport.val() === 'http';
+                $(".row-http").toggle(isHttp);
+                $(".row-mqtt").toggle(!isHttp);
+            };
+            $transport.on('change', toggleHttp);
+            toggleHttp();
+
+            $("#tasmota-detect").on('click', async () => {
+                const host = $("#node-input-host").val();
+                const port = $("#node-input-port").val();
+                const user = $("#node-input-httpUser").val();
+                const password = $("#node-input-httpPassword").val();
+                if (!host) { RED.notify("Host is required for detection", "error"); return; }
+                try {
+                    const url = `/matter2Tasmota/discover?host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}&user=${encodeURIComponent(user)}&password=${encodeURIComponent(password)}`;
+                    const result = await $.getJSON(url);
+                    if (result && result.ok) {
+                        if (result.topic) $("#node-input-deviceTopic").val(result.topic);
+                        if (result.fullTopic) $("#node-input-fullTopic").val(result.fullTopic);
+                        RED.notify("Detected Tasmota MQTT settings", "success");
+                    } else {
+                        RED.notify(`Detection failed: ${result && result.error ? result.error : 'unknown error'}`, "error");
+                    }
+                } catch (e) {
+                    try {
+                        const xhr = e && e.responseText ? e : null;
+                        if (xhr) {
+                            const txt = xhr.responseText;
+                            try { const j = JSON.parse(txt); RED.notify(`Detection error: ${j.error || txt}`, "error"); }
+                            catch { RED.notify(`Detection error: ${txt}`, "error"); }
+                        } else {
+                            RED.notify(`Detection error: ${e}`, "error");
+                        }
+                    } catch {
+                        RED.notify("Detection error", "error");
+                    }
+                }
+            });
+
+            $("#fulltopic-preset").on('change', () => {
+                const v = $("#fulltopic-preset").val();
+                if (v) $("#node-input-fullTopic").val(v);
+            });
+        },
+        oneditsave: function () {
+            // outputs remain 1
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matter2Tasmota">
+    <style>
+        fieldset.matter div.form-row{ clear:both; padding: .25rem 0; }
+        fieldset.matter div.form-row label{ width: 9rem !important; display:inline-block; vertical-align:middle }
+        fieldset.matter div.form-row .fR{ margin-left:1rem; min-width:15rem; width:fit-content; max-width:55%; display:inline-block; vertical-align:middle }
+    </style>
+
+    <fieldset class="matter">
+        <legend>Conversion</legend>
+        <div class="form-row">
+            <label for="node-input-direction">Direction</label>
+            <div class="fR">
+                <select id="node-input-direction">
+                    <option value="fromTasmota">Tasmota -> Matter</option>
+                    <option value="toTasmota">Matter -> Tasmota</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-transport">Transport</label>
+            <div class="fR">
+                <select id="node-input-transport">
+                    <option value="mqtt">MQTT (topics)</option>
+                    <option value="http">HTTP (local device)</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row row-mqtt">
+            <label for="node-input-deviceTopic">Device topic</label>
+            <div class="fR">
+                <input type="text" id="node-input-deviceTopic" placeholder="e.g. LAMP"/>
+            </div>
+        </div>
+        <div class="form-row row-mqtt">
+            <label for="node-input-fullTopic">FullTopic</label>
+            <div class="fR">
+                <input type="text" id="node-input-fullTopic" placeholder="%prefix%/%topic%/"/>
+                <select id="fulltopic-preset" style="margin-left:.5rem">
+                    <option value="">preset…</option>
+                    <option value="%prefix%/%topic%/">%prefix%/%topic%/</option>
+                    <option value="%topic%/%prefix%/">%topic%/%prefix%/</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row row-http">
+            <label for="node-input-host">Host/IP</label>
+            <div class="fR">
+                <input type="text" id="node-input-host" placeholder="e.g. 192.168.1.50"/>
+            </div>
+        </div>
+        <div class="form-row row-http">
+            <label for="node-input-port">Port</label>
+            <div class="fR">
+                <input type="number" id="node-input-port" min="1" max="65535"/>
+            </div>
+        </div>
+        <div class="form-row row-http">
+            <label for="node-input-httpUser">HTTP user</label>
+            <div class="fR">
+                <input type="text" id="node-input-httpUser"/>
+            </div>
+        </div>
+        <div class="form-row row-http">
+            <label for="node-input-httpPassword">HTTP password</label>
+            <div class="fR">
+                <input type="password" id="node-input-httpPassword"/>
+                <button type="button" class="red-ui-button" id="tasmota-detect" style="margin-left:.5rem">Refresh (Auto-detect)</button>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="node-input-useBacklog">Use Backlog</label>
+            <div class="fR">
+                <input type="checkbox" id="node-input-useBacklog"/>
+            </div>
+        </div>
+        <div class="form-row row-http">
+            <label for="node-input-httpPoll">HTTP polling</label>
+            <div class="fR">
+                <input type="checkbox" id="node-input-httpPoll"/>
+            </div>
+        </div>
+        <div class="form-row row-http">
+            <label for="node-input-httpPollIntervalMs">Poll interval (ms)</label>
+            <div class="fR">
+                <input type="number" id="node-input-httpPollIntervalMs" min="200" step="100"/>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="matter">
+        <legend>Basic Info</legend>
+        <div class="form-row">
+            <label for="node-input-name">Name</label>
+            <input type="text" id="node-input-name">
+        </div>
+    </fieldset>
+</script>
+
+<script type="text/html" data-help-name="matter2Tasmota">
+    <p>Convert between Matter and Tasmota payloads over MQTT or HTTP.</p>
+    <p>MQTT: configure <code>deviceTopic</code> and <code>FullTopic</code> (supports %prefix% and %topic%).</p>
+    <p>HTTP: configure Host/Port/User/Password; node outputs a msg with <code>url</code>/<code>method</code> for an HTTP Request node.</p>
+    <p><b>Refresh</b> uses the device HTTP API (Status 6/5) to auto-detect MQTT settings and MAC.</p>
+    <p>When <b>Use Backlog</b> is enabled, multiple commands (POWER, Dimmer, HSBColor, CT) are grouped into a single <code>Backlog</code> command, optionally including transition parameters.</p>
+</script>
+
+

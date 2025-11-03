@@ -8,6 +8,7 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
     constructor(node, config, _name = '') {
         let name = config.name || _name || "Color Light";
         super(node, config, name);
+        const supportsCT = !!this.config.supportsColorTemperature;
         this.attributes = {
             ...this.attributes,
             colorControl: {
@@ -15,29 +16,48 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
                 options: {
                     executeIfOff: true,
                 },
+                colorMode: 1,
                 colorCapabilities: {
                     hueSaturation: true,
                     xy: true,
                     enhancedHue: true,
                     colorLoop: false,
-                    colorTemperature: false
+                    colorTemperature: supportsCT
                 },
             }
         };
+        if (supportsCT) {
+            Object.assign(this.attributes.colorControl, {
+                colorTemperatureMireds: 370,
+                colorTempPhysicalMinMireds: 140,
+                colorTempPhysicalMaxMireds: 666,
+                coupleColorTempToLevelMinMireds: 140,
+                startUpColorTemperatureMireds: 370,
+            });
+        }
         this.mapping = {
             ...this.mapping,
             colorX: { colorControl: "currentX", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
             colorY: { colorControl: "currentY", multiplier: 65536, unit: "", min: 0, max: 0xFEFF, matter: { valueType: "int" }, context: { valueType: "float", valueDecimals: 3 } },
             hue: { colorControl: "currentHue", multiplier: 254 / 360, unit: "deg", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } },
-            saturation: { colorControl: "currentSaturation", multiplier: 255 / 100, unit: "%", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } }
+            saturation: { colorControl: "currentSaturation", multiplier: 254 / 100, unit: "%", min: 0, max: 254, matter: { valueType: "int" }, context: { valueType: "int" } }
         };
+        if (supportsCT) {
+            this.mapping = {
+                ...this.mapping,
+                colorTemperatureMireds: { colorControl: "colorTemperatureMireds", multiplier: 1, unit: "mireds", min: 140, max: 666, matter: { valueType: "int" }, context: { valueType: "int" } }
+            };
+        }
         this.attributes.bridgedDeviceBasicInformation.serialNumber = `clLt-${this.node.id}`.substring(0, 32);
         this.setDefault("hue", 0);
         this.setDefault("saturation", 0);
         this.setDefault("colorX", 0);
         this.setDefault("colorY", 0);
         this.setDefault("colorSpace", "xyY");
-        this.withs.push(behaviors_1.ColorControlServer.with("EnhancedHue", "Xy", "HueSaturation"));
+        const features = ["EnhancedHue", "Xy", "HueSaturation"];
+        if (supportsCT)
+            features.push("ColorTemperature");
+        this.withs.push(behaviors_1.ColorControlServer.with(...features));
     }
     convertHSVtoXY(hue, saturation, brightness) {
         let { r, g, b } = this.convertHSVtoRGB(hue, saturation, brightness);
@@ -192,6 +212,16 @@ class colorLight extends dimmableLight_js_1.dimmableLight {
                 delete b.saturation;
                 if (this.context.colorSpace != "xyY") {
                     this.context.colorSpace = "xyY";
+                    this.saveContext();
+                }
+            }
+            else if (Object.hasOwn(b, "colorTemperatureMireds")) {
+                delete b.hue;
+                delete b.saturation;
+                delete b.colorX;
+                delete b.colorY;
+                if (this.context.colorSpace != "ct") {
+                    this.context.colorSpace = "ct";
                     this.saveContext();
                 }
             }

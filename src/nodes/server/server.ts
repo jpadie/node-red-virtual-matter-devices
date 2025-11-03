@@ -130,17 +130,17 @@ class MatterHub {
             await this.matterServer.add(this.aggregator);
 
             this.started = true;
-            let tempEndpoints = structuredClone(this.endpoints);
-            for (const ix in this.endPointOrder) {
-                if (Object.hasOwn(tempEndpoints, ix)) {
-                    await this.addDevice(tempEndpoints[ix]);
-                    delete (tempEndpoints[ix])
+            let tempEndpoints = { ...this.endpoints };
+            for (const id of this.endPointOrder) {
+                if (Object.hasOwn(tempEndpoints, id)) {
+                    await this.addDevice(tempEndpoints[id]);
+                    delete (tempEndpoints[id])
                 }
             }
-            for (const e in tempEndpoints) {
-                await this.addDevice(tempEndpoints[e]);
-                this.endPointOrder.push(e);
-                delete (tempEndpoints[e])
+            for (const id in tempEndpoints) {
+                await this.addDevice(tempEndpoints[id]);
+                this.endPointOrder.push(id);
+                delete (tempEndpoints[id])
             }
             await this.saveVars();
             await this.matterServer.start();

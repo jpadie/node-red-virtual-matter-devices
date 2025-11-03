@@ -35,7 +35,7 @@ export class BaseEndpoint {
                 this.config[item] = +this.config[item];
             }
         }
-        if (!Object.hasOwn(this.config, "telemetryInterval") || this.config.telemetryInterval < 60) {
+        if (!Object.hasOwn(this.config, "telemetryInterval") || this.config.telemetryInterval < 10) {
             this.config.telemetryInterval = 60;
         }
         this.Context = node.context();
@@ -134,6 +134,7 @@ export class BaseEndpoint {
                         update[`${item}_in_words`] = value;
                     }
                 }
+                update['name'] = this.name;
                 this.node.send({
                     payload: { ...this.context, ...update },
                     topic: "regular update"
@@ -266,6 +267,20 @@ export class BaseEndpoint {
         if (!Object.hasOwn(this.context, item) || this.context[item] == null || this.context[item] == "") {
             this.context[item] = value;
         }
+        if (Object.hasOwn(this.mapping, item)) {
+            if(Object.hasOwn(this.mapping[item], "min")) {
+                this.context[item] = Math.max(this.mapping[item].min, this.context[item]);
+            }
+            if(Object.hasOwn(this.mapping[item], "max")) {
+                this.context[item] = Math.min(this.mapping[item].max, this.context[item]);
+            }
+            if(Object.hasOwn(this.mapping[item], "permittedValues")) {
+                if(!this.mapping[item].permittedValues.includes(this.context[item])) {
+                    this.context[item] = this.mapping[item].permittedValues[0];
+                }
+            }
+
+        }
 
     }
     refine(value, decimals = 0) {
@@ -350,6 +365,12 @@ export class BaseEndpoint {
                 this.node.debug(`Dropping update as value ${ret} is not a permitted value`)
                 return null;
             }
+        }
+        if (Object.hasOwn(this.mapping[item], "min")) {
+            ret = Math.max(this.mapping[item].min, ret);
+        }
+        if (Object.hasOwn(this.mapping[item], "max")) {
+            ret = Math.min(this.mapping[item].max, ret);
         }
         this.node.debug(`Refined value for context: item ${item} and value ${ret}`)
         return ret;
@@ -665,24 +686,24 @@ export class BaseEndpoint {
 
     contextToMatter(item, value) {
         this.node.debug(`Converting a Context value to a Matter value. Item: ${item} Value: ${value}`)
-        let v = value;
+        let v = value ;
         if (!Object.hasOwn(this.mapping, item)) {
             this.node.debug(`Cannot proceed as there is no mapping for item ${item}`)
             return value;
         }
         if (typeof value == "number" && Object.hasOwn(this.mapping[item], "multiplier")) {
-            if (typeof this.mapping[item].multiplier == "object") {
-                v = this.mapping[item].multiplier[0](v);
-            } else {
-                v = this.mapping[item].multiplier * v;
-            }
             if (Object.hasOwn(this.mapping[item], "min")) {
                 v = Math.max(this.mapping[item].min, v);
             }
             if (Object.hasOwn(this.mapping[item], "max")) {
                 v = Math.min(this.mapping[item].max, v);
             }
-            v = this.matterRefine(item, v);
+            
+            if (typeof this.mapping[item].multiplier == "object") {
+                v = this.mapping[item].multiplier[0](v);
+            } else {
+                v = this.mapping[item].multiplier * v;
+            }
         }
         return v;
     }

@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepack": "npmignore --auto"
+    "prepack": "npmignore --auto",
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json -w"
   },
   "author": "jpadie",
   "license": "Apache-2.0",
@@ -17,7 +19,8 @@
       "matter-hvac": "dist/nodes/hvac/hvac.js",
       "matter-actuator": "dist/nodes/actuator/actuator.js",
       "matter-hub-status": "dist/nodes/hub/hub.js",
-      "matter2Z2M": "dist/nodes/converters/converterZ2M.js"
+      "matter2Z2M": "dist/nodes/converters/converterZ2M.js",
+      "matter2Tasmota": "dist/nodes/converters/converterTasmota.js"
     }
   },
   "dependencies": {
@@ -51,7 +54,8 @@
   "publishConfig": {
     "ignore": [
       "src/",
-      "node_modules/"
+      "node_modules/",
+      "scripts/"
     ]
   }
 }

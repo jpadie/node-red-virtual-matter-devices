@@ -1,0 +1,37 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matter-thermostat-coordinator-config', {
+        category: 'config',
+        color: '#E6E0F8',
+        defaults: {
+            name: { value: '' },
+            initialMode: { value: 'Off', validate: function(v) { return ['Heat', 'Cool', 'Off'].includes(v); } }
+        },
+        inputs: 0,
+        outputs: 0,
+        icon: 'font-awesome/fa-cog',
+        label: function() {
+            return this.name || 'Thermostat Coordinator Config';
+        },
+        oneditprepare: function() {
+            $('#node-input-initialMode').typedInput({
+                type: 'select',
+                options: [
+                    { value: 'Heat', label: 'Heat' },
+                    { value: 'Cool', label: 'Cool' },
+                    { value: 'Off', label: 'Off' }
+                ]
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matter-thermostat-coordinator-config">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-initialMode"><i class="fa fa-thermometer-half"></i> Initial Mode</label>
+        <input type="text" id="node-input-initialMode">
+    </div>
+</script>

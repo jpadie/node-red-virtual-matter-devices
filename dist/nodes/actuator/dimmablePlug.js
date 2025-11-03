@@ -13,7 +13,7 @@ class dimmablePlug extends dimmableLight_1.dimmableLight {
             ...this.mapping,
             dimmerLevel: {
                 levelControl: "currentLevel",
-                multiplier: 2.55,
+                multiplier: 254 / 100,
                 unit: "%",
                 min: 0,
                 max: 254,

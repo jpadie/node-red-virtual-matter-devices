@@ -1,0 +1,44 @@
+<script type="text/javascript">
+    RED.nodes.registerType('matter-thermostat-coordinator-control', {
+        category: 'matter hvac',
+        color: '#E6E0F8',
+        defaults: {
+            name: { value: '' },
+            coordinatorId: { value: '', validate: function(v) { return v !== ''; } }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-thermometer-half',
+        label: function() {
+            return this.name || 'Thermostat Coordinator Control';
+        },
+        oneditprepare: function() {
+            // Populate coordinator dropdown
+            const coordinators = [];
+            RED.nodes.eachNode(function(node) {
+                if (node.type === 'matter-thermostat-coordinator-config') {
+                    coordinators.push({
+                        value: node.id,
+                        label: node.name || node.id
+                    });
+                }
+            });
+            
+            $('#node-input-coordinatorId').typedInput({
+                type: 'select',
+                options: coordinators
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="matter-thermostat-coordinator-control">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-coordinatorId"><i class="fa fa-cog"></i> Coordinator Config</label>
+        <input type="text" id="node-input-coordinatorId">
+    </div>
+</script>
