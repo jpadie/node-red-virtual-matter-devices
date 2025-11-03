@@ -11,6 +11,19 @@ export class dimmableLight extends onOffLight {
 
         this.setDefault("brightness", 0);
 
+        this.mapping = {
+            ...this.mapping,
+            brightness: {
+                levelControl: "currentLevel",
+                multiplier: 254 / 100,
+                unit: "%",
+                min: 0,
+                max: 254,
+                matter: { valueType: "int" },
+                context: { valueType: "int" }
+            }
+        }
+
         this.attributes = {
             ...this.attributes,
             levelControl: {
@@ -23,19 +36,6 @@ export class dimmableLight extends onOffLight {
                 currentLevel: this.contextToMatter("brightness", this.context.brightness)
             },
         };
-
-        this.mapping = {
-            ...this.mapping,
-            brightness: {
-                levelControl: "currentLevel",
-                multiplier: 2.55,
-                unit: "%",
-                min: 0,
-                max: 254,
-                matter: { valueType: "int" },
-                context: { valueType: "int" }
-            }
-        }
 
         this.setSerialNumber(`dLt-`);
         this.device = DimmableLightDevice
