@@ -1,0 +1,30 @@
+{
+  "name": "@jpadie/ghome-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Google Smart Home fulfillment bridge for virtual devices (Gate, Garage)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "express": "^4.19.2",
+    "google-auth-library": "^9.14.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "@types/uuid": "^9.0.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
+
