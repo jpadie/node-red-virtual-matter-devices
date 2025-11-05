@@ -10,6 +10,7 @@ export function createFulfillmentRouter() {
     const intent = body.inputs?.[0]?.intent;
     const requestId = body.requestId || "";
     const agentUserId = body.agentUserId || process.env.AGENT_USER_ID || "test-user";
+    try { console.log("FULFILL:IN", JSON.stringify({ requestId, intent, hasBody: !!body })); } catch {}
 
     try {
       switch (intent) {
@@ -23,7 +24,9 @@ export function createFulfillmentRouter() {
             attributes: d.attributes,
             deviceInfo: d.deviceInfo
           }));
-          return res.json({ requestId, payload: { agentUserId, devices } });
+          const out = { requestId, payload: { agentUserId, devices } };
+          try { console.log("FULFILL:OUT SYNC", JSON.stringify({ requestId, numDevices: devices.length })); } catch {}
+          return res.json(out);
         }
         case "action.devices.QUERY": {
           const ids: string[] = body.inputs?.[0]?.payload?.devices?.map((d: any) => d.id) || [];
@@ -32,6 +35,7 @@ export function createFulfillmentRouter() {
             const s = registry.getState(id);
             out[id] = s ? s : { online: false };
           }
+          try { console.log("FULFILL:OUT QUERY", JSON.stringify({ requestId, ids })); } catch {}
           return res.json({ requestId, payload: { devices: out } });
         }
         case "action.devices.EXECUTE": {
@@ -54,6 +58,7 @@ export function createFulfillmentRouter() {
           }
           // Fire and forget report state
           reportState(agentUserId).catch(() => {});
+          try { console.log("FULFILL:OUT EXECUTE", JSON.stringify({ requestId, updated: success.length })); } catch {}
           return res.json({ requestId, payload: { commands: success } });
         }
         case "action.devices.DISCONNECT": {
@@ -64,6 +69,7 @@ export function createFulfillmentRouter() {
       }
     } catch (e) {
       console.error(e);
+      try { console.error("FULFILL:ERR", JSON.stringify({ requestId, message: (e as any)?.message })); } catch {}
       return res.status(500).json({ requestId, error: "internal" });
     }
   });

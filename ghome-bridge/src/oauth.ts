@@ -44,7 +44,7 @@ export function createOauthRouter() {
   });
 
   // Token endpoint
-  router.post("/token", express.urlencoded({ extended: false }), (req, res) => {
+  router.post("/token", express.urlencoded({ extended: false }), express.json(), (req, res) => {
     const { grant_type } = req.body as Record<string, string>;
 
     if (grant_type === "authorization_code") {
@@ -60,6 +60,7 @@ export function createOauthRouter() {
         if (client_secret && client_secret !== CLIENT_SECRET) {
           console.warn(`token: unexpected client_secret (provided length ${client_secret.length})`);
         }
+        console.log("token: authorization_code", { hasCode: !!code, hasRedirect: !!redirect_uri });
       } catch {}
       const userId = codes.get(code);
       if (!userId) return res.status(400).json({ error: "invalid_grant" });
@@ -78,6 +79,7 @@ export function createOauthRouter() {
     if (grant_type === "refresh_token") {
       const accessToken = randomUUID();
       const expiresIn = 3600;
+      try { console.log("token: refresh_token"); } catch {}
       tokens.set(accessToken, { userId: DEFAULT_USER, expiresAt: Date.now() + expiresIn * 1000 });
       return res.json({ token_type: "bearer", access_token: accessToken, expires_in: expiresIn });
     }
