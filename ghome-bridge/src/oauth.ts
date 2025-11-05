@@ -49,12 +49,18 @@ export function createOauthRouter() {
 
     if (grant_type === "authorization_code") {
       const { code, redirect_uri, client_id, client_secret } = req.body as Record<string, string>;
-      if (!code || !redirect_uri || !client_id || !client_secret) {
+      if (!code || !redirect_uri) {
         return res.status(400).json({ error: "invalid_request" });
       }
-      if (client_id !== CLIENT_ID || client_secret !== CLIENT_SECRET) {
-        return res.status(401).json({ error: "invalid_client" });
-      }
+      // PoC: accept any client_id/secret but log if unexpected
+      try {
+        if (client_id && client_id !== CLIENT_ID) {
+          console.warn(`token: unexpected client_id ${client_id} (expected ${CLIENT_ID})`);
+        }
+        if (client_secret && client_secret !== CLIENT_SECRET) {
+          console.warn(`token: unexpected client_secret (provided length ${client_secret.length})`);
+        }
+      } catch {}
       const userId = codes.get(code);
       if (!userId) return res.status(400).json({ error: "invalid_grant" });
       codes.delete(code);
