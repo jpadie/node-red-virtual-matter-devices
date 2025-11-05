@@ -15,12 +15,26 @@ export function createOauthRouter() {
   // Authorization endpoint (auto-approves for PoC)
   router.get("/authorize", (req, res) => {
     const { redirect_uri, state, client_id, response_type } = req.query as Record<string, string>;
-    if (!redirect_uri || !client_id || response_type !== "code") {
-      return res.status(400).send("invalid_request");
+    // Basic logging for diagnostics
+    try { console.log(`OAuth authorize hit:`, { client_id, response_type, redirect_uri_present: !!redirect_uri }); } catch {}
+
+    // Friendly page if params missing (helps manual tests / console previews)
+    if (!redirect_uri || response_type !== "code") {
+      const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>Authorize</title></head>
+      <body>
+        <h1>ghome-bridge OAuth</h1>
+        <p>Missing or invalid parameters. Expected response_type=code and a redirect_uri.</p>
+        <p>Example:</p>
+        <pre>GET /oauth/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=https%3A%2F%2Fexample.com%2Fcb&state=xyz</pre>
+      </body></html>`;
+      return res.status(200).type("html").send(html);
     }
-    if (client_id !== CLIENT_ID) {
-      return res.status(400).send("unauthorized_client");
+
+    // For PoC, do not block on client_id mismatch; just log it.
+    if (client_id && client_id !== CLIENT_ID) {
+      try { console.warn(`authorize: unexpected client_id ${client_id} (expected ${CLIENT_ID})`); } catch {}
     }
+
     const code = randomUUID();
     codes.set(code, DEFAULT_USER);
     const url = new URL(redirect_uri);
